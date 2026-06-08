@@ -68,6 +68,11 @@ export default function StreamerRoom({ token, serverUrl }: StreamerRoomProps) {
     <LiveKitRoom
       video={{
         facingMode: "environment",
+        resolution: {
+          width: 1280,
+          height: 720,
+          frameRate: 30,
+        },
       }}
       audio={true}
       token={token}
