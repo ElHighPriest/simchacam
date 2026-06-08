@@ -13,6 +13,15 @@ export default function Home() {
   const [eventSlug, setEventSlug] = useState("");
   const [cameraScreen, setCameraScreen] = useState(false);
   const [cameraMessage, setCameraMessage] = useState("Camera not started yet");
+  const [copyMessage, setCopyMessage] = useState("");
+
+  const eventLink = eventSlug
+    ? `https://simcha.cam/e/${eventSlug}`
+    : "";
+
+  const whatsAppMessage = encodeURIComponent(
+    `Please join the livestream for ${eventName}: ${eventLink}`
+  );
 
   function createEvent() {
     const slug = eventName
@@ -23,6 +32,31 @@ export default function Home() {
 
     setEventSlug(slug);
     setEventCreated(true);
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(eventLink);
+      setCopyMessage("Link copied");
+    } catch {
+      setCopyMessage("Could not copy link");
+    }
+  }
+
+  async function shareLink() {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "SimchaCam Livestream",
+          text: `Please join the livestream for ${eventName}`,
+          url: eventLink,
+        });
+      } catch {
+        // User cancelled share sheet
+      }
+    } else {
+      copyLink();
+    }
   }
 
   async function startCamera() {
@@ -88,23 +122,61 @@ export default function Home() {
   if (eventCreated) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-        <h1 className="text-4xl font-bold mb-4">Event Created</h1>
+        <div className="w-full max-w-md text-center">
+          <h1 className="text-4xl font-bold mb-4">Event Created</h1>
 
-        <p className="text-lg mb-4">Your event link:</p>
+          <p className="text-gray-600 mb-3">Your event link:</p>
 
-        <Link
-          href={`/e/${eventSlug}`}
-          className="bg-gray-100 px-4 py-3 rounded-lg mb-8 hover:bg-gray-200"
-        >
-          simcha.cam/e/{eventSlug}
-        </Link>
+          <Link
+            href={`/e/${eventSlug}`}
+            className="block bg-gray-100 px-4 py-3 rounded-lg mb-4 break-all hover:bg-gray-200"
+          >
+            {eventLink}
+          </Link>
 
-        <button
-          onClick={startCamera}
-          className="bg-black text-white px-6 py-3 rounded-lg"
-        >
-          Start Streaming
-        </button>
+          {copyMessage && (
+            <p className="text-sm text-green-700 mb-4">{copyMessage}</p>
+          )}
+
+          <div className="grid gap-3 mb-6">
+            <button
+              onClick={shareLink}
+              className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
+            >
+              Share Link
+            </button>
+
+            <a
+              href={`https://wa.me/?text=${whatsAppMessage}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-green-600 text-white px-6 py-3 rounded-lg text-lg"
+            >
+              Share on WhatsApp
+            </a>
+
+            <button
+              onClick={copyLink}
+              className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg"
+            >
+              Copy Link
+            </button>
+
+            <Link
+              href={`/e/${eventSlug}`}
+              className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg"
+            >
+              Open Event Page
+            </Link>
+          </div>
+
+          <button
+            onClick={startCamera}
+            className="w-full bg-red-600 text-white px-6 py-4 rounded-xl text-lg font-semibold"
+          >
+            Start Streaming
+          </button>
+        </div>
       </main>
     );
   }
