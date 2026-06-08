@@ -1,23 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import StreamerRoom from "./components/StreamerRoom";
 
 export default function Home() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
   const [showForm, setShowForm] = useState(false);
   const [eventName, setEventName] = useState("");
   const [password, setPassword] = useState("");
   const [eventCreated, setEventCreated] = useState(false);
   const [eventSlug, setEventSlug] = useState("");
-  const [cameraScreen, setCameraScreen] = useState(false);
-  const [cameraMessage, setCameraMessage] = useState("Camera not started yet");
   const [copyMessage, setCopyMessage] = useState("");
 
-  const eventLink = eventSlug
-    ? `https://simcha.cam/e/${eventSlug}`
-    : "";
+  const [livekitToken, setLivekitToken] = useState("");
+  const [livekitUrl, setLivekitUrl] = useState("");
+  const [isGoingLive, setIsGoingLive] = useState(false);
+
+  const eventLink = eventSlug ? `https://simcha.cam/e/${eventSlug}` : "";
 
   const whatsAppMessage = encodeURIComponent(
     `Please join the livestream for ${eventName}: ${eventLink}`
@@ -52,71 +51,45 @@ export default function Home() {
           url: eventLink,
         });
       } catch {
-        // User cancelled share sheet
+        // user cancelled
       }
     } else {
       copyLink();
     }
   }
 
-  async function startCamera() {
-    setCameraScreen(true);
+  async function goLive() {
+    try {
+      const response = await fetch("/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomName: eventSlug,
+          participantName: "streamer",
+          canPublish: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Could not start livestream");
+        return;
+      }
+
+      setLivekitToken(data.token);
+      setLivekitUrl(data.url);
+      setIsGoingLive(true);
+    } catch (error) {
+      console.error(error);
+      alert("Could not start livestream");
+    }
   }
 
-  useEffect(() => {
-    async function openCamera() {
-      if (!cameraScreen) return;
-
-      try {
-        setCameraMessage("Requesting camera and microphone...");
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-          },
-          audio: true,
-        });
-
-        setCameraMessage("Camera connected");
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-      } catch (error) {
-        console.error(error);
-        setCameraMessage("Camera or microphone access failed.");
-        alert("Camera or microphone access failed.");
-      }
-    }
-
-    openCamera();
-  }, [cameraScreen]);
-
-  if (cameraScreen) {
-    return (
-      <main className="min-h-screen bg-black text-white px-4 py-6 flex flex-col">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold">SimchaCam</h1>
-          <p className="text-sm text-gray-300">{eventName}</p>
-          <p className="text-xs text-gray-400 mt-1">{cameraMessage}</p>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full max-w-md rounded-2xl bg-zinc-900"
-          />
-        </div>
-
-        <button className="mt-6 w-full bg-red-600 text-white py-4 rounded-xl text-lg font-semibold">
-          Go Live
-        </button>
-      </main>
-    );
+  if (isGoingLive && livekitToken && livekitUrl) {
+    return <StreamerRoom token={livekitToken} serverUrl={livekitUrl} />;
   }
 
   if (eventCreated) {
@@ -171,10 +144,10 @@ export default function Home() {
           </div>
 
           <button
-            onClick={startCamera}
+            onClick={goLive}
             className="w-full bg-red-600 text-white px-6 py-4 rounded-xl text-lg font-semibold"
           >
-            Start Streaming
+            Go Live
           </button>
         </div>
       </main>
