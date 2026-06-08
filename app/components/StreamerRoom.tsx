@@ -10,7 +10,7 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 type StreamerRoomProps = {
   token: string;
@@ -19,9 +19,6 @@ type StreamerRoomProps = {
 
 function StreamerContent() {
   const { localParticipant } = useLocalParticipant();
-  const [facingMode, setFacingMode] = useState<"environment" | "user">(
-    "environment"
-  );
 
   const tracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: true }],
@@ -36,43 +33,21 @@ function StreamerContent() {
     async function startRearCamera() {
       try {
         await localParticipant.setCameraEnabled(true, {
-          facingMode,
+          facingMode: "environment",
         });
       } catch (error) {
-        console.error("Could not start camera", error);
+        console.error("Could not start rear camera", error);
       }
     }
 
     startRearCamera();
-  }, [localParticipant, facingMode]);
-
-  async function flipCamera() {
-    const nextFacingMode = facingMode === "environment" ? "user" : "environment";
-
-    try {
-      await localParticipant.setCameraEnabled(false);
-      setFacingMode(nextFacingMode);
-    } catch (error) {
-      console.error("Could not flip camera", error);
-    }
-  }
+  }, [localParticipant]);
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
-      <header className="p-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">SimchaCam</h1>
-          <p className="text-sm text-gray-400">
-            Camera: {facingMode === "environment" ? "Rear" : "Front"}
-          </p>
-        </div>
-
-        <button
-          onClick={flipCamera}
-          className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold"
-        >
-          Flip Camera
-        </button>
+      <header className="p-4">
+        <h1 className="text-2xl font-bold">SimchaCam</h1>
+        <p className="text-sm text-gray-400">Rear camera active</p>
       </header>
 
       <section className="flex-1 flex items-center justify-center p-4">
