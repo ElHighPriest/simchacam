@@ -3,8 +3,8 @@
 import "@livekit/components-styles";
 import {
   LiveKitRoom,
+  ParticipantTile,
   RoomAudioRenderer,
-  VideoTrack,
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
@@ -26,7 +26,7 @@ function ViewerContent() {
 
   if (!streamerTrack) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-black text-white px-6 text-center">
+      <main className="h-screen flex items-center justify-center bg-black text-white px-6 text-center overflow-hidden">
         <div>
           <h1 className="text-3xl font-bold mb-4">SimchaCam</h1>
           <p className="text-gray-300">
@@ -38,17 +38,19 @@ function ViewerContent() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
-      <header className="px-4 py-3 border-b border-white/10">
-        <h1 className="text-lg font-semibold">SimchaCam</h1>
-        <p className="text-xs text-gray-400">Live now</p>
+    <main className="h-screen bg-black text-white flex flex-col overflow-hidden">
+      <header className="h-14 px-4 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div>
+          <h1 className="text-lg font-semibold">SimchaCam</h1>
+          <p className="text-xs text-gray-400">Live now</p>
+        </div>
       </header>
 
-      <section className="flex-1 flex items-center justify-center p-3 overflow-hidden">
-        <div className="w-full h-full max-w-6xl flex items-center justify-center">
-          <VideoTrack
+      <section className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-3">
+        <div className="w-full h-full max-w-6xl flex items-center justify-center overflow-hidden">
+          <ParticipantTile
             trackRef={streamerTrack}
-            className="max-h-full max-w-full rounded-xl object-contain"
+            className="w-full h-full max-h-full max-w-full rounded-xl overflow-hidden"
           />
         </div>
       </section>
@@ -67,7 +69,7 @@ export default function ViewerRoom({ token, serverUrl }: ViewerRoomProps) {
       serverUrl={serverUrl}
       connect={true}
       data-lk-theme="default"
-      style={{ height: "100vh" }}
+      style={{ height: "100vh", overflow: "hidden" }}
     >
       <ViewerContent />
     </LiveKitRoom>
