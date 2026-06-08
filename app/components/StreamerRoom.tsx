@@ -10,7 +10,6 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { useEffect } from "react";
 
 type StreamerRoomProps = {
   token: string;
@@ -29,25 +28,11 @@ function StreamerContent() {
     (trackRef) => trackRef.participant.identity === localParticipant.identity
   );
 
-  useEffect(() => {
-    async function startRearCamera() {
-      try {
-        await localParticipant.setCameraEnabled(true, {
-          facingMode: "environment",
-        });
-      } catch (error) {
-        console.error("Could not start rear camera", error);
-      }
-    }
-
-    startRearCamera();
-  }, [localParticipant]);
-
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
       <header className="p-4">
         <h1 className="text-2xl font-bold">SimchaCam</h1>
-        <p className="text-sm text-gray-400">Rear camera active</p>
+        <p className="text-sm text-gray-400">Camera active</p>
       </header>
 
       <section className="flex-1 flex items-center justify-center p-4">
@@ -81,7 +66,9 @@ function StreamerContent() {
 export default function StreamerRoom({ token, serverUrl }: StreamerRoomProps) {
   return (
     <LiveKitRoom
-      video={false}
+      video={{
+        facingMode: "environment",
+      }}
       audio={true}
       token={token}
       serverUrl={serverUrl}
