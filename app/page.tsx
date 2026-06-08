@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -11,11 +11,13 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [eventCreated, setEventCreated] = useState(false);
   const [eventSlug, setEventSlug] = useState("");
-  const [cameraStarted, setCameraStarted] = useState(false);
+  const [cameraScreen, setCameraScreen] = useState(false);
+  const [cameraMessage, setCameraMessage] = useState("Camera not started yet");
 
   function createEvent() {
     const slug = eventName
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9 ]/g, "")
       .replace(/\s+/g, "-");
 
@@ -24,29 +26,46 @@ export default function Home() {
   }
 
   async function startCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-
-      setCameraStarted(true);
-    } catch (error) {
-      alert("Camera or microphone access was blocked.");
-      console.error(error);
-    }
+    setCameraScreen(true);
   }
 
-  if (cameraStarted) {
+  useEffect(() => {
+    async function openCamera() {
+      if (!cameraScreen) return;
+
+      try {
+        setCameraMessage("Requesting camera and microphone...");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "environment",
+          },
+          audio: true,
+        });
+
+        setCameraMessage("Camera connected");
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+      } catch (error) {
+        console.error(error);
+        setCameraMessage("Camera or microphone access failed.");
+        alert("Camera or microphone access failed.");
+      }
+    }
+
+    openCamera();
+  }, [cameraScreen]);
+
+  if (cameraScreen) {
     return (
       <main className="min-h-screen bg-black text-white px-4 py-6 flex flex-col">
         <div className="mb-4">
           <h1 className="text-2xl font-bold">SimchaCam</h1>
           <p className="text-sm text-gray-300">{eventName}</p>
+          <p className="text-xs text-gray-400 mt-1">{cameraMessage}</p>
         </div>
 
         <div className="flex-1 flex items-center justify-center">
@@ -69,13 +88,9 @@ export default function Home() {
   if (eventCreated) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-        <h1 className="text-4xl font-bold mb-4">
-          Event Created
-        </h1>
+        <h1 className="text-4xl font-bold mb-4">Event Created</h1>
 
-        <p className="text-lg mb-4">
-          Your event link:
-        </p>
+        <p className="text-lg mb-4">Your event link:</p>
 
         <Link
           href={`/e/${eventSlug}`}
@@ -98,17 +113,13 @@ export default function Home() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
         <div className="w-full max-w-md">
-          <h1 className="text-4xl font-bold mb-2">
-            Create Event
-          </h1>
+          <h1 className="text-4xl font-bold mb-2">Create Event</h1>
 
           <p className="text-gray-600 mb-8">
             Set up a private livestream page for your simcha.
           </p>
 
-          <label className="block mb-2 font-medium">
-            Event Name
-          </label>
+          <label className="block mb-2 font-medium">Event Name</label>
 
           <input
             className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-5"
@@ -117,9 +128,7 @@ export default function Home() {
             onChange={(e) => setEventName(e.target.value)}
           />
 
-          <label className="block mb-2 font-medium">
-            Password (Optional)
-          </label>
+          <label className="block mb-2 font-medium">Password (Optional)</label>
 
           <input
             className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-6"
@@ -141,9 +150,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-      <h1 className="text-5xl font-bold mb-4">
-        SimchaCam
-      </h1>
+      <h1 className="text-5xl font-bold mb-4">SimchaCam</h1>
 
       <p className="text-xl text-gray-600 text-center max-w-xl mb-8">
         Share your simcha live with family anywhere in the world.
