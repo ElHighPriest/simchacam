@@ -3,8 +3,8 @@
 import "@livekit/components-styles";
 import {
   LiveKitRoom,
-  ParticipantTile,
   RoomAudioRenderer,
+  VideoTrack,
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
@@ -38,12 +38,19 @@ function ViewerContent() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
-      <section className="flex-1 flex items-center justify-center p-4">
-        <ParticipantTile
-          trackRef={streamerTrack}
-          className="w-full max-w-5xl rounded-2xl overflow-hidden"
-        />
+    <main className="min-h-screen bg-black text-white flex flex-col overflow-hidden">
+      <header className="px-4 py-3 border-b border-white/10">
+        <h1 className="text-lg font-semibold">SimchaCam</h1>
+        <p className="text-xs text-gray-400">Live now</p>
+      </header>
+
+      <section className="flex-1 flex items-center justify-center p-3 overflow-hidden">
+        <div className="w-full h-full max-w-6xl flex items-center justify-center">
+          <VideoTrack
+            trackRef={streamerTrack}
+            className="max-h-full max-w-full rounded-xl object-contain"
+          />
+        </div>
       </section>
 
       <RoomAudioRenderer />
