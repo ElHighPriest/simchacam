@@ -1,20 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StreamerRoom from "./components/StreamerRoom";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [showForm, setShowForm] = useState(false);
   const [eventName, setEventName] = useState("");
   const [password, setPassword] = useState("");
   const [eventCreated, setEventCreated] = useState(false);
   const [eventSlug, setEventSlug] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
   const [isGoingLive, setIsGoingLive] = useState(false);
+
+  useEffect(() => {
+    async function loadUser() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      setAuthLoading(false);
+    }
+
+    loadUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const firstName = user?.user_metadata?.first_name;
+  const displayName = firstName || user?.email || "there";
 
   const eventLink = eventSlug ? `https://simcha.cam/e/${eventSlug}` : "";
 
@@ -22,12 +51,54 @@ export default function Home() {
     `Please join the livestream for ${eventName}: ${eventLink}`
   );
 
-  function createEvent() {
-    const slug = eventName
+  function makeSlug(name: string) {
+    const baseSlug = name
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9 ]/g, "")
       .replace(/\s+/g, "-");
+
+    const randomCode = Math.random().toString(36).substring(2, 7);
+
+    return `${baseSlug}-${randomCode}`;
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    setUser(null);
+    setShowForm(false);
+    setEventCreated(false);
+  }
+
+  async function createEvent() {
+    if (!user) {
+      alert("Please log in before creating an event");
+      return;
+    }
+
+    if (!eventName.trim()) {
+      alert("Please enter an event name");
+      return;
+    }
+
+    setIsCreating(true);
+
+    const slug = makeSlug(eventName);
+
+    const { error } = await supabase.from("events").insert({
+      name: eventName,
+      slug,
+      password: password || null,
+      user_id: user.id,
+    });
+
+    setIsCreating(false);
+
+    if (error) {
+      console.error(error);
+      alert("Could not create event");
+      return;
+    }
 
     setEventSlug(slug);
     setEventCreated(true);
@@ -86,6 +157,14 @@ export default function Home() {
       console.error(error);
       alert("Could not start livestream");
     }
+  }
+
+  if (authLoading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        Loading SimchaCam...
+      </main>
+    );
   }
 
   if (isGoingLive && livekitToken && livekitUrl) {
@@ -158,6 +237,13 @@ export default function Home() {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
         <div className="w-full max-w-md">
+          <button
+            onClick={() => setShowForm(false)}
+            className="text-sm text-gray-500 mb-6"
+          >
+            ← Back
+          </button>
+
           <h1 className="text-4xl font-bold mb-2">Create Event</h1>
 
           <p className="text-gray-600 mb-8">
@@ -184,9 +270,10 @@ export default function Home() {
 
           <button
             onClick={createEvent}
-            className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
+            disabled={isCreating}
+            className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg disabled:bg-gray-400"
           >
-            Create
+            {isCreating ? "Creating..." : "Create"}
           </button>
         </div>
       </main>
@@ -195,18 +282,48 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-      <h1 className="text-5xl font-bold mb-4">SimchaCam</h1>
+      <div className="w-full max-w-md text-center">
+        <h1 className="text-5xl font-bold mb-4">SimchaCam</h1>
 
-      <p className="text-xl text-gray-600 text-center max-w-xl mb-8">
-        Share your simcha live with family anywhere in the world.
-      </p>
+        <p className="text-xl text-gray-600 mb-8">
+          Share your simcha live with family anywhere in the world.
+        </p>
 
-      <button
-        onClick={() => setShowForm(true)}
-        className="bg-black text-white px-6 py-3 rounded-lg text-lg"
-      >
-        Create Event
-      </button>
+        {user ? (
+          <>
+            <p className="text-gray-600 mb-6">Welcome, {displayName}</p>
+
+            <div className="grid gap-3">
+              <button
+                onClick={() => setShowForm(true)}
+                className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
+              >
+                Create Event
+              </button>
+
+              <button className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg">
+                My Events
+              </button>
+
+              <button
+                onClick={logout}
+                className="w-full text-gray-600 px-6 py-3 rounded-lg text-lg"
+              >
+                Logout
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="grid gap-3">
+            <Link
+              href="/auth"
+              className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
+            >
+              Login / Create Account
+            </Link>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
