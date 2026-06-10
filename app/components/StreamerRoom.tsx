@@ -80,6 +80,9 @@ export default function StreamerRoom({ token, serverUrl }: StreamerRoomProps) {
       connect={true}
       data-lk-theme="default"
       style={{ height: "100vh" }}
+      onDisconnected={() => {
+        window.location.href = "/my-events";
+      }}
     >
       <StreamerContent />
     </LiveKitRoom>

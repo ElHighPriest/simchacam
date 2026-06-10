@@ -1,7 +1,11 @@
-export default function EventPage() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-red-600 text-white text-5xl font-bold">
-      TEST VIEWER PAGE
-    </main>
-  );
+import ViewerPageClient from "./ViewerPageClient";
+
+type EventPageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export default async function EventPage({ params }: EventPageProps) {
+  const { slug } = await params;
+
+  return <ViewerPageClient slug={slug} />;
 }
