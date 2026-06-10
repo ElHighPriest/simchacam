@@ -9,6 +9,7 @@ type Event = {
   id: string;
   name: string;
   slug: string;
+  status: string | null;
 };
 
 export default function MyEventsPage() {
@@ -18,6 +19,7 @@ export default function MyEventsPage() {
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
+  const [liveEventId, setLiveEventId] = useState("");
   const [isGoingLive, setIsGoingLive] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function MyEventsPage() {
 
     const { data, error } = await supabase
       .from("events")
-      .select("id,name,slug")
+      .select("id,name,slug,status")
       .eq("user_id", userData.user.id)
       .order("created_at", { ascending: false });
 
@@ -44,6 +46,12 @@ export default function MyEventsPage() {
 
     setEvents(data || []);
     setLoading(false);
+  }
+
+  function statusLabel(status: string | null) {
+    if (status === "live") return "🔴 Live";
+    if (status === "ended") return "✓ Ended";
+    return "⚪ Offline";
   }
 
   async function copyLink(slug: string) {
@@ -77,7 +85,26 @@ export default function MyEventsPage() {
     );
   }
 
-  async function goLive(slug: string) {
+  async function goLive(id: string, slug: string) {
+    const { error: statusError } = await supabase
+      .from("events")
+      .update({
+        status: "live",
+      })
+      .eq("id", id);
+
+    if (statusError) {
+      console.error(statusError);
+      alert("Could not update event status");
+      return;
+    }
+
+    setEvents((currentEvents) =>
+      currentEvents.map((event) =>
+        event.id === id ? { ...event, status: "live" } : event
+      )
+    );
+
     try {
       const response = await fetch("/api/token", {
         method: "POST",
@@ -98,6 +125,7 @@ export default function MyEventsPage() {
         return;
       }
 
+      setLiveEventId(id);
       setLivekitToken(data.token);
       setLivekitUrl(data.url);
       setIsGoingLive(true);
@@ -108,7 +136,13 @@ export default function MyEventsPage() {
   }
 
   if (isGoingLive && livekitToken && livekitUrl) {
-    return <StreamerRoom token={livekitToken} serverUrl={livekitUrl} />;
+    return (
+      <StreamerRoom
+        token={livekitToken}
+        serverUrl={livekitUrl}
+        eventId={liveEventId}
+      />
+    );
   }
 
   if (loading) {
@@ -135,7 +169,12 @@ export default function MyEventsPage() {
         <div className="space-y-4">
           {events.map((event) => (
             <div key={event.id} className="border rounded-xl p-4">
-              <h2 className="font-semibold text-lg mb-1">{event.name}</h2>
+              <div className="flex items-start justify-between gap-4 mb-1">
+                <h2 className="font-semibold text-lg">{event.name}</h2>
+                <span className="text-sm whitespace-nowrap">
+                  {statusLabel(event.status)}
+                </span>
+              </div>
 
               <p className="text-sm text-gray-500 mb-4 break-all">
                 simcha.cam/e/{event.slug}
@@ -157,7 +196,7 @@ export default function MyEventsPage() {
                 </button>
 
                 <button
-                  onClick={() => goLive(event.slug)}
+                  onClick={() => goLive(event.id, event.slug)}
                   className="bg-red-600 text-white px-4 py-2 rounded"
                 >
                   Go Live

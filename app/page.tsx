@@ -90,6 +90,7 @@ export default function Home() {
       slug,
       password: password || null,
       user_id: user.id,
+      status: "offline",
     });
 
     setIsCreating(false);

@@ -10,10 +10,12 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import { supabase } from "@/lib/supabase";
 
 type StreamerRoomProps = {
   token: string;
   serverUrl: string;
+  eventId?: string;
 };
 
 function StreamerContent() {
@@ -63,7 +65,24 @@ function StreamerContent() {
   );
 }
 
-export default function StreamerRoom({ token, serverUrl }: StreamerRoomProps) {
+export default function StreamerRoom({
+  token,
+  serverUrl,
+  eventId,
+}: StreamerRoomProps) {
+  async function handleDisconnected() {
+    if (eventId) {
+      await supabase
+        .from("events")
+        .update({
+          status: "ended",
+        })
+        .eq("id", eventId);
+    }
+
+    window.location.href = "/my-events";
+  }
+
   return (
     <LiveKitRoom
       video={{
@@ -80,9 +99,7 @@ export default function StreamerRoom({ token, serverUrl }: StreamerRoomProps) {
       connect={true}
       data-lk-theme="default"
       style={{ height: "100vh" }}
-      onDisconnected={() => {
-        window.location.href = "/my-events";
-      }}
+      onDisconnected={handleDisconnected}
     >
       <StreamerContent />
     </LiveKitRoom>
