@@ -23,30 +23,30 @@ export default function MyEventsPage() {
   const [isGoingLive, setIsGoingLive] = useState(false);
 
   useEffect(() => {
+    async function loadEvents() {
+      const { data: userData } = await supabase.auth.getUser();
+
+      if (!userData.user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("events")
+        .select("id,name,slug,status")
+        .eq("user_id", userData.user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+      }
+
+      setEvents(data || []);
+      setLoading(false);
+    }
+
     loadEvents();
   }, []);
-
-  async function loadEvents() {
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData.user) {
-      setLoading(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("events")
-      .select("id,name,slug,status")
-      .eq("user_id", userData.user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error(error);
-    }
-
-    setEvents(data || []);
-    setLoading(false);
-  }
 
   function statusLabel(status: string | null) {
     if (status === "live") return "🔴 Live";
