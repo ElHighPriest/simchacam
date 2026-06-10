@@ -7,6 +7,7 @@ import {
   ParticipantTile,
   RoomAudioRenderer,
   useLocalParticipant,
+  useParticipants,
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
@@ -20,6 +21,10 @@ type StreamerRoomProps = {
 
 function StreamerContent() {
   const { localParticipant } = useLocalParticipant();
+  const participants = useParticipants();
+  const viewerCount = participants.filter(
+    (participant) => participant.identity !== localParticipant.identity
+  ).length;
 
   const tracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: true }],
@@ -32,9 +37,14 @@ function StreamerContent() {
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
-      <header className="p-4">
-        <h1 className="text-2xl font-bold">SimchaCam</h1>
-        <p className="text-sm text-gray-400">Camera active</p>
+      <header className="p-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">SimchaCam</h1>
+          <p className="text-sm text-gray-400">Camera active</p>
+        </div>
+        <p className="text-sm text-gray-300">
+          {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
+        </p>
       </header>
 
       <section className="flex-1 flex items-center justify-center p-4">
