@@ -106,15 +106,24 @@ export default function MyEventsPage() {
     );
 
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert("Please log in before starting a livestream");
+        return;
+      }
+
       const response = await fetch("/api/token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           roomName: slug,
           participantName: "streamer",
-          canPublish: true,
         }),
       });
 

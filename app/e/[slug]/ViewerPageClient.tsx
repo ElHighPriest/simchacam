@@ -81,7 +81,6 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
             participantName: `viewer-${Math.random()
               .toString(36)
               .substring(2, 8)}`,
-            canPublish: false,
           }),
         });
 
@@ -131,7 +130,6 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
           participantName: `viewer-${Math.random()
             .toString(36)
             .substring(2, 8)}`,
-          canPublish: false,
         }),
       });
 
