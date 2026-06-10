@@ -17,7 +17,7 @@ type ViewerRoomProps = {
 function ViewerContent() {
   const tracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: false }],
-    { onlySubscribed: false }
+    { onlySubscribed: true }
   );
 
   const streamerTrack = tracks.find(
@@ -64,12 +64,15 @@ export default function ViewerRoom({ token, serverUrl }: ViewerRoomProps) {
   return (
     <LiveKitRoom
       video={false}
-      audio={true}
+      audio={false}
       token={token}
       serverUrl={serverUrl}
       connect={true}
       data-lk-theme="default"
       style={{ height: "100vh", overflow: "hidden" }}
+      connectOptions={{
+        autoSubscribe: true,
+      }}
     >
       <ViewerContent />
     </LiveKitRoom>

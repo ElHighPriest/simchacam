@@ -301,9 +301,12 @@ export default function Home() {
                 Create Event
               </button>
 
-              <button className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg">
+              <Link
+                href="/my-events"
+                className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg block"
+              >
                 My Events
-              </button>
+              </Link>
 
               <button
                 onClick={logout}
