@@ -158,7 +158,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   }
 
   if (token && serverUrl) {
-    return <ViewerRoom token={token} serverUrl={serverUrl} />;
+    return <ViewerRoom token={token} serverUrl={serverUrl} eventId={event.id} />;
   }
 
   if (event.status === "ended") {
