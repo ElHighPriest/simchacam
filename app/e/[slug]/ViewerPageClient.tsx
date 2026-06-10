@@ -13,6 +13,7 @@ type EventRecord = {
   name: string | null;
   slug: string | null;
   password: string | null;
+  status: string | null;
 };
 
 export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
@@ -32,7 +33,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     async function loadEvent() {
       const { data, error } = await supabase
         .from("events")
-        .select("id, name, slug, password")
+        .select("id, name, slug, password, status")
         .eq("slug", slug)
         .single();
 
@@ -160,6 +161,42 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     return <ViewerRoom token={token} serverUrl={serverUrl} />;
   }
 
+  if (event.status === "ended") {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
+        <div className="w-full max-w-md">
+          <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
+            SimchaCam
+          </p>
+
+          <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
+
+          <p className="text-gray-600">
+            This livestream has ended.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (event.status !== "live") {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
+        <div className="w-full max-w-md">
+          <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
+            SimchaCam
+          </p>
+
+          <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
+
+          <p className="text-gray-600">
+            The livestream has not started yet.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
       <div className="w-full max-w-md">
@@ -170,7 +207,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
         <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
 
         <p className="text-gray-600 mb-8">
-          The livestream is ready when the host goes live.
+          The livestream is live now.
         </p>
 
         <button
