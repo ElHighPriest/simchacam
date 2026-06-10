@@ -8,8 +8,6 @@ import { supabase } from "@/lib/supabase";
 type EventRecord = {
   id: string;
   name: string;
-  password: string | null;
-  user_id: string | null;
 };
 
 export default function EditEventPage() {
@@ -20,6 +18,7 @@ export default function EditEventPage() {
 
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordChanged, setPasswordChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -32,14 +31,24 @@ export default function EditEventPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("events")
-        .select("id,name,password,user_id")
-        .eq("id", id)
-        .single();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (error || !data) {
-        console.error(error);
+      if (!session) {
+        router.push("/auth");
+        return;
+      }
+
+      const response = await fetch(`/api/events/id/${encodeURIComponent(id)}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data.error);
         alert("Event not found");
         router.push("/my-events");
         return;
@@ -47,14 +56,7 @@ export default function EditEventPage() {
 
       const event = data as EventRecord;
 
-      if (event.user_id !== userData.user.id) {
-        alert("You do not have permission to edit this event");
-        router.push("/my-events");
-        return;
-      }
-
       setName(event.name || "");
-      setPassword(event.password || "");
       setLoading(false);
     }
 
@@ -69,19 +71,34 @@ export default function EditEventPage() {
 
     setSaving(true);
 
-    const { error } = await supabase
-      .from("events")
-      .update({
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setSaving(false);
+      router.push("/auth");
+      return;
+    }
+
+    const response = await fetch(`/api/events/id/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
         name,
-        password: password || null,
-      })
-      .eq("id", id);
+        ...(passwordChanged ? { password } : {}),
+      }),
+    });
+    const data = await response.json();
 
     setSaving(false);
 
-    if (error) {
-      console.error(error);
-      alert("Could not save event");
+    if (!response.ok) {
+      console.error(data.error);
+      alert(data.error || "Could not save event");
       return;
     }
 
@@ -110,9 +127,13 @@ export default function EditEventPage() {
       <label className="block mb-2 font-medium">Password Optional</label>
       <input
         className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-6"
-        placeholder="Leave blank for no password"
+        type="password"
+        placeholder="Leave blank to keep current password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => {
+          setPassword(e.target.value);
+          setPasswordChanged(true);
+        }}
       />
 
       <button

@@ -1,6 +1,7 @@
 import { AccessToken } from "livekit-server-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { verifyPassword } from "@/lib/password";
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +79,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Event not found" }, { status: 404 });
       }
 
-      if (event.password && password !== event.password) {
+      if (
+        event.password &&
+        !(await verifyPassword(password || "", event.password))
+      ) {
         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
       }
     }

@@ -85,24 +85,35 @@ export default function Home() {
     setIsCreating(true);
 
     const slug = makeSlug(eventName);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    const { data, error } = await supabase
-      .from("events")
-      .insert({
+    if (!session) {
+      setIsCreating(false);
+      alert("Please log in before creating an event");
+      return;
+    }
+
+    const response = await fetch("/api/events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
         name: eventName,
         slug,
         password: password || null,
-        user_id: user.id,
-        status: "offline",
-      })
-      .select("id")
-      .single();
+      }),
+    });
+    const data = await response.json();
 
     setIsCreating(false);
 
-    if (error) {
-      console.error(error);
-      alert("Could not create event");
+    if (!response.ok) {
+      console.error(data.error);
+      alert(data.error || "Could not create event");
       return;
     }
 

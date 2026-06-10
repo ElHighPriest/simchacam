@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyPassword } from "@/lib/password";
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -70,7 +71,7 @@ export async function POST(
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  if (event.password && password !== event.password) {
+  if (event.password && !(await verifyPassword(password || "", event.password))) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
