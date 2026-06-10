@@ -12,6 +12,7 @@ type EventRecord = {
   name: string | null;
   slug: string | null;
   status: string | null;
+  eventAt: string | null;
   hasPassword: boolean;
 };
 
@@ -239,6 +240,12 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
           </p>
 
           <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
+
+          {event.eventAt && (
+            <p className="text-gray-600 mb-4">
+              {new Date(event.eventAt).toLocaleString()}
+            </p>
+          )}
 
           <p className="text-gray-600">
             The livestream has not started yet.

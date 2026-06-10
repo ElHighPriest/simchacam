@@ -12,6 +12,8 @@ export default function Home() {
 
   const [showForm, setShowForm] = useState(false);
   const [eventName, setEventName] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventTime, setEventTime] = useState("");
   const [password, setPassword] = useState("");
   const [eventCreated, setEventCreated] = useState(false);
   const [eventId, setEventId] = useState("");
@@ -82,9 +84,22 @@ export default function Home() {
       return;
     }
 
+    if (!eventDate || !eventTime) {
+      alert("Please enter an event date and time");
+      return;
+    }
+
     setIsCreating(true);
 
     const slug = makeSlug(eventName);
+    const eventAt = new Date(`${eventDate}T${eventTime}`);
+
+    if (Number.isNaN(eventAt.getTime())) {
+      setIsCreating(false);
+      alert("Please enter a valid event date and time");
+      return;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -104,6 +119,7 @@ export default function Home() {
       body: JSON.stringify({
         name: eventName,
         slug,
+        eventAt: eventAt.toISOString(),
         password: password || null,
       }),
     });
@@ -303,6 +319,24 @@ export default function Home() {
             placeholder="Aryeh & Devorah Wedding"
             value={eventName}
             onChange={(e) => setEventName(e.target.value)}
+          />
+
+          <label className="block mb-2 font-medium">Event Date</label>
+
+          <input
+            type="date"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-5"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+          />
+
+          <label className="block mb-2 font-medium">Event Time</label>
+
+          <input
+            type="time"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-5"
+            value={eventTime}
+            onChange={(e) => setEventTime(e.target.value)}
           />
 
           <label className="block mb-2 font-medium">Password (Optional)</label>

@@ -10,6 +10,7 @@ type Event = {
   name: string;
   slug: string;
   status: string | null;
+  event_at: string | null;
 };
 
 export default function MyEventsPage() {
@@ -33,7 +34,7 @@ export default function MyEventsPage() {
 
       const { data, error } = await supabase
         .from("events")
-        .select("id,name,slug,status")
+        .select("id,name,slug,status,event_at")
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false });
 
@@ -188,6 +189,12 @@ export default function MyEventsPage() {
               <p className="text-sm text-gray-500 mb-4 break-all">
                 simcha.cam/e/{event.slug}
               </p>
+
+              {event.event_at && (
+                <p className="text-sm text-gray-600 mb-4">
+                  {new Date(event.event_at).toLocaleString()}
+                </p>
+              )}
 
               <div className="grid gap-2 sm:grid-cols-5">
                 <Link

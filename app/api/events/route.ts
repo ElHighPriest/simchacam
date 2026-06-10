@@ -29,13 +29,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { name, slug, password } = await request.json();
+  const { name, slug, eventAt, password } = await request.json();
 
-  if (!name?.trim() || !slug) {
+  if (!name?.trim() || !slug || !eventAt) {
     return NextResponse.json(
-      { error: "Missing event name or slug" },
+      { error: "Missing event name, slug, or date" },
       { status: 400 }
     );
+  }
+
+  const eventDate = new Date(eventAt);
+
+  if (Number.isNaN(eventDate.getTime())) {
+    return NextResponse.json({ error: "Invalid event date" }, { status: 400 });
   }
 
   const authenticatedSupabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -51,6 +57,7 @@ export async function POST(request: NextRequest) {
     .insert({
       name,
       slug,
+      event_at: eventDate.toISOString(),
       password: password ? await hashPassword(password) : null,
       user_id: user.id,
       status: "offline",
