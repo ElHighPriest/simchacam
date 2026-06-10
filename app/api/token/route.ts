@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
-    const { roomName, participantName } = await request.json();
+    const { roomName, participantName, password } = await request.json();
 
     if (!roomName || !participantName) {
       return NextResponse.json(
@@ -67,6 +67,20 @@ export async function POST(request: NextRequest) {
       }
 
       canPublish = true;
+    } else {
+      const { data: event, error: eventError } = await supabase
+        .from("events")
+        .select("password")
+        .eq("slug", roomName)
+        .single();
+
+      if (eventError || !event) {
+        return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      }
+
+      if (event.password && password !== event.password) {
+        return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+      }
     }
 
     const token = new AccessToken(apiKey, apiSecret, {

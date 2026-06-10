@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import ViewerRoom from "@/app/components/ViewerRoom";
-import { supabase } from "@/lib/supabase";
 
 type ViewerPageClientProps = {
   slug: string;
@@ -12,8 +11,8 @@ type EventRecord = {
   id: string;
   name: string | null;
   slug: string | null;
-  password: string | null;
   status: string | null;
+  hasPassword: boolean;
 };
 
 export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
@@ -32,14 +31,11 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   useEffect(() => {
     async function loadEvent() {
-      const { data, error } = await supabase
-        .from("events")
-        .select("id, name, slug, password, status")
-        .eq("slug", slug)
-        .single();
+      const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
+      const data = await response.json();
 
-      if (error || !data) {
-        console.error(error);
+      if (!response.ok) {
+        console.error(data.error);
         setEventError("Event not found.");
         setEventLoading(false);
         return;
@@ -56,7 +52,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     return () => clearInterval(interval);
   }, [slug]);
 
-  const eventHasPassword = Boolean(event?.password);
+  const eventHasPassword = Boolean(event?.hasPassword);
 
   useEffect(() => {
     if (
@@ -81,6 +77,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
             participantName: `viewer-${Math.random()
               .toString(36)
               .substring(2, 8)}`,
+            password: enteredPassword,
           }),
         });
 
@@ -100,15 +97,20 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     }
 
     autoJoinLivestream();
-  }, [event?.status, eventHasPassword, passwordPassed, slug]);
+  }, [enteredPassword, event?.status, eventHasPassword, passwordPassed, slug]);
 
-  function checkPassword() {
-    if (!event?.password) {
-      setPasswordPassed(true);
-      return;
-    }
+  async function checkPassword() {
+    const response = await fetch(`/api/events/${encodeURIComponent(slug)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        password: enteredPassword,
+      }),
+    });
 
-    if (enteredPassword === event.password) {
+    if (response.ok) {
       setPasswordPassed(true);
       setPasswordError("");
     } else {
@@ -130,6 +132,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
           participantName: `viewer-${Math.random()
             .toString(36)
             .substring(2, 8)}`,
+          password: enteredPassword,
         }),
       });
 
