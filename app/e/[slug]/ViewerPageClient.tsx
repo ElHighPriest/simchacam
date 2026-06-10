@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ViewerRoom from "@/app/components/ViewerRoom";
 import { supabase } from "@/lib/supabase";
 
@@ -28,6 +28,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [streamLoading, setStreamLoading] = useState(false);
+  const autoJoinStarted = useRef(false);
 
   useEffect(() => {
     async function loadEvent() {
@@ -49,9 +50,58 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     }
 
     loadEvent();
+
+    const interval = setInterval(loadEvent, 3000);
+
+    return () => clearInterval(interval);
   }, [slug]);
 
   const eventHasPassword = Boolean(event?.password);
+
+  useEffect(() => {
+    if (
+      event?.status !== "live" ||
+      (eventHasPassword && !passwordPassed) ||
+      autoJoinStarted.current
+    ) {
+      return;
+    }
+
+    autoJoinStarted.current = true;
+
+    async function autoJoinLivestream() {
+      try {
+        const response = await fetch("/api/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            roomName: slug,
+            participantName: `viewer-${Math.random()
+              .toString(36)
+              .substring(2, 8)}`,
+            canPublish: false,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error);
+        }
+
+        setToken(data.token);
+        setServerUrl(data.url);
+      } catch (error) {
+        autoJoinStarted.current = false;
+        console.error(error);
+        setEventError("Could not connect to livestream.");
+      }
+    }
+
+    autoJoinLivestream();
+  }, [event?.status, eventHasPassword, passwordPassed, slug]);
 
   function checkPassword() {
     if (!event?.password) {
