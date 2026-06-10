@@ -32,18 +32,22 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   useEffect(() => {
     async function loadEvent() {
-      const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
-      const data = await response.json();
+      try {
+        const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
+        const data = await response.json();
 
-      if (!response.ok) {
-        console.error(data.error);
-        setEventError("Event not found.");
+        if (!response.ok) {
+          console.error(data.error);
+          setEventError("Event not found.");
+          setEventLoading(false);
+          return;
+        }
+
+        setEvent(data);
         setEventLoading(false);
-        return;
+      } catch (error) {
+        console.error(error);
       }
-
-      setEvent(data);
-      setEventLoading(false);
     }
 
     loadEvent();
