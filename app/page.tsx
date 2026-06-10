@@ -14,6 +14,7 @@ export default function Home() {
   const [eventName, setEventName] = useState("");
   const [password, setPassword] = useState("");
   const [eventCreated, setEventCreated] = useState(false);
+  const [eventId, setEventId] = useState("");
   const [eventSlug, setEventSlug] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -85,13 +86,17 @@ export default function Home() {
 
     const slug = makeSlug(eventName);
 
-    const { error } = await supabase.from("events").insert({
-      name: eventName,
-      slug,
-      password: password || null,
-      user_id: user.id,
-      status: "offline",
-    });
+    const { data, error } = await supabase
+      .from("events")
+      .insert({
+        name: eventName,
+        slug,
+        password: password || null,
+        user_id: user.id,
+        status: "offline",
+      })
+      .select("id")
+      .single();
 
     setIsCreating(false);
 
@@ -101,6 +106,7 @@ export default function Home() {
       return;
     }
 
+    setEventId(data.id);
     setEventSlug(slug);
     setEventCreated(true);
   }
@@ -131,6 +137,19 @@ export default function Home() {
   }
 
   async function goLive() {
+    const { error: statusError } = await supabase
+      .from("events")
+      .update({
+        status: "live",
+      })
+      .eq("id", eventId);
+
+    if (statusError) {
+      console.error(statusError);
+      alert("Could not update event status");
+      return;
+    }
+
     try {
       const response = await fetch("/api/token", {
         method: "POST",
@@ -169,7 +188,13 @@ export default function Home() {
   }
 
   if (isGoingLive && livekitToken && livekitUrl) {
-    return <StreamerRoom token={livekitToken} serverUrl={livekitUrl} />;
+    return (
+      <StreamerRoom
+        token={livekitToken}
+        serverUrl={livekitUrl}
+        eventId={eventId}
+      />
+    );
   }
 
   if (eventCreated) {
