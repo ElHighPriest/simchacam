@@ -11,16 +11,25 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 type StreamerRoomProps = {
   token: string;
   serverUrl: string;
   eventId?: string;
+  recordingEnabled?: boolean;
 };
 
-function StreamerContent() {
+function StreamerContent({
+  eventId,
+  recordingEnabled,
+}: {
+  eventId?: string;
+  recordingEnabled: boolean;
+}) {
   const { localParticipant } = useLocalParticipant();
+  const recordingStartRequested = useRef(false);
   const participants = useParticipants();
   const viewerCount = participants.filter(
     (participant) => participant.identity !== localParticipant.identity
@@ -34,6 +43,45 @@ function StreamerContent() {
   const localCameraTrack = tracks.find(
     (trackRef) => trackRef.participant.identity === localParticipant.identity
   );
+
+  useEffect(() => {
+    if (
+      !eventId ||
+      !recordingEnabled ||
+      !localCameraTrack ||
+      recordingStartRequested.current
+    ) {
+      return;
+    }
+
+    recordingStartRequested.current = true;
+
+    async function startRecording() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(eventId!)}/recording/start`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Could not initialize recording");
+      }
+    }
+
+    startRecording();
+  }, [eventId, localCameraTrack, recordingEnabled]);
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
@@ -79,9 +127,28 @@ export default function StreamerRoom({
   token,
   serverUrl,
   eventId,
+  recordingEnabled = false,
 }: StreamerRoomProps) {
   async function handleDisconnected() {
     if (eventId) {
+      if (recordingEnabled) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          await fetch(
+            `/api/events/id/${encodeURIComponent(eventId)}/recording/stop`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            }
+          );
+        }
+      }
+
       await supabase
         .from("events")
         .update({
@@ -111,7 +178,10 @@ export default function StreamerRoom({
       style={{ height: "100vh" }}
       onDisconnected={handleDisconnected}
     >
-      <StreamerContent />
+      <StreamerContent
+        eventId={eventId}
+        recordingEnabled={recordingEnabled}
+      />
     </LiveKitRoom>
   );
 }

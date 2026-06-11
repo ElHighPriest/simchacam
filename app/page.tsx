@@ -24,6 +24,7 @@ export default function Home() {
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
+  const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [isGoingLive, setIsGoingLive] = useState(false);
 
   useEffect(() => {
@@ -188,6 +189,21 @@ export default function Home() {
         return;
       }
 
+      const eventResponse = await fetch(
+        `/api/events/id/${encodeURIComponent(eventId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+      const eventData = await eventResponse.json();
+
+      if (!eventResponse.ok) {
+        alert(eventData.error || "Could not load event");
+        return;
+      }
+
       const response = await fetch("/api/token", {
         method: "POST",
         headers: {
@@ -209,6 +225,7 @@ export default function Home() {
 
       setLivekitToken(data.token);
       setLivekitUrl(data.url);
+      setRecordingEnabled(Boolean(eventData.hasRecording));
       setIsGoingLive(true);
     } catch (error) {
       console.error(error);
@@ -230,6 +247,7 @@ export default function Home() {
         token={livekitToken}
         serverUrl={livekitUrl}
         eventId={eventId}
+        recordingEnabled={recordingEnabled}
       />
     );
   }

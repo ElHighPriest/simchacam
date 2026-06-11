@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash, createHmac } from "node:crypto";
 
-type R2Config = {
+export type R2Config = {
   accessKeyId: string;
   bucketName: string;
   endpoint: URL;
@@ -10,7 +10,7 @@ type R2Config = {
   secretAccessKey: string;
 };
 
-function getR2Config(): R2Config {
+export function getR2Config(): R2Config {
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const bucketName = process.env.R2_BUCKET_NAME;
   const endpoint = process.env.R2_ENDPOINT;
