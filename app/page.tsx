@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import StreamerRoom from "./components/StreamerRoom";
 import { supabase } from "@/lib/supabase";
+import { isEmailVerified } from "@/lib/auth";
 import type { User } from "@supabase/supabase-js";
 
 export default function Home() {
@@ -74,8 +75,8 @@ export default function Home() {
   }
 
   async function createEvent() {
-    if (!user) {
-      alert("Please log in before creating an event");
+    if (!isEmailVerified(user)) {
+      alert("Please confirm your email before creating an event");
       return;
     }
 
@@ -369,7 +370,7 @@ export default function Home() {
           Share your simcha live with family anywhere in the world.
         </p>
 
-        {user ? (
+        {isEmailVerified(user) ? (
           <>
             <p className="text-gray-600 mb-6">Welcome, {displayName}</p>
 

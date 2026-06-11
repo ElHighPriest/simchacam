@@ -14,9 +14,11 @@ export default function AuthPage() {
 
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   async function handleSubmit() {
     setLoading(true);
+    setMessage("");
 
     if (mode === "signup") {
       const { error } = await supabase.auth.signUp({
@@ -37,8 +39,12 @@ export default function AuthPage() {
         return;
       }
 
-      alert("Account created!");
-      router.push("/");
+      await supabase.auth.signOut();
+      setMessage(
+        "Check your email and confirm your account before logging in to SimchaCam."
+      );
+      setMode("login");
+      setPassword("");
       return;
     }
 
@@ -50,11 +56,16 @@ export default function AuthPage() {
     setLoading(false);
 
     if (error) {
-      alert(error.message);
+      if (error.code === "email_not_confirmed") {
+        setMessage(
+          "Please confirm your email address before logging in. Check your inbox for the confirmation link."
+        );
+      } else {
+        setMessage(error.message);
+      }
       return;
     }
 
-    alert("Logged in!");
     router.push("/");
   }
 
@@ -64,6 +75,12 @@ export default function AuthPage() {
         <h1 className="text-4xl font-bold mb-6 text-center">
           {mode === "signup" ? "Create Account" : "Login"}
         </h1>
+
+        {message && (
+          <p className="bg-gray-100 text-gray-700 rounded-lg px-4 py-3 mb-4">
+            {message}
+          </p>
+        )}
 
         {mode === "signup" && (
           <>

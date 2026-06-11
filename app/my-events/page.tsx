@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { isEmailVerified } from "@/lib/auth";
 import StreamerRoom from "@/app/components/StreamerRoom";
 
 type Event = {
@@ -14,6 +16,7 @@ type Event = {
 };
 
 export default function MyEventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [copyMessage, setCopyMessage] = useState("");
@@ -27,8 +30,8 @@ export default function MyEventsPage() {
     async function loadEvents() {
       const { data: userData } = await supabase.auth.getUser();
 
-      if (!userData.user) {
-        setLoading(false);
+      if (!isEmailVerified(userData.user)) {
+        router.push("/auth");
         return;
       }
 
@@ -47,7 +50,7 @@ export default function MyEventsPage() {
     }
 
     loadEvents();
-  }, []);
+  }, [router]);
 
   function statusLabel(status: string | null) {
     if (status === "live") return "🔴 Live";

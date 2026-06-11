@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword } from "@/lib/password";
+import { isEmailVerified } from "@/lib/auth";
 
 async function getAuthenticatedClient(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,7 +19,7 @@ async function getAuthenticatedClient(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser(accessToken);
 
-  if (!user) {
+  if (!isEmailVerified(user)) {
     return null;
   }
 

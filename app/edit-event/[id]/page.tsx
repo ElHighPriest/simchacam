@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { isEmailVerified } from "@/lib/auth";
 
 type EventRecord = {
   id: string;
@@ -26,7 +27,7 @@ export default function EditEventPage() {
     async function loadEvent() {
       const { data: userData } = await supabase.auth.getUser();
 
-      if (!userData.user) {
+      if (!isEmailVerified(userData.user)) {
         router.push("/auth");
         return;
       }

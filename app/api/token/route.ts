@@ -2,6 +2,7 @@ import { AccessToken } from "livekit-server-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
+import { isEmailVerified } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
         data: { user },
       } = await supabase.auth.getUser(accessToken);
 
-      if (!user) {
+      if (!isEmailVerified(user)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
