@@ -13,6 +13,22 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseAnonKey);
 }
 
+function getRecordingClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -37,6 +53,30 @@ export async function GET(
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
+  const recordingClient = getRecordingClient();
+  let recording = null;
+
+  if (recordingClient) {
+    const { data, error: recordingError } = await recordingClient
+      .from("event_recordings")
+      .select("status, expires_at")
+      .eq("event_id", event.id)
+      .maybeSingle();
+
+    if (recordingError) {
+      console.error("Could not load viewer recording metadata", recordingError);
+    } else if (
+      data?.status === "ready" &&
+      data.expires_at &&
+      new Date(data.expires_at) > new Date()
+    ) {
+      recording = {
+        status: data.status,
+        expiresAt: data.expires_at,
+      };
+    }
+  }
+
   return NextResponse.json({
     id: event.id,
     name: event.name,
@@ -44,6 +84,7 @@ export async function GET(
     status: event.status,
     eventAt: event.event_at,
     hasPassword: Boolean(event.password),
+    recording,
   });
 }
 

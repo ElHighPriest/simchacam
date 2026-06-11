@@ -45,14 +45,6 @@ function StreamerContent({
   );
 
   useEffect(() => {
-    console.log("[TEMP RECORDING DEBUG] StreamerRoom recording state", {
-      eventId,
-      recordingEnabled,
-      hasLocalCameraTrack: Boolean(localCameraTrack),
-    });
-  }, [eventId, localCameraTrack, recordingEnabled]);
-
-  useEffect(() => {
     if (
       !eventId ||
       !recordingEnabled ||
@@ -65,18 +57,11 @@ function StreamerContent({
     recordingStartRequested.current = true;
 
     async function startRecording() {
-      console.log("[TEMP RECORDING DEBUG] Calling recording/start", {
-        eventId,
-      });
-
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
-        console.log(
-          "[TEMP RECORDING DEBUG] recording/start skipped: no session"
-        );
         return;
       }
 
@@ -89,13 +74,6 @@ function StreamerContent({
           },
         }
       );
-      const responseBody = await response.text();
-
-      console.log("[TEMP RECORDING DEBUG] recording/start response", {
-        eventId,
-        status: response.status,
-        body: responseBody,
-      });
 
       if (!response.ok) {
         console.error("Could not initialize recording");
@@ -107,10 +85,6 @@ function StreamerContent({
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
-      <div className="bg-red-600 px-4 py-3 text-center font-bold">
-        RECORDING DEBUG BUILD 62274ba
-      </div>
-
       <header className="p-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">SimchaCam</h1>

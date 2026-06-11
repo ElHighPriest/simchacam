@@ -82,11 +82,6 @@ export async function GET(
 
   const hasRecording = recordingError ? false : Boolean(recording);
 
-  console.log("[TEMP RECORDING DEBUG] Event recording status", {
-    eventId: id,
-    hasRecording,
-  });
-
   return NextResponse.json({
     id: event.id,
     name: event.name,

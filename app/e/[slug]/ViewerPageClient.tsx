@@ -14,6 +14,10 @@ type EventRecord = {
   status: string | null;
   eventAt: string | null;
   hasPassword: boolean;
+  recording: {
+    status: "ready";
+    expiresAt: string;
+  } | null;
 };
 
 export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
@@ -28,6 +32,10 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [streamLoading, setStreamLoading] = useState(false);
+  const [recordingAction, setRecordingAction] = useState<
+    "watch" | "download" | null
+  >(null);
+  const [recordingError, setRecordingError] = useState("");
   const autoJoinStarted = useRef(false);
 
   useEffect(() => {
@@ -157,6 +165,38 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     }
   }
 
+  async function openRecording(action: "watch" | "download") {
+    setRecordingAction(action);
+    setRecordingError("");
+
+    try {
+      const response = await fetch(
+        `/api/events/${encodeURIComponent(slug)}/recording`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action,
+            password: enteredPassword,
+          }),
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      setRecordingError("Could not access recording.");
+      setRecordingAction(null);
+    }
+  }
+
   if (eventLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -227,9 +267,44 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
           <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
 
-          <p className="text-gray-600">
+          <p className={event.recording ? "text-gray-600 mb-6" : "text-gray-600"}>
             This livestream has ended.
           </p>
+
+          {event.recording && (
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                Recording available until{" "}
+                {new Date(event.recording.expiresAt).toLocaleString()}
+              </p>
+
+              {recordingError && (
+                <p className="text-sm text-red-600 mb-3">{recordingError}</p>
+              )}
+
+              <div className="grid gap-3">
+                <button
+                  onClick={() => openRecording("watch")}
+                  disabled={recordingAction !== null}
+                  className="w-full bg-black text-white px-6 py-4 rounded-xl text-lg font-semibold disabled:bg-gray-400"
+                >
+                  {recordingAction === "watch"
+                    ? "Opening..."
+                    : "Watch Recording"}
+                </button>
+
+                <button
+                  onClick={() => openRecording("download")}
+                  disabled={recordingAction !== null}
+                  className="w-full border border-gray-300 px-6 py-4 rounded-xl text-lg font-semibold disabled:text-gray-400"
+                >
+                  {recordingAction === "download"
+                    ? "Preparing..."
+                    : "Download Recording"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
     );
