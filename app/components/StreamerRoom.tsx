@@ -45,6 +45,14 @@ function StreamerContent({
   );
 
   useEffect(() => {
+    console.log("[TEMP RECORDING DEBUG] StreamerRoom recording state", {
+      eventId,
+      recordingEnabled,
+      hasLocalCameraTrack: Boolean(localCameraTrack),
+    });
+  }, [eventId, localCameraTrack, recordingEnabled]);
+
+  useEffect(() => {
     if (
       !eventId ||
       !recordingEnabled ||
@@ -57,11 +65,18 @@ function StreamerContent({
     recordingStartRequested.current = true;
 
     async function startRecording() {
+      console.log("[TEMP RECORDING DEBUG] Calling recording/start", {
+        eventId,
+      });
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
+        console.log(
+          "[TEMP RECORDING DEBUG] recording/start skipped: no session"
+        );
         return;
       }
 
@@ -74,6 +89,13 @@ function StreamerContent({
           },
         }
       );
+      const responseBody = await response.text();
+
+      console.log("[TEMP RECORDING DEBUG] recording/start response", {
+        eventId,
+        status: response.status,
+        body: responseBody,
+      });
 
       if (!response.ok) {
         console.error("Could not initialize recording");

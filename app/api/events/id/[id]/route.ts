@@ -80,10 +80,17 @@ export async function GET(
     console.error("Could not load recording status:", recordingError);
   }
 
+  const hasRecording = recordingError ? false : Boolean(recording);
+
+  console.log("[TEMP RECORDING DEBUG] Event recording status", {
+    eventId: id,
+    hasRecording,
+  });
+
   return NextResponse.json({
     id: event.id,
     name: event.name,
-    hasRecording: recordingError ? false : Boolean(recording),
+    hasRecording,
   });
 }
 
