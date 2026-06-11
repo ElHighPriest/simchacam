@@ -60,23 +60,30 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: recording, error: recordingError } = await authenticated.supabase
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const recordingSupabase = serviceRoleKey
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      })
+    : authenticated.supabase;
+
+  const { data: recording, error: recordingError } = await recordingSupabase
     .from("event_recordings")
     .select("event_id")
     .eq("event_id", id)
     .maybeSingle();
 
   if (recordingError) {
-    return NextResponse.json(
-      { error: "Could not load recording status" },
-      { status: 500 }
-    );
+    console.error("Could not load recording status:", recordingError);
   }
 
   return NextResponse.json({
     id: event.id,
     name: event.name,
-    hasRecording: Boolean(recording),
+    hasRecording: recordingError ? false : Boolean(recording),
   });
 }
 
