@@ -60,7 +60,24 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  return NextResponse.json({ id: event.id, name: event.name });
+  const { data: recording, error: recordingError } = await authenticated.supabase
+    .from("event_recordings")
+    .select("event_id")
+    .eq("event_id", id)
+    .maybeSingle();
+
+  if (recordingError) {
+    return NextResponse.json(
+      { error: "Could not load recording status" },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    id: event.id,
+    name: event.name,
+    hasRecording: Boolean(recording),
+  });
 }
 
 export async function PATCH(

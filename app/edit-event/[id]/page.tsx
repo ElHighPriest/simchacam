@@ -9,6 +9,7 @@ import { isEmailVerified } from "@/lib/auth";
 type EventRecord = {
   id: string;
   name: string;
+  hasRecording: boolean;
 };
 
 export default function EditEventPage() {
