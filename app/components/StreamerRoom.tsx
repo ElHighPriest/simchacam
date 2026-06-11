@@ -107,6 +107,10 @@ function StreamerContent({
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">
+      <div className="bg-red-600 px-4 py-3 text-center font-bold">
+        RECORDING DEBUG BUILD 62274ba
+      </div>
+
       <header className="p-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">SimchaCam</h1>
