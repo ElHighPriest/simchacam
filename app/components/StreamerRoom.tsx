@@ -10,7 +10,7 @@ import {
   useParticipants,
   useTracks,
 } from "@livekit/components-react";
-import { Track } from "livekit-client";
+import { Track, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -31,6 +31,7 @@ type QualityDiagnostics = {
   packetLossPercent: number | null;
   publishedFrameRate: number | null;
   publishedHeight: number | null;
+  publishedLayer: string | null;
   publishedWidth: number | null;
 };
 
@@ -44,10 +45,9 @@ function StreamerContent({
   const { isMicrophoneEnabled, localParticipant, microphoneTrack } =
     useLocalParticipant();
   const recordingStartRequested = useRef(false);
-  const previousVideoStats = useRef<{
-    bytesSent: number;
-    timestamp: number;
-  } | null>(null);
+  const previousVideoStats = useRef(
+    new Map<string, { bytesSent: number; timestamp: number }>()
+  );
   const [quality, setQuality] = useState<QualityDiagnostics>({
     audioActive: false,
     bitrateKbps: null,
@@ -58,6 +58,7 @@ function StreamerContent({
     packetLossPercent: null,
     publishedFrameRate: null,
     publishedHeight: null,
+    publishedLayer: null,
     publishedWidth: null,
   });
   const participants = useParticipants();
@@ -88,15 +89,26 @@ function StreamerContent({
       let packetLossPercent: number | null = null;
       let publishedFrameRate: number | null = null;
       let publishedHeight: number | null = null;
+      let publishedLayer: string | null = null;
       let publishedWidth: number | null = null;
 
       const stats = await cameraTrack?.getRTCStatsReport();
 
       if (stats) {
-        let bytesSent = 0;
+        let totalBitrateKbps = 0;
         let packetsLost = 0;
         let packetsSent = 0;
-        let timestamp = 0;
+        const nextVideoStats = new Map<
+          string,
+          { bytesSent: number; timestamp: number }
+        >();
+        const activeLayers: Array<{
+          bitrateKbps: number;
+          frameRate: number | null;
+          height: number;
+          rid: string;
+          width: number;
+        }> = [];
 
         stats.forEach((stat) => {
           if (
@@ -104,17 +116,38 @@ function StreamerContent({
             stat.kind === "video" &&
             !stat.isRemote
           ) {
-            bytesSent += stat.bytesSent ?? 0;
-            packetsSent += stat.packetsSent ?? 0;
-            timestamp = Math.max(timestamp, stat.timestamp ?? 0);
+            const statId = String(stat.id);
+            const bytesSent = stat.bytesSent ?? 0;
+            const timestamp = stat.timestamp ?? 0;
+            const previous = previousVideoStats.current.get(statId);
+            let layerBitrateKbps = 0;
 
             if (
-              (stat.frameWidth ?? 0) * (stat.frameHeight ?? 0) >
-              (publishedWidth ?? 0) * (publishedHeight ?? 0)
+              previous &&
+              timestamp > previous.timestamp &&
+              bytesSent >= previous.bytesSent
             ) {
-              publishedWidth = stat.frameWidth ?? null;
-              publishedHeight = stat.frameHeight ?? null;
-              publishedFrameRate = stat.framesPerSecond ?? null;
+              layerBitrateKbps =
+                ((bytesSent - previous.bytesSent) * 8) /
+                (timestamp - previous.timestamp);
+              totalBitrateKbps += layerBitrateKbps;
+            }
+
+            nextVideoStats.set(statId, { bytesSent, timestamp });
+            packetsSent += stat.packetsSent ?? 0;
+
+            if (
+              stat.frameWidth &&
+              stat.frameHeight &&
+              (layerBitrateKbps > 0 || (stat.framesPerSecond ?? 0) > 0)
+            ) {
+              activeLayers.push({
+                bitrateKbps: layerBitrateKbps,
+                frameRate: stat.framesPerSecond ?? null,
+                height: stat.frameHeight,
+                rid: stat.rid || "single",
+                width: stat.frameWidth,
+              });
             }
           }
 
@@ -126,19 +159,20 @@ function StreamerContent({
           }
         });
 
-        const previous = previousVideoStats.current;
+        previousVideoStats.current = nextVideoStats;
+        bitrateKbps = totalBitrateKbps > 0 ? totalBitrateKbps : null;
 
-        if (
-          previous &&
-          timestamp > previous.timestamp &&
-          bytesSent >= previous.bytesSent
-        ) {
-          bitrateKbps =
-            ((bytesSent - previous.bytesSent) * 8) /
-            (timestamp - previous.timestamp);
+        const highestActiveLayer = activeLayers.sort(
+          (left, right) =>
+            right.width * right.height - left.width * left.height
+        )[0];
+
+        if (highestActiveLayer) {
+          publishedWidth = highestActiveLayer.width;
+          publishedHeight = highestActiveLayer.height;
+          publishedFrameRate = highestActiveLayer.frameRate;
+          publishedLayer = highestActiveLayer.rid;
         }
-
-        previousVideoStats.current = { bytesSent, timestamp };
 
         if (packetsSent + packetsLost > 0) {
           packetLossPercent =
@@ -163,6 +197,7 @@ function StreamerContent({
           packetLossPercent,
           publishedFrameRate,
           publishedHeight,
+          publishedLayer,
           publishedWidth,
         });
       }
@@ -241,13 +276,14 @@ function StreamerContent({
               : ""}
           </p>
           <p>
-            Published:{" "}
+            Highest active layer:{" "}
             {quality.publishedWidth && quality.publishedHeight
               ? `${quality.publishedWidth}×${quality.publishedHeight}`
               : "Unavailable"}
             {quality.publishedFrameRate
               ? ` @ ${Math.round(quality.publishedFrameRate)} fps`
               : ""}
+            {quality.publishedLayer ? ` (${quality.publishedLayer})` : ""}
           </p>
           <p>
             Video bitrate:{" "}
@@ -336,12 +372,28 @@ export default function StreamerRoom({
       video={{
         facingMode: "environment",
         resolution: {
-          width: 1280,
-          height: 720,
+          width: 1920,
+          height: 1080,
           frameRate: 30,
         },
       }}
       audio={true}
+      options={{
+        adaptiveStream: true,
+        dynacast: true,
+        publishDefaults: {
+          simulcast: true,
+          videoCodec: "vp8",
+          videoEncoding: {
+            maxBitrate: 3_000_000,
+            maxFramerate: 30,
+          },
+          videoSimulcastLayers: [
+            VideoPresets.h360,
+            VideoPresets.h720,
+          ],
+        },
+      }}
       token={token}
       serverUrl={serverUrl}
       connect={true}

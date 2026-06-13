@@ -103,6 +103,10 @@ export default function ViewerRoom({
     <LiveKitRoom
       video={false}
       audio={false}
+      options={{
+        adaptiveStream: true,
+        dynacast: true,
+      }}
       token={token}
       serverUrl={serverUrl}
       connect={true}
