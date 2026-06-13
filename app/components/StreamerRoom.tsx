@@ -213,16 +213,27 @@ function StreamerContent({
   }, [isMicrophoneEnabled, localParticipant, microphoneTrack]);
 
   useEffect(() => {
+    const cameraTrack = Array.from(
+      localParticipant.videoTrackPublications.values()
+    ).find((publication) => publication.source === Track.Source.Camera)?.videoTrack;
+
     if (
       !eventId ||
       !recordingEnabled ||
-      !localCameraTrack ||
+      !cameraTrack ||
       recordingStartRequested.current
     ) {
       return;
     }
 
     recordingStartRequested.current = true;
+    const captureSettings = cameraTrack.mediaStreamTrack.getSettings();
+    const orientation =
+      captureSettings.height &&
+      captureSettings.width &&
+      captureSettings.height > captureSettings.width
+        ? "portrait"
+        : "landscape";
 
     async function startRecording() {
       const {
@@ -239,7 +250,9 @@ function StreamerContent({
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({ orientation }),
         }
       );
 
@@ -249,7 +262,7 @@ function StreamerContent({
     }
 
     startRecording();
-  }, [eventId, localCameraTrack, recordingEnabled]);
+  }, [eventId, localCameraTrack, localParticipant, recordingEnabled]);
 
   return (
     <main className="min-h-screen bg-black text-white flex flex-col">

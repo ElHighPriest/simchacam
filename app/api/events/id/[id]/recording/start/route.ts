@@ -20,6 +20,11 @@ export async function POST(
   }
 
   const { id } = await params;
+  const body = (await request.json().catch(() => null)) as {
+    orientation?: unknown;
+  } | null;
+  const orientation =
+    body?.orientation === "portrait" ? "portrait" : "landscape";
   const ownedEvent = await getOwnedRecordingEvent(accessToken, id);
 
   if (!ownedEvent) {
@@ -113,7 +118,8 @@ export async function POST(
   try {
     const { egressId, objectKey } = await startParticipantRecording(
       id,
-      ownedEvent.event.slug
+      ownedEvent.event.slug,
+      orientation
     );
     const startedAt = new Date().toISOString();
     const { error: recordingError } = await ownedEvent.serviceSupabase

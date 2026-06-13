@@ -4,6 +4,7 @@ import {
   EgressClient,
   EncodedFileOutput,
   EncodedFileType,
+  EncodingOptionsPreset,
   S3Upload,
 } from "livekit-server-sdk";
 import { isEmailVerified } from "@/lib/auth";
@@ -160,7 +161,8 @@ function getEgressClient() {
 
 export async function startParticipantRecording(
   eventId: string,
-  roomName: string
+  roomName: string,
+  orientation: "portrait" | "landscape"
 ) {
   const r2 = getR2Config();
   const objectKey =
@@ -183,7 +185,13 @@ export async function startParticipantRecording(
   const egress = await getEgressClient().startParticipantEgress(
     roomName,
     "streamer",
-    { file: output }
+    { file: output },
+    {
+      encodingOptions:
+        orientation === "portrait"
+          ? EncodingOptionsPreset.PORTRAIT_H264_1080P_30
+          : EncodingOptionsPreset.H264_1080P_30,
+    }
   );
 
   return {
