@@ -15,8 +15,8 @@ type EventRecord = {
   eventAt: string | null;
   hasPassword: boolean;
   recording: {
-    status: "ready";
-    expiresAt: string;
+    status: "ready" | "processing" | "failed";
+    expiresAt: string | null;
   } | null;
 };
 
@@ -271,10 +271,19 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
             This livestream has ended.
           </p>
 
-          {event.recording && (
+          {event.recording?.status === "processing" && (
+            <p className="text-gray-600">Recording is processing</p>
+          )}
+
+          {event.recording?.status === "failed" && (
+            <p className="text-red-600">Recording failed</p>
+          )}
+
+          {event.recording?.status === "ready" &&
+            event.recording.expiresAt && (
             <>
               <p className="text-sm text-gray-500 mb-4">
-                Recording available until{" "}
+                Available until{" "}
                 {new Date(event.recording.expiresAt).toLocaleString()}
               </p>
 
@@ -304,7 +313,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
                 </button>
               </div>
             </>
-          )}
+            )}
         </div>
       </main>
     );

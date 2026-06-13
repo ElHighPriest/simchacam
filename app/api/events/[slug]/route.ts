@@ -65,15 +65,18 @@ export async function GET(
 
     if (recordingError) {
       console.error("Could not load viewer recording metadata", recordingError);
-    } else if (
-      data?.status === "ready" &&
-      data.expires_at &&
-      new Date(data.expires_at) > new Date()
-    ) {
+    } else if (data?.status === "processing" || data?.status === "failed") {
       recording = {
         status: data.status,
-        expiresAt: data.expires_at,
+        expiresAt: null,
       };
+    } else if (data?.status === "ready") {
+      if (data.expires_at && new Date(data.expires_at) > new Date()) {
+        recording = {
+          status: data.status,
+          expiresAt: data.expires_at,
+        };
+      }
     }
   }
 
