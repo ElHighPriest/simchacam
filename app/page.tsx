@@ -254,62 +254,135 @@ export default function Home() {
   }
 
   if (eventCreated) {
+    const formattedEventDate = new Intl.DateTimeFormat("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(`${eventDate}T${eventTime}`));
+
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-        <div className="w-full max-w-md text-center">
-          <h1 className="text-4xl font-bold mb-4">Event Created</h1>
-
-          <p className="text-gray-600 mb-3">Your event link:</p>
-
-          <Link
-            href={`/e/${eventSlug}`}
-            className="block bg-gray-100 px-4 py-3 rounded-lg mb-4 break-all hover:bg-gray-200"
-          >
-            {eventLink}
-          </Link>
-
-          {copyMessage && (
-            <p className="text-sm text-green-700 mb-4">{copyMessage}</p>
-          )}
-
-          <div className="grid gap-3 mb-6">
-            <button
-              onClick={shareLink}
-              className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
-            >
-              Share Link
-            </button>
-
-            <a
-              href={`https://wa.me/?text=${whatsAppMessage}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-green-600 text-white px-6 py-3 rounded-lg text-lg"
-            >
-              Share on WhatsApp
-            </a>
-
-            <button
-              onClick={copyLink}
-              className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg"
-            >
-              Copy Link
-            </button>
-
+      <main className="min-h-screen bg-warm-white text-navy">
+        <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
+          <nav className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
             <Link
-              href={`/e/${eventSlug}`}
-              className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg"
+              href="/"
+              aria-label="SimchaCam home"
+              className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
             >
-              Open Event Page
+              <Image
+                src="/simchacam-logo.png"
+                alt="SimchaCam"
+                fill
+                sizes="(max-width: 640px) 144px, 176px"
+                className="object-cover object-center mix-blend-multiply"
+              />
             </Link>
+            <Link
+              href="/my-events"
+              className="text-sm font-semibold text-navy/70 transition hover:text-navy"
+            >
+              My Events
+            </Link>
+          </nav>
+        </header>
+
+        <div className="mx-auto flex max-w-2xl flex-col px-5 py-10 sm:px-8 sm:py-14">
+          <div className="text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-gold/40 bg-pale-gold text-gold">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-7 w-7"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="m5 12 4 4L19 6" />
+              </svg>
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.28em] text-gold">
+              Event created
+            </p>
+            <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] text-navy sm:text-6xl">
+              Your event is ready
+            </h1>
+            <h2 className="mt-6 font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
+              {eventName}
+            </h2>
+            <p className="mt-3 text-base font-medium text-muted-navy">
+              {formattedEventDate}
+            </p>
           </div>
 
-          <button
-            onClick={goLive}
-            className="w-full bg-red-600 text-white px-6 py-4 rounded-xl text-lg font-semibold"
-          >
-            Go Live
-          </button>
+          <section className="mt-10 rounded-[1.5rem] border border-gold/30 bg-white/75 p-5 shadow-[0_18px_50px_rgba(11,31,58,0.07)] sm:p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+              Your private event link
+            </p>
+            <Link
+              href={`/e/${eventSlug}`}
+              className="mt-3 block break-all rounded-xl bg-pale-gold/70 px-4 py-4 text-sm font-semibold text-navy transition hover:bg-pale-gold sm:text-base"
+            >
+              {eventLink}
+            </Link>
+
+            {copyMessage && (
+              <p
+                role="status"
+                className="mt-3 text-sm font-medium text-[#56714f]"
+              >
+                {copyMessage}
+              </p>
+            )}
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={copyLink}
+                className="min-h-12 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
+              >
+                Copy Link
+              </button>
+              <a
+                href={`https://wa.me/?text=${whatsAppMessage}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-12 items-center justify-center rounded-xl bg-[#218c55] px-5 py-3 text-center font-semibold text-white transition hover:bg-[#1b7648]"
+              >
+                Share on WhatsApp
+              </a>
+              <Link
+                href={`/e/${eventSlug}`}
+                className="flex min-h-12 items-center justify-center rounded-xl border border-navy/20 px-5 py-3 text-center font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/50"
+              >
+                Open Event Page
+              </Link>
+              <button
+                onClick={shareLink}
+                className="min-h-12 rounded-xl border border-navy/20 px-5 py-3 font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/50"
+              >
+                More Sharing Options
+              </button>
+            </div>
+          </section>
+
+          <section className="mt-8 border-t border-gold/30 pt-8 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
+              When you&apos;re ready
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-navy">
+              Start the livestream when the celebration begins. You can also
+              return and start it later from My Events.
+            </p>
+            <button
+              onClick={goLive}
+              className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-recording-red px-6 py-4 text-lg font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.2)] transition hover:bg-[#cc302d]"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_0_5px_rgba(255,255,255,0.18)]" />
+              Go Live
+            </button>
+          </section>
         </div>
       </main>
     );
