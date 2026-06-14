@@ -36,6 +36,8 @@ export default function MyEventsPage() {
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
   const [liveEventId, setLiveEventId] = useState("");
+  const [liveSessionId, setLiveSessionId] = useState("");
+  const [liveHardEndsAt, setLiveHardEndsAt] = useState("");
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [isGoingLive, setIsGoingLive] = useState(false);
 
@@ -184,26 +186,7 @@ export default function MyEventsPage() {
     );
   }
 
-  async function goLive(id: string, slug: string) {
-    const { error: statusError } = await supabase
-      .from("events")
-      .update({
-        status: "live",
-      })
-      .eq("id", id);
-
-    if (statusError) {
-      console.error(statusError);
-      alert("Could not update event status");
-      return;
-    }
-
-    setEvents((currentEvents) =>
-      currentEvents.map((event) =>
-        event.id === id ? { ...event, status: "live" } : event
-      )
-    );
-
+  async function goLive(id: string) {
     try {
       const {
         data: { session },
@@ -214,33 +197,15 @@ export default function MyEventsPage() {
         return;
       }
 
-      const eventResponse = await fetch(
-        `/api/events/id/${encodeURIComponent(id)}`,
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(id)}/stream/start`,
         {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
-      const eventData = await eventResponse.json();
-
-      if (!eventResponse.ok) {
-        alert(eventData.error || "Could not load event");
-        return;
-      }
-
-      const response = await fetch("/api/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          roomName: slug,
-          participantName: "streamer",
-        }),
-      });
-
       const data = await response.json();
 
       if (!response.ok) {
@@ -248,10 +213,17 @@ export default function MyEventsPage() {
         return;
       }
 
-      setLiveEventId(id);
+      setEvents((currentEvents) =>
+        currentEvents.map((event) =>
+          event.id === data.eventId ? { ...event, status: "live" } : event
+        )
+      );
+      setLiveEventId(data.eventId);
+      setLiveSessionId(data.sessionId);
+      setLiveHardEndsAt(data.hardEndsAt);
       setLivekitToken(data.token);
       setLivekitUrl(data.url);
-      setRecordingEnabled(Boolean(eventData.hasRecording));
+      setRecordingEnabled(Boolean(data.recordingEnabled));
       setIsGoingLive(true);
     } catch (error) {
       console.error(error);
@@ -265,7 +237,10 @@ export default function MyEventsPage() {
         token={livekitToken}
         serverUrl={livekitUrl}
         eventId={liveEventId}
+        sessionId={liveSessionId}
+        hardEndsAt={liveHardEndsAt}
         recordingEnabled={recordingEnabled}
+        lifecycleMode="server-owned"
       />
     );
   }
@@ -505,9 +480,7 @@ export default function MyEventsPage() {
                                   </Link>
                                 ) : (
                                   <button
-                                    onClick={() =>
-                                      goLive(event.id, event.slug)
-                                    }
+                                    onClick={() => goLive(event.id)}
                                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-recording-red px-6 py-3 font-semibold text-white shadow-[0_10px_24px_rgba(229,57,53,0.18)] transition hover:bg-[#cc302d] sm:w-auto"
                                   >
                                     <span className="h-2 w-2 rounded-full bg-white" />

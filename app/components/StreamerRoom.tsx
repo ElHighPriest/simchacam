@@ -8,6 +8,7 @@ import {
   RoomAudioRenderer,
   useLocalParticipant,
   useParticipants,
+  useRoomContext,
   useTracks,
 } from "@livekit/components-react";
 import { Track, VideoPresets } from "livekit-client";
@@ -18,6 +19,9 @@ type StreamerRoomProps = {
   token: string;
   serverUrl: string;
   eventId?: string;
+  sessionId?: string;
+  hardEndsAt?: string;
+  lifecycleMode?: "legacy" | "server-owned";
   recordingEnabled?: boolean;
 };
 
@@ -37,13 +41,22 @@ type QualityDiagnostics = {
 
 function StreamerContent({
   eventId,
+  hardEndsAt,
+  lifecycleMode,
+  onEndStream,
   recordingEnabled,
+  sessionId,
 }: {
   eventId?: string;
+  hardEndsAt?: string;
+  lifecycleMode: "legacy" | "server-owned";
+  onEndStream: () => Promise<void>;
   recordingEnabled: boolean;
+  sessionId?: string;
 }) {
   const { isMicrophoneEnabled, localParticipant, microphoneTrack } =
     useLocalParticipant();
+  const room = useRoomContext();
   const recordingStartRequested = useRef(false);
   const previousVideoStats = useRef(
     new Map<string, { bytesSent: number; timestamp: number }>()
@@ -61,6 +74,7 @@ function StreamerContent({
     publishedLayer: null,
     publishedWidth: null,
   });
+  const [isEndingStream, setIsEndingStream] = useState(false);
   const participants = useParticipants();
   const viewerCount = participants.filter(
     (participant) => participant.identity !== localParticipant.identity
@@ -264,8 +278,30 @@ function StreamerContent({
     startRecording();
   }, [eventId, localCameraTrack, localParticipant, recordingEnabled]);
 
+  async function endStream() {
+    if (isEndingStream) {
+      return;
+    }
+
+    setIsEndingStream(true);
+
+    try {
+      await onEndStream();
+      await room.disconnect();
+      window.location.href = "/my-events";
+    } catch (error) {
+      console.error(error);
+      alert("Could not end livestream");
+      setIsEndingStream(false);
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col">
+    <main
+      className="min-h-screen bg-black text-white flex flex-col"
+      data-stream-session-id={sessionId}
+      data-stream-hard-ends-at={hardEndsAt}
+    >
       <header className="p-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">SimchaCam</h1>
@@ -333,9 +369,19 @@ function StreamerContent({
             camera: true,
             screenShare: false,
             chat: false,
-            leave: true,
+            leave: lifecycleMode === "legacy",
           }}
         />
+        {lifecycleMode === "server-owned" && (
+          <button
+            type="button"
+            onClick={endStream}
+            disabled={isEndingStream}
+            className="mt-3 min-h-12 w-full rounded-xl bg-recording-red px-6 py-3 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
+          >
+            {isEndingStream ? "Ending Stream..." : "End Stream"}
+          </button>
+        )}
       </footer>
 
       <RoomAudioRenderer />
@@ -347,9 +393,67 @@ export default function StreamerRoom({
   token,
   serverUrl,
   eventId,
+  sessionId,
+  hardEndsAt,
+  lifecycleMode = "legacy",
   recordingEnabled = false,
 }: StreamerRoomProps) {
+  const explicitEndRequested = useRef(false);
+
+  async function endServerOwnedStream() {
+    if (!eventId) {
+      throw new Error("Missing event ID");
+    }
+
+    explicitEndRequested.current = true;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      explicitEndRequested.current = false;
+      throw new Error("Please log in before ending the livestream");
+    }
+
+    if (recordingEnabled) {
+      await fetch(
+        `/api/events/id/${encodeURIComponent(eventId)}/recording/stop`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+    }
+
+    const response = await fetch(
+      `/api/events/id/${encodeURIComponent(eventId)}/stream/stop`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      explicitEndRequested.current = false;
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error || "Could not end livestream");
+    }
+  }
+
   async function handleDisconnected() {
+    if (lifecycleMode === "server-owned") {
+      if (explicitEndRequested.current) {
+        return;
+      }
+
+      window.location.href = "/my-events";
+      return;
+    }
+
     if (eventId) {
       if (recordingEnabled) {
         const {
@@ -416,6 +520,10 @@ export default function StreamerRoom({
     >
       <StreamerContent
         eventId={eventId}
+        sessionId={sessionId}
+        hardEndsAt={hardEndsAt}
+        lifecycleMode={lifecycleMode}
+        onEndStream={endServerOwnedStream}
         recordingEnabled={recordingEnabled}
       />
     </LiveKitRoom>
