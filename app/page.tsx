@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import StreamerRoom from "./components/StreamerRoom";
@@ -416,52 +417,166 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-      <div className="w-full max-w-md text-center">
-        <h1 className="text-5xl font-bold mb-4">SimchaCam</h1>
+    <main className="min-h-screen overflow-hidden bg-warm-white">
+      <header className="relative z-20 border-b border-navy/10 bg-warm-white/95 backdrop-blur">
+        <nav
+          aria-label="Primary navigation"
+          className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12"
+        >
+          <Link
+            href="/"
+            aria-label="SimchaCam home"
+            className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
+          >
+            <Image
+              src="/simchacam-logo.png"
+              alt="SimchaCam"
+              fill
+              sizes="(max-width: 640px) 144px, 176px"
+              className="object-cover object-center mix-blend-multiply"
+            />
+          </Link>
 
-        <p className="text-xl text-gray-600 mb-8">
-          Share your simcha live with family anywhere in the world.
-        </p>
-
-        {isEmailVerified(user) ? (
-          <>
-            <p className="text-gray-600 mb-6">Welcome, {displayName}</p>
-
-            <div className="grid gap-3">
-              <button
-                onClick={() => setShowForm(true)}
-                className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
-              >
-                Create Event
-              </button>
-
-              <Link
-                href="/my-events"
-                className="w-full border border-gray-300 px-6 py-3 rounded-lg text-lg block"
-              >
-                My Events
-              </Link>
-
-              <button
-                onClick={logout}
-                className="w-full text-gray-600 px-6 py-3 rounded-lg text-lg"
-              >
-                Logout
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="grid gap-3">
-            <Link
-              href="/auth"
-              className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg"
-            >
-              Login / Create Account
-            </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {isEmailVerified(user) ? (
+              <>
+                <Link
+                  href="/my-events"
+                  className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy sm:block"
+                >
+                  My Events
+                </Link>
+                <button
+                  onClick={logout}
+                  className="hidden px-3 py-2 text-sm font-medium text-navy/65 transition hover:text-navy md:block"
+                >
+                  Sign Out
+                </button>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
+                >
+                  Create Event
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth"
+                  className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy sm:block"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth"
+                  className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
+                >
+                  Create Event
+                </Link>
+              </>
+            )}
           </div>
-        )}
-      </div>
+        </nav>
+      </header>
+
+      <section className="relative">
+        <div
+          aria-hidden="true"
+          className="absolute -left-28 top-24 h-72 w-72 rounded-full bg-gold/10 blur-3xl"
+        />
+        <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-12 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16 lg:px-12 lg:py-20">
+          <div className="relative z-10 max-w-2xl">
+            <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-gold sm:text-sm">
+              Every simcha, shared
+            </p>
+            <h1 className="font-display text-[3.25rem] font-semibold leading-[0.96] tracking-[-0.035em] text-navy sm:text-6xl lg:text-7xl">
+              Bring everyone closer to the celebration.
+            </h1>
+            <p className="mt-7 max-w-xl text-lg leading-8 text-muted-navy sm:text-xl">
+              Simple, private livestreaming for weddings and family simchas.
+              Share the moment beautifully with loved ones anywhere in the
+              world.
+            </p>
+
+            {isEmailVerified(user) && (
+              <p className="mt-5 text-sm font-medium text-navy/65">
+                Welcome back, {displayName}
+              </p>
+            )}
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              {isEmailVerified(user) ? (
+                <>
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
+                  >
+                    Create Your Livestream
+                  </button>
+                  <Link
+                    href="/my-events"
+                    className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
+                  >
+                    My Events
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth"
+                    className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
+                  >
+                    Create Your Livestream
+                  </Link>
+                  <Link
+                    href="/auth"
+                    className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
+                  >
+                    Sign In
+                  </Link>
+                </>
+              )}
+            </div>
+
+            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-navy/65">
+              <span className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                No app required
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                Private event links
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                Live from your phone
+              </span>
+            </div>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-3xl lg:mx-0">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-3 rounded-[2rem] border border-gold/30 sm:-inset-4"
+            />
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-navy shadow-[0_28px_70px_rgba(11,31,58,0.24)] sm:aspect-[16/11] sm:rounded-[1.75rem]">
+              <Image
+                src="/simchacam-hero.png"
+                alt="A wedding chuppah being livestreamed to family through a phone"
+                fill
+                preload
+                sizes="(max-width: 1024px) 100vw, 56vw"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy/35 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full border border-white/20 bg-navy/85 px-3.5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur sm:bottom-6 sm:left-6">
+                <span className="h-2 w-2 rounded-full bg-recording-red shadow-[0_0_0_4px_rgba(229,57,53,0.18)]" />
+                LIVE
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy: #0b1f3a;
+  --warm-white: #faf8f3;
+  --gold: #c8a96b;
+  --recording-red: #e53935;
+  --muted-navy: #566579;
+  --pale-gold: #f3ebdd;
+  --background: var(--warm-white);
+  --foreground: var(--navy);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-navy: var(--navy);
+  --color-warm-white: var(--warm-white);
+  --color-gold: var(--gold);
+  --color-recording-red: var(--recording-red);
+  --color-muted-navy: var(--muted-navy);
+  --color-pale-gold: var(--pale-gold);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-cormorant);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: color-mix(in srgb, var(--navy) 14%, transparent);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--gold) 75%, white);
+  outline-offset: 3px;
+}
+
+.font-display {
+  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
 }
