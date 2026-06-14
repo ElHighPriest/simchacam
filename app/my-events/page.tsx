@@ -14,6 +14,7 @@ type Event = {
   slug: string;
   status: string | null;
   event_at: string | null;
+  plan: "free" | "premium" | null;
   recording: {
     status: "ready" | "processing" | "failed";
     expiresAt: string | null;
@@ -57,25 +58,56 @@ export default function MyEventsPage() {
         console.error(error);
       }
 
+      const eventIds = (data || []).map((event) => event.id);
+      const entitlementPlans = new Map<
+        string,
+        "free" | "premium"
+      >();
+
+      if (eventIds.length > 0) {
+        const { data: entitlements, error: entitlementError } = await supabase
+          .from("event_entitlements")
+          .select("event_id,plan")
+          .in("event_id", eventIds);
+
+        if (entitlementError) {
+          console.error(entitlementError);
+        } else {
+          for (const entitlement of entitlements || []) {
+            if (
+              entitlement.plan === "free" ||
+              entitlement.plan === "premium"
+            ) {
+              entitlementPlans.set(entitlement.event_id, entitlement.plan);
+            }
+          }
+        }
+      }
+
       const eventsWithRecordings = await Promise.all(
         (data || []).map(async (event) => {
+          const eventWithPlan = {
+            ...event,
+            plan: entitlementPlans.get(event.id) ?? null,
+          };
+
           try {
             const response = await fetch(
               `/api/events/${encodeURIComponent(event.slug)}`
             );
 
             if (!response.ok) {
-              return { ...event, recording: null };
+              return { ...eventWithPlan, recording: null };
             }
 
             const metadata = await response.json();
             return {
-              ...event,
+              ...eventWithPlan,
               recording: metadata.recording ?? null,
             };
           } catch (metadataError) {
             console.error(metadataError);
-            return { ...event, recording: null };
+            return { ...eventWithPlan, recording: null };
           }
         })
       );
@@ -399,6 +431,19 @@ export default function MyEventsPage() {
                             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0">
                                 <div className="mb-4 flex flex-wrap gap-2">
+                                  {event.plan && (
+                                    <span
+                                      className={
+                                        event.plan === "premium"
+                                          ? "rounded-full border border-gold/40 bg-pale-gold px-3 py-1 text-xs font-semibold text-[#80652f]"
+                                          : "rounded-full border border-navy/10 bg-white px-3 py-1 text-xs font-semibold text-navy/60"
+                                      }
+                                    >
+                                      {event.plan === "premium"
+                                        ? "Premium"
+                                        : "Free"}
+                                    </span>
+                                  )}
                                   <span
                                     className={
                                       isLive
