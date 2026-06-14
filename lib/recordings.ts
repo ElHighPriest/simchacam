@@ -75,18 +75,31 @@ export async function getOwnedRecordingEvent(
     return null;
   }
 
+  const serviceSupabase = createClient(
+    config.supabaseUrl,
+    config.supabaseServiceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+  const { data: entitlement, error: entitlementError } = await serviceSupabase
+    .from("event_entitlements")
+    .select("status, recording_enabled")
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (entitlementError) {
+    console.error("Could not load recording entitlement", entitlementError);
+    return null;
+  }
+
   return {
+    entitlement,
     event,
-    serviceSupabase: createClient(
-      config.supabaseUrl,
-      config.supabaseServiceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    ),
+    serviceSupabase,
   };
 }
 

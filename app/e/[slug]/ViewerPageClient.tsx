@@ -18,6 +18,7 @@ type EventRecord = {
   recording: {
     status: "ready" | "processing" | "failed";
     expiresAt: string | null;
+    downloadEnabled: boolean;
   } | null;
 };
 
@@ -415,15 +416,17 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
                         : "Watch Recording"}
                     </button>
 
-                    <button
-                      onClick={() => openRecording("download")}
-                      disabled={recordingAction !== null}
-                      className="min-h-13 w-full rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3.5 text-lg font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
-                    >
-                      {recordingAction === "download"
-                        ? "Preparing..."
-                        : "Download Recording"}
-                    </button>
+                    {event.recording.downloadEnabled && (
+                      <button
+                        onClick={() => openRecording("download")}
+                        disabled={recordingAction !== null}
+                        className="min-h-13 w-full rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3.5 text-lg font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                      >
+                        {recordingAction === "download"
+                          ? "Preparing..."
+                          : "Download Recording"}
+                      </button>
+                    )}
                   </div>
 
                   <p className="mt-5 text-xs leading-5 text-muted-navy">

@@ -34,6 +34,16 @@ export async function POST(
     );
   }
 
+  if (
+    ownedEvent.entitlement?.status !== "active" ||
+    !ownedEvent.entitlement.recording_enabled
+  ) {
+    return NextResponse.json(
+      { error: "Recording is not enabled for this event" },
+      { status: 403 }
+    );
+  }
+
   const { data: existingRecording, error: existingRecordingError } =
     await ownedEvent.serviceSupabase
       .from("event_recordings")

@@ -57,25 +57,47 @@ export async function GET(
   let recording = null;
 
   if (recordingClient) {
-    const { data, error: recordingError } = await recordingClient
-      .from("event_recordings")
-      .select("status, expires_at")
-      .eq("event_id", event.id)
-      .maybeSingle();
+    const { data: entitlement, error: entitlementError } =
+      await recordingClient
+        .from("event_entitlements")
+        .select("status, replay_retention_days, download_enabled")
+        .eq("event_id", event.id)
+        .maybeSingle();
 
-    if (recordingError) {
-      console.error("Could not load viewer recording metadata", recordingError);
-    } else if (data?.status === "processing" || data?.status === "failed") {
-      recording = {
-        status: data.status,
-        expiresAt: null,
-      };
-    } else if (data?.status === "ready") {
-      if (data.expires_at && new Date(data.expires_at) > new Date()) {
+    if (entitlementError) {
+      console.error(
+        "Could not load viewer recording entitlement",
+        entitlementError
+      );
+    } else if (
+      entitlement?.status === "active" &&
+      entitlement.replay_retention_days > 0
+    ) {
+      const { data, error: recordingError } = await recordingClient
+        .from("event_recordings")
+        .select("status, expires_at")
+        .eq("event_id", event.id)
+        .maybeSingle();
+
+      if (recordingError) {
+        console.error(
+          "Could not load viewer recording metadata",
+          recordingError
+        );
+      } else if (data?.status === "processing" || data?.status === "failed") {
         recording = {
           status: data.status,
-          expiresAt: data.expires_at,
+          expiresAt: null,
+          downloadEnabled: entitlement.download_enabled,
         };
+      } else if (data?.status === "ready") {
+        if (data.expires_at && new Date(data.expires_at) > new Date()) {
+          recording = {
+            status: data.status,
+            expiresAt: data.expires_at,
+            downloadEnabled: entitlement.download_enabled,
+          };
+        }
       }
     }
   }

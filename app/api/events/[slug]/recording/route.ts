@@ -49,6 +49,40 @@ export async function POST(
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
+  const { data: entitlement, error: entitlementError } = await supabase
+    .from("event_entitlements")
+    .select("status, replay_retention_days, download_enabled")
+    .eq("event_id", event.id)
+    .maybeSingle();
+
+  if (entitlementError) {
+    console.error(
+      "Could not load recording access entitlement",
+      entitlementError
+    );
+    return NextResponse.json(
+      { error: "Could not load recording access" },
+      { status: 500 }
+    );
+  }
+
+  if (
+    entitlement?.status !== "active" ||
+    entitlement.replay_retention_days <= 0
+  ) {
+    return NextResponse.json(
+      { error: "Recording is not available" },
+      { status: 404 }
+    );
+  }
+
+  if (action === "download" && !entitlement.download_enabled) {
+    return NextResponse.json(
+      { error: "Recording download is not available" },
+      { status: 403 }
+    );
+  }
+
   const { data: recording, error: recordingError } = await supabase
     .from("event_recordings")
     .select("status, object_key, expires_at")
