@@ -27,6 +27,8 @@ export default function Home() {
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
+  const [liveSessionId, setLiveSessionId] = useState("");
+  const [liveHardEndsAt, setLiveHardEndsAt] = useState("");
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [isGoingLive, setIsGoingLive] = useState(false);
 
@@ -169,19 +171,6 @@ export default function Home() {
   }
 
   async function goLive() {
-    const { error: statusError } = await supabase
-      .from("events")
-      .update({
-        status: "live",
-      })
-      .eq("id", eventId);
-
-    if (statusError) {
-      console.error(statusError);
-      alert("Could not update event status");
-      return;
-    }
-
     try {
       const {
         data: { session },
@@ -192,33 +181,15 @@ export default function Home() {
         return;
       }
 
-      const eventResponse = await fetch(
-        `/api/events/id/${encodeURIComponent(eventId)}`,
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(eventId)}/stream/start`,
         {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
-      const eventData = await eventResponse.json();
-
-      if (!eventResponse.ok) {
-        alert(eventData.error || "Could not load event");
-        return;
-      }
-
-      const response = await fetch("/api/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          roomName: eventSlug,
-          participantName: "streamer",
-        }),
-      });
-
       const data = await response.json();
 
       if (!response.ok) {
@@ -226,9 +197,12 @@ export default function Home() {
         return;
       }
 
+      setEventId(data.eventId);
+      setLiveSessionId(data.sessionId);
+      setLiveHardEndsAt(data.hardEndsAt);
       setLivekitToken(data.token);
       setLivekitUrl(data.url);
-      setRecordingEnabled(Boolean(eventData.hasRecording));
+      setRecordingEnabled(Boolean(data.recordingEnabled));
       setIsGoingLive(true);
     } catch (error) {
       console.error(error);
@@ -250,7 +224,10 @@ export default function Home() {
         token={livekitToken}
         serverUrl={livekitUrl}
         eventId={eventId}
+        sessionId={liveSessionId}
+        hardEndsAt={liveHardEndsAt}
         recordingEnabled={recordingEnabled}
+        lifecycleMode="server-owned"
       />
     );
   }
