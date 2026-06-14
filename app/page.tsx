@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import CreateEventForm from "./components/CreateEventForm";
 import StreamerRoom from "./components/StreamerRoom";
 import { supabase } from "@/lib/supabase";
 import { isEmailVerified } from "@/lib/auth";
@@ -389,6 +390,24 @@ export default function Home() {
   }
 
   if (showForm) {
+    return (
+      <CreateEventForm
+        eventDate={eventDate}
+        eventName={eventName}
+        eventTime={eventTime}
+        isCreating={isCreating}
+        onBack={() => setShowForm(false)}
+        onCreate={createEvent}
+        onEventDateChange={setEventDate}
+        onEventNameChange={setEventName}
+        onEventTimeChange={setEventTime}
+        onPasswordChange={setPassword}
+        password={password}
+      />
+    );
+  }
+
+  if (false) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
         <div className="w-full max-w-md">
