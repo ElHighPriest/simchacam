@@ -531,6 +531,20 @@ export default function Home() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden items-center lg:flex">
+              <Link
+                href="/how-it-works"
+                className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
+              >
+                How It Works
+              </Link>
+              <Link
+                href="/pricing"
+                className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
+              >
+                Pricing
+              </Link>
+            </div>
             {isEmailVerified(user) ? (
               <>
                 <Link
