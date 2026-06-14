@@ -15,9 +15,19 @@ type ViewerRoomProps = {
   token: string;
   serverUrl: string;
   eventId: string;
+  eventName: string | null;
+  eventAt: string | null;
 };
 
-function ViewerContent({ eventId }: { eventId: string }) {
+function ViewerContent({
+  eventId,
+  eventName,
+  eventAt,
+}: {
+  eventId: string;
+  eventName: string | null;
+  eventAt: string | null;
+}) {
   const [status, setStatus] = useState<string | null>(null);
 
   const tracks = useTracks(
@@ -49,10 +59,15 @@ function ViewerContent({ eventId }: { eventId: string }) {
 
   if (!streamerTrack && status === "ended") {
     return (
-      <main className="h-screen flex items-center justify-center bg-black text-white px-6 text-center overflow-hidden">
+      <main className="flex h-screen items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
         <div>
-          <h1 className="text-3xl font-bold mb-4">SimchaCam</h1>
-          <p className="text-gray-300">This livestream has ended.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
+            SimchaCam
+          </p>
+          <h1 className="mt-4 font-display text-4xl font-semibold">
+            {eventName}
+          </h1>
+          <p className="mt-4 text-white/70">This livestream has ended.</p>
         </div>
       </main>
     );
@@ -60,11 +75,14 @@ function ViewerContent({ eventId }: { eventId: string }) {
 
   if (!streamerTrack) {
     return (
-      <main className="h-screen flex items-center justify-center bg-black text-white px-6 text-center overflow-hidden">
+      <main className="flex h-screen items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
         <div>
-          <h1 className="text-3xl font-bold mb-4">SimchaCam</h1>
-          <p className="text-gray-300">
-            Waiting for the livestream to begin...
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full border-2 border-gold bg-gold/10" />
+          <h1 className="mt-5 font-display text-4xl font-semibold">
+            {eventName}
+          </h1>
+          <p className="mt-3 text-white/70">
+            Connecting to the livestream...
           </p>
         </div>
       </main>
@@ -72,19 +90,29 @@ function ViewerContent({ eventId }: { eventId: string }) {
   }
 
   return (
-    <main className="h-screen bg-black text-white flex flex-col overflow-hidden">
-      <header className="h-14 px-4 flex items-center justify-between border-b border-white/10 shrink-0">
-        <div>
-          <h1 className="text-lg font-semibold">SimchaCam</h1>
-          <p className="text-xs text-gray-400">Live now</p>
+    <main className="flex h-screen flex-col overflow-hidden bg-black text-white">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-navy/55 px-4 backdrop-blur">
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-semibold sm:text-base">
+            {eventName}
+          </h1>
+          {eventAt && (
+            <p className="hidden text-xs text-white/45 sm:block">
+              {new Date(eventAt).toLocaleString("en-GB")}
+            </p>
+          )}
+        </div>
+        <div className="ml-4 flex shrink-0 items-center gap-2 rounded-full bg-recording-red/15 px-3 py-1.5 text-xs font-semibold text-[#ff7774]">
+          <span className="h-2 w-2 rounded-full bg-recording-red" />
+          LIVE
         </div>
       </header>
 
-      <section className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-3">
-        <div className="w-full h-full max-w-6xl flex items-center justify-center overflow-hidden">
+      <section className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-1.5 sm:p-3">
+        <div className="flex h-full w-full max-w-6xl items-center justify-center overflow-hidden">
           <ParticipantTile
             trackRef={streamerTrack}
-            className="w-full h-full max-h-full max-w-full rounded-xl overflow-hidden"
+            className="h-full max-h-full w-full max-w-full overflow-hidden rounded-lg sm:rounded-xl"
           />
         </div>
       </section>
@@ -98,6 +126,8 @@ export default function ViewerRoom({
   token,
   serverUrl,
   eventId,
+  eventName,
+  eventAt,
 }: ViewerRoomProps) {
   return (
     <LiveKitRoom
@@ -116,7 +146,11 @@ export default function ViewerRoom({
         autoSubscribe: true,
       }}
     >
-      <ViewerContent eventId={eventId} />
+      <ViewerContent
+        eventId={eventId}
+        eventName={eventName}
+        eventAt={eventAt}
+      />
     </LiveKitRoom>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import ViewerRoom from "@/app/components/ViewerRoom";
 
@@ -19,6 +20,39 @@ type EventRecord = {
     expiresAt: string | null;
   } | null;
 };
+
+function formatEventDate(eventAt: string | null) {
+  if (!eventAt) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(eventAt));
+}
+
+function ViewerHeader() {
+  return (
+    <header className="absolute inset-x-0 top-0 z-10">
+      <div className="mx-auto flex h-20 max-w-5xl items-center justify-center px-5">
+        <div className="relative h-10 w-36 overflow-hidden sm:h-12 sm:w-44">
+          <Image
+            src="/simchacam-logo.png"
+            alt="SimchaCam"
+            fill
+            sizes="(max-width: 640px) 144px, 176px"
+            className="object-cover object-center mix-blend-multiply"
+          />
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   const [event, setEvent] = useState<EventRecord | null>(null);
@@ -199,121 +233,217 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (eventLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        Loading event...
+      <main className="flex min-h-screen items-center justify-center bg-warm-white px-6 text-navy">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gold/35 border-t-gold" />
+          <p className="text-sm font-medium text-muted-navy">
+            Loading event...
+          </p>
+        </div>
       </main>
     );
   }
 
   if (eventError || !event) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 text-center">
-        <div>
-          <h1 className="text-3xl font-bold mb-4">SimchaCam</h1>
-          <p className="text-gray-600">{eventError || "Event not found."}</p>
+      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-6 text-center text-navy">
+        <ViewerHeader />
+        <div className="w-full max-w-md rounded-[1.5rem] border border-gold/30 bg-white/75 px-6 py-10 shadow-[0_18px_50px_rgba(11,31,58,0.07)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
+            Event unavailable
+          </p>
+          <h1 className="mt-3 font-display text-4xl font-semibold">
+            We couldn&apos;t open this event
+          </h1>
+          <p className="mt-4 text-muted-navy">
+            {eventError || "Event not found."}
+          </p>
         </div>
       </main>
     );
   }
 
+  const formattedDate = formatEventDate(event.eventAt);
+
   if (eventHasPassword && !passwordPassed) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
+      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+        <ViewerHeader />
         <div className="w-full max-w-md">
-          <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
-            SimchaCam
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+            Private event
           </p>
-
-          <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
-
-          <p className="text-gray-600 mb-6">
-            This livestream is password protected.
-          </p>
-
-          <input
-            type="password"
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-3"
-            placeholder="Enter password"
-            value={enteredPassword}
-            onChange={(e) => setEnteredPassword(e.target.value)}
-          />
-
-          {passwordError && (
-            <p className="text-sm text-red-600 mb-3">{passwordError}</p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-none">
+            {event.name}
+          </h1>
+          {formattedDate && (
+            <p className="mt-4 font-medium text-muted-navy">{formattedDate}</p>
           )}
 
-          <button
-            onClick={checkPassword}
-            className="w-full bg-black text-white px-6 py-4 rounded-xl text-lg font-semibold"
-          >
-            Continue
-          </button>
+          <section className="mt-8 rounded-[1.5rem] border border-gold/30 bg-white/75 p-6 text-left shadow-[0_18px_50px_rgba(11,31,58,0.07)] sm:p-7">
+            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-pale-gold text-gold">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <rect x="5" y="10" width="14" height="10" rx="2" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+              </svg>
+            </div>
+            <h2 className="font-display text-2xl font-semibold">
+              Enter the event password
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-navy">
+              This livestream is private. Enter the password shared by the
+              host to continue.
+            </p>
+            <input
+              type="password"
+              className="mt-5 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 text-navy placeholder:text-muted-navy/65"
+              placeholder="Event password"
+              value={enteredPassword}
+              onChange={(e) => setEnteredPassword(e.target.value)}
+            />
+
+            {passwordError && (
+              <p className="mt-3 text-sm font-medium text-recording-red">
+                {passwordError}
+              </p>
+            )}
+
+            <button
+              onClick={checkPassword}
+              className="mt-5 min-h-12 w-full rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
+            >
+              Enter Event
+            </button>
+          </section>
         </div>
       </main>
     );
   }
 
   if (token && serverUrl) {
-    return <ViewerRoom token={token} serverUrl={serverUrl} eventId={event.id} />;
+    return (
+      <ViewerRoom
+        token={token}
+        serverUrl={serverUrl}
+        eventId={event.id}
+        eventName={event.name}
+        eventAt={event.eventAt}
+      />
+    );
   }
 
   if (event.status === "ended") {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
-        <div className="w-full max-w-md">
-          <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
-            SimchaCam
+      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+        <ViewerHeader />
+        <div className="w-full max-w-xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+            Event recording
           </p>
-
-          <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
-
-          <p className={event.recording ? "text-gray-600 mb-6" : "text-gray-600"}>
-            This livestream has ended.
-          </p>
-
-          {event.recording?.status === "processing" && (
-            <p className="text-gray-600">Recording is processing</p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-none sm:text-6xl">
+            {event.name}
+          </h1>
+          {formattedDate && (
+            <p className="mt-4 font-medium text-muted-navy">{formattedDate}</p>
           )}
 
-          {event.recording?.status === "failed" && (
-            <p className="text-red-600">Recording failed</p>
-          )}
+          <section className="mt-9 rounded-[1.5rem] border border-gold/30 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.07)] sm:p-8">
+            <p className="text-muted-navy">This livestream has ended.</p>
 
-          {event.recording?.status === "ready" &&
-            event.recording.expiresAt && (
-            <>
-              <p className="text-sm text-gray-500 mb-4">
-                Available until{" "}
-                {new Date(event.recording.expiresAt).toLocaleString()}
-              </p>
+            {event.recording?.status === "processing" && (
+              <div className="py-6">
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+                <h2 className="mt-5 font-display text-3xl font-semibold">
+                  Recording is processing
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-navy">
+                  The replay is being prepared. This page will update
+                  automatically when it is ready.
+                </p>
+              </div>
+            )}
 
-              {recordingError && (
-                <p className="text-sm text-red-600 mb-3">{recordingError}</p>
+            {event.recording?.status === "failed" && (
+              <div className="py-6">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-recording-red">
+                  <span className="text-xl font-semibold">!</span>
+                </div>
+                <h2 className="mt-5 font-display text-3xl font-semibold">
+                  Recording failed
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-navy">
+                  Unfortunately, a replay is not available for this event.
+                </p>
+              </div>
+            )}
+
+            {event.recording?.status === "ready" &&
+              event.recording.expiresAt && (
+                <div className="pt-6">
+                  <div className="rounded-xl bg-pale-gold px-4 py-3 text-sm font-semibold text-navy">
+                    Available until{" "}
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(event.recording.expiresAt))}
+                  </div>
+
+                  {recordingError && (
+                    <p className="mt-4 text-sm font-medium text-recording-red">
+                      {recordingError}
+                    </p>
+                  )}
+
+                  <div className="mt-5 grid gap-3">
+                    <button
+                      onClick={() => openRecording("watch")}
+                      disabled={recordingAction !== null}
+                      className="min-h-13 w-full rounded-xl bg-navy px-6 py-3.5 text-lg font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+                    >
+                      {recordingAction === "watch"
+                        ? "Opening..."
+                        : "Watch Recording"}
+                    </button>
+
+                    <button
+                      onClick={() => openRecording("download")}
+                      disabled={recordingAction !== null}
+                      className="min-h-13 w-full rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3.5 text-lg font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                    >
+                      {recordingAction === "download"
+                        ? "Preparing..."
+                        : "Download Recording"}
+                    </button>
+                  </div>
+
+                  <p className="mt-5 text-xs leading-5 text-muted-navy">
+                    Please share this private recording only with invited
+                    family and friends.
+                  </p>
+                </div>
               )}
 
-              <div className="grid gap-3">
-                <button
-                  onClick={() => openRecording("watch")}
-                  disabled={recordingAction !== null}
-                  className="w-full bg-black text-white px-6 py-4 rounded-xl text-lg font-semibold disabled:bg-gray-400"
-                >
-                  {recordingAction === "watch"
-                    ? "Opening..."
-                    : "Watch Recording"}
-                </button>
-
-                <button
-                  onClick={() => openRecording("download")}
-                  disabled={recordingAction !== null}
-                  className="w-full border border-gray-300 px-6 py-4 rounded-xl text-lg font-semibold disabled:text-gray-400"
-                >
-                  {recordingAction === "download"
-                    ? "Preparing..."
-                    : "Download Recording"}
-                </button>
+            {!event.recording && (
+              <div className="pt-5">
+                <h2 className="font-display text-3xl font-semibold">
+                  Thank you for joining
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-navy">
+                  No recording is currently available for this event.
+                </p>
               </div>
-            </>
             )}
+          </section>
         </div>
       </main>
     );
@@ -321,45 +451,56 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (event.status !== "live") {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
-        <div className="w-full max-w-md">
-          <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
-            SimchaCam
+      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+        <ViewerHeader />
+        <div className="w-full max-w-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+            You&apos;re invited
           </p>
-
-          <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
-
-          {event.eventAt && (
-            <p className="text-gray-600 mb-4">
-              {new Date(event.eventAt).toLocaleString()}
-            </p>
+          <h1 className="mt-3 font-display text-5xl font-semibold leading-none sm:text-6xl">
+            {event.name}
+          </h1>
+          {formattedDate && (
+            <p className="mt-5 font-medium text-muted-navy">{formattedDate}</p>
           )}
 
-          <p className="text-gray-600">
-            The livestream has not started yet.
-          </p>
+          <section className="mt-9 rounded-[1.5rem] border border-gold/30 bg-white/75 p-7 shadow-[0_18px_50px_rgba(11,31,58,0.07)]">
+            <div className="mx-auto h-10 w-10 animate-pulse rounded-full border-2 border-gold bg-pale-gold shadow-[0_0_0_8px_rgba(200,169,107,0.12)]" />
+            <h2 className="mt-6 font-display text-3xl font-semibold">
+              Waiting for the host
+            </h2>
+            <p className="mt-3 leading-7 text-muted-navy">
+              The livestream has not started yet. It will begin automatically
+              on this page when the host goes live.
+            </p>
+          </section>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-white px-6 text-center">
-      <div className="w-full max-w-md">
-        <p className="text-sm uppercase tracking-[0.3em] text-gray-500 mb-4">
-          SimchaCam
-        </p>
-
-        <h1 className="text-4xl font-bold mb-4">{event.name}</h1>
-
-        <p className="text-gray-600 mb-8">
-          The livestream is live now.
+    <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+      <ViewerHeader />
+      <div className="w-full max-w-lg">
+        <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-recording-red">
+          <span className="h-2 w-2 rounded-full bg-recording-red shadow-[0_0_0_4px_rgba(229,57,53,0.12)]" />
+          Live now
+        </div>
+        <h1 className="mt-5 font-display text-5xl font-semibold leading-none sm:text-6xl">
+          {event.name}
+        </h1>
+        {formattedDate && (
+          <p className="mt-4 font-medium text-muted-navy">{formattedDate}</p>
+        )}
+        <p className="mt-5 text-muted-navy">
+          The livestream is ready to watch.
         </p>
 
         <button
           onClick={joinLivestream}
           disabled={streamLoading}
-          className="w-full bg-black text-white px-6 py-4 rounded-xl text-lg font-semibold disabled:bg-gray-400"
+          className="mt-8 min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
         >
           {streamLoading ? "Connecting..." : "Join Livestream"}
         </button>
