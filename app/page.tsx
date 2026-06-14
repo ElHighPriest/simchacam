@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CreateEventForm from "./components/CreateEventForm";
+import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
 import { supabase } from "@/lib/supabase";
 import { isEmailVerified } from "@/lib/auth";
@@ -669,6 +670,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <PublicFooter />
     </main>
   );
 }

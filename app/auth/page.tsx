@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PublicFooter from "@/app/components/PublicFooter";
 import { supabase } from "@/lib/supabase";
 
 export default function AuthPage() {
@@ -72,31 +73,32 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-warm-white px-5 py-24 text-navy">
-      <div
-        aria-hidden="true"
-        className="absolute -left-28 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-navy/5 blur-3xl"
-      />
-
-      <Link
-        href="/"
-        aria-label="SimchaCam home"
-        className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
-      >
-        <Image
-          src="/simchacam-logo.png"
-          alt="SimchaCam"
-          fill
-          sizes="(max-width: 640px) 144px, 176px"
-          className="object-cover object-center mix-blend-multiply"
+    <main className="min-h-screen bg-warm-white text-navy">
+      <div className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden px-5 py-24">
+        <div
+          aria-hidden="true"
+          className="absolute -left-28 top-20 h-72 w-72 rounded-full bg-gold/10 blur-3xl"
         />
-      </Link>
+        <div
+          aria-hidden="true"
+          className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-navy/5 blur-3xl"
+        />
 
-      <div className="relative z-10 w-full max-w-md">
+        <Link
+          href="/"
+          aria-label="SimchaCam home"
+          className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
+        >
+          <Image
+            src="/simchacam-logo.png"
+            alt="SimchaCam"
+            fill
+            sizes="(max-width: 640px) 144px, 176px"
+            className="object-cover object-center mix-blend-multiply"
+          />
+        </Link>
+
+        <div className="relative z-10 w-full max-w-md">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             Private livestreaming
@@ -243,8 +245,10 @@ export default function AuthPage() {
               ? "You will need to confirm your email before creating or managing events."
               : "Only confirmed accounts can access protected SimchaCam features."}
           </p>
-        </section>
+          </section>
+        </div>
       </div>
+      <PublicFooter />
     </main>
   );
 }
