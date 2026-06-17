@@ -1,9 +1,35 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
 import { isEmailVerified } from "@/lib/auth";
 import { getStripeConfig } from "@/lib/stripe";
 
 export const runtime = "nodejs";
+
+function logStripeCheckoutError(
+  apiCall: string,
+  priceId: string,
+  error: unknown
+) {
+  if (error instanceof Stripe.errors.StripeError) {
+    console.error("[TEMP STRIPE DEBUG] Checkout Stripe API error", {
+      apiCall,
+      priceId,
+      type: error.type,
+      code: error.code ?? null,
+      statusCode: error.statusCode ?? null,
+      requestId: error.requestId ?? null,
+      message: error.message,
+    });
+    return;
+  }
+
+  console.error("[TEMP STRIPE DEBUG] Checkout non-Stripe API error", {
+    apiCall,
+    priceId,
+    message: error instanceof Error ? error.message : "Unknown error",
+  });
+}
 
 export async function POST(
   request: NextRequest,
@@ -111,7 +137,20 @@ export async function POST(
 
   try {
     const { client, premiumPriceId, siteUrl } = getStripeConfig();
-    const price = await client.prices.retrieve(premiumPriceId);
+    console.info("[TEMP STRIPE DEBUG] Stripe API call", {
+      apiCall: "prices.retrieve",
+      priceId: premiumPriceId,
+    });
+
+    let price: Stripe.Price;
+
+    try {
+      price = await client.prices.retrieve(premiumPriceId);
+    } catch (error) {
+      logStripeCheckoutError("prices.retrieve", premiumPriceId, error);
+      throw error;
+    }
+
     const productId =
       typeof price.product === "string" ? price.product : price.product.id;
 
@@ -166,6 +205,11 @@ export async function POST(
       "?checkout=cancelled";
 
     try {
+      console.info("[TEMP STRIPE DEBUG] Stripe API call", {
+        apiCall: "checkout.sessions.create",
+        priceId: premiumPriceId,
+      });
+
       const session = await client.checkout.sessions.create(
         {
           mode: "payment",
@@ -215,6 +259,11 @@ export async function POST(
 
       return NextResponse.json({ url: session.url });
     } catch (error) {
+      logStripeCheckoutError(
+        "checkout.sessions.create",
+        premiumPriceId,
+        error
+      );
       console.error("Could not create Stripe Checkout Session", error);
       await serviceSupabase
         .from("event_payments")
