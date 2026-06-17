@@ -597,7 +597,7 @@ export default function Home() {
               <>
                 <button
                   onClick={() => setShowForm(true)}
-                  className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
+                  className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
                 >
                   Create Event
                 </button>
@@ -613,7 +613,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/auth"
-                  className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
+                  className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
                 >
                   Create Event
                 </Link>
