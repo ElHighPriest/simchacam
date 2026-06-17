@@ -169,44 +169,24 @@ export default function CreateEventForm({
           </section>
 
           <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
-            <div className="flex items-start justify-between gap-5">
-              <div>
-                <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-                  Premium recording
-                </div>
-                <h2 className="mt-4 font-display text-3xl font-semibold">
-                  Recording, Replay & Download
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-muted-navy">
-                  Keep the celebration available for invited viewers for 30
-                  days after the event.
-                </p>
-                <p className="mt-4 font-semibold">£4.99 Premium Feature</p>
-                <p className="mt-1 text-xs font-medium text-muted-navy">
-                  Create the event first, then upgrade to Premium.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                disabled
-                aria-label="Create the event first, then upgrade to Premium"
-                className="flex h-8 w-14 shrink-0 cursor-not-allowed items-center rounded-full bg-navy/15 p-1"
-              >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-navy/45 shadow-sm">
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="5" y="10" width="14" height="10" rx="2" />
-                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-                  </svg>
-                </span>
-              </button>
+            <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
+              Premium recording
+            </div>
+            <h2 className="mt-4 font-display text-3xl font-semibold">
+              Recording, Replay & Download
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-navy">
+              Create your event first, then upgrade to Premium for recording,
+              replay and download.
+            </p>
+            <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
+              <p className="text-sm font-semibold text-navy">
+                £4.99 Premium Feature
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted-navy">
+                Premium is added to a specific event after it has a private
+                event link.
+              </p>
             </div>
           </section>
 
