@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CreateEventForm from "./components/CreateEventForm";
+import ProfileMenu from "./components/ProfileMenu";
 import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
 import { supabase } from "@/lib/supabase";
@@ -52,9 +53,6 @@ export default function Home() {
       listener.subscription.unsubscribe();
     };
   }, []);
-
-  const firstName = user?.user_metadata?.first_name;
-  const displayName = firstName || user?.email || "there";
 
   const eventLink = eventSlug ? `https://simcha.cam/e/${eventSlug}` : "";
 
@@ -597,30 +595,13 @@ export default function Home() {
             </div>
             {isEmailVerified(user) ? (
               <>
-                <Link
-                  href="/my-events"
-                  className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy sm:block"
-                >
-                  My Events
-                </Link>
-                <Link
-                  href="/account-settings"
-                  className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy lg:block"
-                >
-                  Account Settings
-                </Link>
-                <button
-                  onClick={logout}
-                  className="hidden px-3 py-2 text-sm font-medium text-navy/65 transition hover:text-navy md:block"
-                >
-                  Sign Out
-                </button>
                 <button
                   onClick={() => setShowForm(true)}
                   className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
                 >
                   Create Event
                 </button>
+                <ProfileMenu user={user} onSignOut={logout} />
               </>
             ) : (
               <>
@@ -661,12 +642,6 @@ export default function Home() {
               world.
             </p>
 
-            {isEmailVerified(user) && (
-              <p className="mt-5 text-sm font-medium text-navy/65">
-                Welcome back, {displayName}
-              </p>
-            )}
-
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {isEmailVerified(user) ? (
                 <>
@@ -681,12 +656,6 @@ export default function Home() {
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
                     My Events
-                  </Link>
-                  <Link
-                    href="/account-settings"
-                    className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
-                  >
-                    Account Settings
                   </Link>
                 </>
               ) : (

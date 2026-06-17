@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
 import { isEmailVerified } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 type Event = {
   id: string;
@@ -29,6 +31,7 @@ type EventGroup = {
 
 export default function MyEventsPage() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [copyMessage, setCopyMessage] = useState("");
@@ -50,6 +53,8 @@ export default function MyEventsPage() {
         router.push("/auth");
         return;
       }
+
+      setUser(userData.user);
 
       const { data, error } = await supabase
         .from("events")
@@ -185,6 +190,11 @@ export default function MyEventsPage() {
     setEvents((currentEvents) =>
       currentEvents.filter((event) => event.id !== id)
     );
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    router.push("/auth");
   }
 
   async function upgradeToPremium(id: string) {
@@ -349,17 +359,12 @@ export default function MyEventsPage() {
 
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
-              href="/account-settings"
-              className="hidden text-sm font-semibold text-navy/70 transition hover:text-navy sm:inline-flex"
-            >
-              Account Settings
-            </Link>
-            <Link
               href="/"
               className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
             >
               Create Event
             </Link>
+            {user && <ProfileMenu user={user} onSignOut={logout} />}
           </div>
         </nav>
       </header>
