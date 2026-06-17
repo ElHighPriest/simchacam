@@ -284,7 +284,7 @@ export default function Home() {
     }).format(new Date(`${eventDate}T${eventTime}`));
 
     return (
-      <main className="min-h-screen bg-warm-white text-navy">
+      <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-warm-white text-navy">
         <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
           <nav className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
             <Link
@@ -309,7 +309,7 @@ export default function Home() {
           </nav>
         </header>
 
-        <div className="mx-auto flex max-w-2xl flex-col px-5 py-10 sm:px-8 sm:py-14">
+        <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col px-5 py-10 sm:px-8 sm:py-14">
           <div className="text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-gold/40 bg-pale-gold text-gold">
               <svg
@@ -329,7 +329,7 @@ export default function Home() {
             <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] text-navy sm:text-6xl">
               Your event is ready
             </h1>
-            <h2 className="mt-6 font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
+            <h2 className="wrap-anywhere mt-6 max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
               {eventName}
             </h2>
             <p className="mt-3 text-base font-medium text-muted-navy">

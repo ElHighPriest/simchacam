@@ -234,7 +234,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (eventLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-warm-white px-6 text-navy">
+      <main className="flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-6 text-navy">
         <div className="text-center">
           <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gold/35 border-t-gold" />
           <p className="text-sm font-medium text-muted-navy">
@@ -247,9 +247,9 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (eventError || !event) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-6 text-center text-navy">
+      <main className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-6 text-center text-navy">
         <ViewerHeader />
-        <div className="w-full max-w-md rounded-[1.5rem] border border-gold/30 bg-white/75 px-6 py-10 shadow-[0_18px_50px_rgba(11,31,58,0.07)]">
+        <div className="w-full min-w-0 max-w-md rounded-[1.5rem] border border-gold/30 bg-white/75 px-6 py-10 shadow-[0_18px_50px_rgba(11,31,58,0.07)]">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             Event unavailable
           </p>
@@ -268,13 +268,13 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (eventHasPassword && !passwordPassed) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+      <main className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy">
         <ViewerHeader />
-        <div className="w-full max-w-md">
+        <div className="w-full min-w-0 max-w-md">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             Private event
           </p>
-          <h1 className="mt-3 font-display text-5xl font-semibold leading-none">
+          <h1 className="wrap-anywhere mt-3 max-w-full font-display text-5xl font-semibold leading-none">
             {event.name}
           </h1>
           {formattedDate && (
@@ -342,13 +342,13 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (event.status === "ended") {
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+      <main className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy">
         <ViewerHeader />
-        <div className="w-full max-w-xl">
+        <div className="w-full min-w-0 max-w-xl">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             Event recording
           </p>
-          <h1 className="mt-3 font-display text-5xl font-semibold leading-none sm:text-6xl">
+          <h1 className="wrap-anywhere mt-3 max-w-full font-display text-5xl font-semibold leading-none sm:text-6xl">
             {event.name}
           </h1>
           {formattedDate && (
@@ -454,13 +454,13 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   if (event.status !== "live") {
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+      <main className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy">
         <ViewerHeader />
-        <div className="w-full max-w-lg">
+        <div className="w-full min-w-0 max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             You&apos;re invited
           </p>
-          <h1 className="mt-3 font-display text-5xl font-semibold leading-none sm:text-6xl">
+          <h1 className="wrap-anywhere mt-3 max-w-full font-display text-5xl font-semibold leading-none sm:text-6xl">
             {event.name}
           </h1>
           {formattedDate && (
@@ -483,14 +483,14 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-warm-white px-5 py-28 text-center text-navy">
+    <main className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy">
       <ViewerHeader />
-      <div className="w-full max-w-lg">
+      <div className="w-full min-w-0 max-w-lg">
         <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-recording-red">
           <span className="h-2 w-2 rounded-full bg-recording-red shadow-[0_0_0_4px_rgba(229,57,53,0.12)]" />
           Live now
         </div>
-        <h1 className="mt-5 font-display text-5xl font-semibold leading-none sm:text-6xl">
+        <h1 className="wrap-anywhere mt-5 max-w-full font-display text-5xl font-semibold leading-none sm:text-6xl">
           {event.name}
         </h1>
         {formattedDate && (

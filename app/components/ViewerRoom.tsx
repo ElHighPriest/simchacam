@@ -59,12 +59,12 @@ function ViewerContent({
 
   if (!streamerTrack && status === "ended") {
     return (
-      <main className="flex h-screen items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
-        <div>
+      <main className="flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+        <div className="min-w-0 max-w-full">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             SimchaCam
           </p>
-          <h1 className="mt-4 font-display text-4xl font-semibold">
+          <h1 className="wrap-anywhere mt-4 max-w-full font-display text-4xl font-semibold">
             {eventName}
           </h1>
           <p className="mt-4 text-white/70">This livestream has ended.</p>
@@ -75,10 +75,10 @@ function ViewerContent({
 
   if (!streamerTrack) {
     return (
-      <main className="flex h-screen items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
-        <div>
+      <main className="flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+        <div className="min-w-0 max-w-full">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full border-2 border-gold bg-gold/10" />
-          <h1 className="mt-5 font-display text-4xl font-semibold">
+          <h1 className="wrap-anywhere mt-5 max-w-full font-display text-4xl font-semibold">
             {eventName}
           </h1>
           <p className="mt-3 text-white/70">
@@ -90,9 +90,9 @@ function ViewerContent({
   }
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-black text-white">
+    <main className="flex h-screen w-full max-w-full flex-col overflow-hidden bg-black text-white">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-navy/55 px-4 backdrop-blur">
-        <div className="min-w-0">
+        <div className="min-w-0 max-w-full flex-1">
           <h1 className="truncate text-sm font-semibold sm:text-base">
             {eventName}
           </h1>
@@ -141,7 +141,12 @@ export default function ViewerRoom({
       serverUrl={serverUrl}
       connect={true}
       data-lk-theme="default"
-      style={{ height: "100vh", overflow: "hidden" }}
+      style={{
+        height: "100vh",
+        maxWidth: "100vw",
+        overflow: "hidden",
+        width: "100%",
+      }}
       connectOptions={{
         autoSubscribe: true,
       }}

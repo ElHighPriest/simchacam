@@ -29,6 +29,12 @@
   border-color: color-mix(in srgb, var(--navy) 14%, transparent);
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -49,4 +55,9 @@ input:focus-visible {
 
 .font-display {
   font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
+}
+
+.wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }

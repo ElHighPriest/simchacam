@@ -455,11 +455,11 @@ export default function MyEventsPage() {
                       return (
                         <article
                           key={event.id}
-                          className="overflow-hidden rounded-[1.5rem] border border-navy/10 bg-white/75 shadow-[0_16px_44px_rgba(11,31,58,0.07)]"
+                          className="max-w-full overflow-hidden rounded-[1.5rem] border border-navy/10 bg-white/75 shadow-[0_16px_44px_rgba(11,31,58,0.07)]"
                         >
                           <div className="p-5 sm:p-7">
                             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="min-w-0">
+                              <div className="min-w-0 max-w-full">
                                 <div className="mb-4 flex flex-wrap gap-2">
                                   {event.plan && (
                                     <span
@@ -505,13 +505,13 @@ export default function MyEventsPage() {
                                   )}
                                 </div>
 
-                                <h3 className="font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
+                                <h3 className="wrap-anywhere max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
                                   {event.name}
                                 </h3>
                                 <p className="mt-3 text-base font-semibold text-navy/80">
                                   {formatEventDate(event.event_at)}
                                 </p>
-                                <p className="mt-3 truncate text-sm text-muted-navy">
+                                <p className="mt-3 max-w-full truncate text-sm text-muted-navy">
                                   simcha.cam/e/{event.slug}
                                 </p>
                               </div>
