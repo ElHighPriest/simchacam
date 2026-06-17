@@ -25,20 +25,6 @@ type StreamerRoomProps = {
   recordingEnabled?: boolean;
 };
 
-type QualityDiagnostics = {
-  audioActive: boolean;
-  bitrateKbps: number | null;
-  captureFrameRate: number | null;
-  captureHeight: number | null;
-  captureWidth: number | null;
-  connectionQuality: string;
-  packetLossPercent: number | null;
-  publishedFrameRate: number | null;
-  publishedHeight: number | null;
-  publishedLayer: string | null;
-  publishedWidth: number | null;
-};
-
 function StreamerContent({
   eventId,
   hardEndsAt,
@@ -54,26 +40,9 @@ function StreamerContent({
   recordingEnabled: boolean;
   sessionId?: string;
 }) {
-  const { isMicrophoneEnabled, localParticipant, microphoneTrack } =
-    useLocalParticipant();
+  const { localParticipant } = useLocalParticipant();
   const room = useRoomContext();
   const recordingStartRequested = useRef(false);
-  const previousVideoStats = useRef(
-    new Map<string, { bytesSent: number; timestamp: number }>()
-  );
-  const [quality, setQuality] = useState<QualityDiagnostics>({
-    audioActive: false,
-    bitrateKbps: null,
-    captureFrameRate: null,
-    captureHeight: null,
-    captureWidth: null,
-    connectionQuality: "unknown",
-    packetLossPercent: null,
-    publishedFrameRate: null,
-    publishedHeight: null,
-    publishedLayer: null,
-    publishedWidth: null,
-  });
   const [isEndingStream, setIsEndingStream] = useState(false);
   const participants = useParticipants();
   const viewerCount = participants.filter(
@@ -88,143 +57,6 @@ function StreamerContent({
   const localCameraTrack = tracks.find(
     (trackRef) => trackRef.participant.identity === localParticipant.identity
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function updateQualityDiagnostics() {
-      const cameraPublication = Array.from(
-        localParticipant.videoTrackPublications.values()
-      ).find((publication) => publication.source === Track.Source.Camera);
-      const cameraTrack = cameraPublication?.videoTrack;
-      const captureSettings = cameraTrack?.mediaStreamTrack.getSettings();
-      const microphoneMediaTrack = microphoneTrack?.track?.mediaStreamTrack;
-      let bitrateKbps: number | null = null;
-      let packetLossPercent: number | null = null;
-      let publishedFrameRate: number | null = null;
-      let publishedHeight: number | null = null;
-      let publishedLayer: string | null = null;
-      let publishedWidth: number | null = null;
-
-      const stats = await cameraTrack?.getRTCStatsReport();
-
-      if (stats) {
-        let totalBitrateKbps = 0;
-        let packetsLost = 0;
-        let packetsSent = 0;
-        const nextVideoStats = new Map<
-          string,
-          { bytesSent: number; timestamp: number }
-        >();
-        const activeLayers: Array<{
-          bitrateKbps: number;
-          frameRate: number | null;
-          height: number;
-          rid: string;
-          width: number;
-        }> = [];
-
-        stats.forEach((stat) => {
-          if (
-            stat.type === "outbound-rtp" &&
-            stat.kind === "video" &&
-            !stat.isRemote
-          ) {
-            const statId = String(stat.id);
-            const bytesSent = stat.bytesSent ?? 0;
-            const timestamp = stat.timestamp ?? 0;
-            const previous = previousVideoStats.current.get(statId);
-            let layerBitrateKbps = 0;
-
-            if (
-              previous &&
-              timestamp > previous.timestamp &&
-              bytesSent >= previous.bytesSent
-            ) {
-              layerBitrateKbps =
-                ((bytesSent - previous.bytesSent) * 8) /
-                (timestamp - previous.timestamp);
-              totalBitrateKbps += layerBitrateKbps;
-            }
-
-            nextVideoStats.set(statId, { bytesSent, timestamp });
-            packetsSent += stat.packetsSent ?? 0;
-
-            if (
-              stat.frameWidth &&
-              stat.frameHeight &&
-              (layerBitrateKbps > 0 || (stat.framesPerSecond ?? 0) > 0)
-            ) {
-              activeLayers.push({
-                bitrateKbps: layerBitrateKbps,
-                frameRate: stat.framesPerSecond ?? null,
-                height: stat.frameHeight,
-                rid: stat.rid || "single",
-                width: stat.frameWidth,
-              });
-            }
-          }
-
-          if (
-            stat.type === "remote-inbound-rtp" &&
-            stat.kind === "video"
-          ) {
-            packetsLost += stat.packetsLost ?? 0;
-          }
-        });
-
-        previousVideoStats.current = nextVideoStats;
-        bitrateKbps = totalBitrateKbps > 0 ? totalBitrateKbps : null;
-
-        const highestActiveLayer = activeLayers.sort(
-          (left, right) =>
-            right.width * right.height - left.width * left.height
-        )[0];
-
-        if (highestActiveLayer) {
-          publishedWidth = highestActiveLayer.width;
-          publishedHeight = highestActiveLayer.height;
-          publishedFrameRate = highestActiveLayer.frameRate;
-          publishedLayer = highestActiveLayer.rid;
-        }
-
-        if (packetsSent + packetsLost > 0) {
-          packetLossPercent =
-            (packetsLost / (packetsSent + packetsLost)) * 100;
-        }
-      }
-
-      if (!cancelled) {
-        setQuality({
-          audioActive: Boolean(
-            isMicrophoneEnabled &&
-              microphoneMediaTrack &&
-              microphoneMediaTrack.enabled &&
-              microphoneMediaTrack.readyState === "live" &&
-              !microphoneTrack?.isMuted
-          ),
-          bitrateKbps,
-          captureFrameRate: captureSettings?.frameRate ?? null,
-          captureHeight: captureSettings?.height ?? null,
-          captureWidth: captureSettings?.width ?? null,
-          connectionQuality: localParticipant.connectionQuality,
-          packetLossPercent,
-          publishedFrameRate,
-          publishedHeight,
-          publishedLayer,
-          publishedWidth,
-        });
-      }
-    }
-
-    updateQualityDiagnostics();
-    const interval = setInterval(updateQualityDiagnostics, 2000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [isMicrophoneEnabled, localParticipant, microphoneTrack]);
 
   useEffect(() => {
     const cameraTrack = Array.from(
@@ -311,45 +143,6 @@ function StreamerContent({
           {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
         </p>
       </header>
-
-      <section className="mx-4 rounded-lg border border-white/20 bg-white/10 p-3 text-xs text-gray-200">
-        <p className="mb-2 font-semibold text-white">Quality diagnostics</p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
-          <p>
-            Capture:{" "}
-            {quality.captureWidth && quality.captureHeight
-              ? `${quality.captureWidth}×${quality.captureHeight}`
-              : "Unavailable"}
-            {quality.captureFrameRate
-              ? ` @ ${Math.round(quality.captureFrameRate)} fps`
-              : ""}
-          </p>
-          <p>
-            Highest active layer:{" "}
-            {quality.publishedWidth && quality.publishedHeight
-              ? `${quality.publishedWidth}×${quality.publishedHeight}`
-              : "Unavailable"}
-            {quality.publishedFrameRate
-              ? ` @ ${Math.round(quality.publishedFrameRate)} fps`
-              : ""}
-            {quality.publishedLayer ? ` (${quality.publishedLayer})` : ""}
-          </p>
-          <p>
-            Video bitrate:{" "}
-            {quality.bitrateKbps === null
-              ? "Unavailable"
-              : `${Math.round(quality.bitrateKbps)} kbps`}
-          </p>
-          <p>Audio: {quality.audioActive ? "Active" : "Inactive"}</p>
-          <p>Connection: {quality.connectionQuality}</p>
-          <p>
-            Packet loss:{" "}
-            {quality.packetLossPercent === null
-              ? "Unavailable"
-              : `${quality.packetLossPercent.toFixed(2)}%`}
-          </p>
-        </div>
-      </section>
 
       <section className="flex-1 flex items-center justify-center p-4">
         {localCameraTrack ? (
