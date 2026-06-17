@@ -24,6 +24,7 @@ export default function Home() {
   const [eventSlug, setEventSlug] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false);
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
@@ -167,6 +168,48 @@ export default function Home() {
       }
     } else {
       copyLink();
+    }
+  }
+
+  async function upgradeToPremium() {
+    if (!eventId) {
+      return;
+    }
+
+    setIsStartingCheckout(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert("Please log in before upgrading to Premium");
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(eventId)}/checkout`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        alert(data.error || "Could not start Premium checkout");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      alert("Could not start Premium checkout");
+    } finally {
+      setIsStartingCheckout(false);
     }
   }
 
@@ -346,6 +389,34 @@ export default function Home() {
             </div>
           </section>
 
+          <section className="mt-8 rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
+                  Premium recording
+                </div>
+                <h2 className="mt-4 font-display text-3xl font-semibold">
+                  Recording, Replay & Download
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-navy">
+                  Add automatic recording, replay for 30 days, download access,
+                  and a longer Premium livestream for this event.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={upgradeToPremium}
+                disabled={isStartingCheckout}
+                className="min-h-12 shrink-0 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+              >
+                {isStartingCheckout
+                  ? "Creating checkout..."
+                  : "Upgrade to Premium — £4.99"}
+              </button>
+            </div>
+          </section>
+
           <section className="mt-8 border-t border-gold/30 pt-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
               When you&apos;re ready
@@ -448,13 +519,15 @@ export default function Home() {
                 <p className="text-sm font-medium text-amber-800 mt-2">
                   £4.99 Premium Feature
                 </p>
-                <p className="text-xs text-gray-500 mt-2">Coming soon</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Create the event first, then upgrade to Premium.
+                </p>
               </div>
 
               <button
                 type="button"
                 disabled
-                aria-label="Premium recording is coming soon"
+                aria-label="Create the event first, then upgrade to Premium"
                 className="shrink-0 w-12 h-7 rounded-full bg-gray-300 p-1 cursor-not-allowed"
               >
                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-gray-500">

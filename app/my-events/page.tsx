@@ -32,6 +32,7 @@ export default function MyEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [copyMessage, setCopyMessage] = useState("");
+  const [upgradingEventId, setUpgradingEventId] = useState("");
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
@@ -184,6 +185,44 @@ export default function MyEventsPage() {
     setEvents((currentEvents) =>
       currentEvents.filter((event) => event.id !== id)
     );
+  }
+
+  async function upgradeToPremium(id: string) {
+    setUpgradingEventId(id);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push("/auth");
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(id)}/checkout`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        alert(data.error || "Could not start Premium checkout");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error(error);
+      alert("Could not start Premium checkout");
+    } finally {
+      setUpgradingEventId("");
+    }
   }
 
   async function goLive(id: string) {
@@ -396,6 +435,9 @@ export default function MyEventsPage() {
                         event.recording?.status === "ready";
                       const recordingProcessing =
                         event.recording?.status === "processing";
+                      const canUpgrade =
+                        event.plan === "free" && event.status !== "ended";
+                      const isUpgrading = upgradingEventId === event.id;
 
                       return (
                         <article
@@ -461,7 +503,7 @@ export default function MyEventsPage() {
                                 </p>
                               </div>
 
-                              <div className="w-full shrink-0 sm:w-auto">
+                              <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto">
                                 {isEnded && recordingReady ? (
                                   <Link
                                     href={`/e/${event.slug}`}
@@ -486,6 +528,25 @@ export default function MyEventsPage() {
                                     <span className="h-2 w-2 rounded-full bg-white" />
                                     {isLive ? "Return to Stream" : "Go Live"}
                                   </button>
+                                )}
+
+                                {canUpgrade && (
+                                  <button
+                                    type="button"
+                                    onClick={() => upgradeToPremium(event.id)}
+                                    disabled={isUpgrading}
+                                    className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/45 bg-pale-gold/70 px-6 py-3 font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/45 sm:w-auto"
+                                  >
+                                    {isUpgrading
+                                      ? "Creating checkout..."
+                                      : "Upgrade to Premium — £4.99"}
+                                  </button>
+                                )}
+
+                                {event.plan === "premium" && (
+                                  <div className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/35 bg-pale-gold/60 px-6 py-3 text-sm font-semibold text-[#80652f] sm:w-auto">
+                                    Premium enabled
+                                  </div>
                                 )}
                               </div>
                             </div>

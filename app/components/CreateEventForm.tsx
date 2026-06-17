@@ -183,14 +183,14 @@ export default function CreateEventForm({
                 </p>
                 <p className="mt-4 font-semibold">£4.99 Premium Feature</p>
                 <p className="mt-1 text-xs font-medium text-muted-navy">
-                  Coming soon
+                  Create the event first, then upgrade to Premium.
                 </p>
               </div>
 
               <button
                 type="button"
                 disabled
-                aria-label="Premium recording is coming soon"
+                aria-label="Create the event first, then upgrade to Premium"
                 className="flex h-8 w-14 shrink-0 cursor-not-allowed items-center rounded-full bg-navy/15 p-1"
               >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-navy/45 shadow-sm">
