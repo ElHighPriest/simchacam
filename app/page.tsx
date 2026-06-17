@@ -603,6 +603,12 @@ export default function Home() {
                 >
                   My Events
                 </Link>
+                <Link
+                  href="/account-settings"
+                  className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy lg:block"
+                >
+                  Account Settings
+                </Link>
                 <button
                   onClick={logout}
                   className="hidden px-3 py-2 text-sm font-medium text-navy/65 transition hover:text-navy md:block"
@@ -675,6 +681,12 @@ export default function Home() {
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
                     My Events
+                  </Link>
+                  <Link
+                    href="/account-settings"
+                    className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
+                  >
+                    Account Settings
                   </Link>
                 </>
               ) : (

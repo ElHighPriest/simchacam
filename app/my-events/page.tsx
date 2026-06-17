@@ -347,12 +347,20 @@ export default function MyEventsPage() {
             />
           </Link>
 
-          <Link
-            href="/"
-            className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
-          >
-            Create Event
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              href="/account-settings"
+              className="hidden text-sm font-semibold text-navy/70 transition hover:text-navy sm:inline-flex"
+            >
+              Account Settings
+            </Link>
+            <Link
+              href="/"
+              className="min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:px-5"
+            >
+              Create Event
+            </Link>
+          </div>
         </nav>
       </header>
 
