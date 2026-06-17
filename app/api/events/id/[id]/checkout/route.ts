@@ -21,6 +21,7 @@ export async function POST(
     STRIPE_PREMIUM_PRICE_ID: Boolean(
       process.env.STRIPE_PREMIUM_PRICE_ID
     ),
+    STRIPE_WEBHOOK_SECRET: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
     NEXT_PUBLIC_SITE_URL: Boolean(process.env.NEXT_PUBLIC_SITE_URL),
   });
 
