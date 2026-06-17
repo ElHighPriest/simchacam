@@ -130,47 +130,56 @@ function StreamerContent({
 
   return (
     <main
-      className="min-h-screen bg-black text-white flex flex-col"
+      className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-black text-white"
       data-stream-session-id={sessionId}
       data-stream-hard-ends-at={hardEndsAt}
     >
-      <header className="p-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">SimchaCam</h1>
-          <p className="text-sm text-gray-400">Camera active</p>
+      <header className="flex shrink-0 items-start justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold sm:text-2xl">SimchaCam</h1>
+          <p className="text-xs text-gray-400 sm:text-sm">Camera active</p>
         </div>
-        <p className="text-sm text-gray-300">
-          {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
-        </p>
+        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+          <p className="text-sm text-gray-300">
+            {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
+          </p>
+          {recordingEnabled && (
+            <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774]">
+              Recording enabled
+            </p>
+          )}
+        </div>
       </header>
 
-      <section className="flex-1 flex items-center justify-center p-4">
+      <section className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-1 sm:px-4 sm:py-2">
         {localCameraTrack ? (
           <ParticipantTile
             trackRef={localCameraTrack}
-            className="w-full max-w-5xl rounded-2xl overflow-hidden"
+            className="h-full max-h-full w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
           />
         ) : (
           <div className="text-center text-gray-400">Starting camera...</div>
         )}
       </section>
 
-      <footer className="p-4">
-        <ControlBar
-          controls={{
-            microphone: true,
-            camera: true,
-            screenShare: false,
-            chat: false,
-            leave: lifecycleMode === "legacy",
-          }}
-        />
+      <footer className="shrink-0 px-3 py-2 sm:px-4 sm:py-3">
+        <div className="overflow-hidden">
+          <ControlBar
+            controls={{
+              microphone: true,
+              camera: true,
+              screenShare: false,
+              chat: false,
+              leave: lifecycleMode === "legacy",
+            }}
+          />
+        </div>
         {lifecycleMode === "server-owned" && (
           <button
             type="button"
             onClick={endStream}
             disabled={isEndingStream}
-            className="mt-3 min-h-12 w-full rounded-xl bg-recording-red px-6 py-3 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
+            className="mt-2 min-h-11 w-full rounded-xl bg-recording-red px-6 py-2.5 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55 sm:mt-3 sm:min-h-12 sm:py-3"
           >
             {isEndingStream ? "Ending Stream..." : "End Stream"}
           </button>
@@ -308,7 +317,12 @@ export default function StreamerRoom({
       serverUrl={serverUrl}
       connect={true}
       data-lk-theme="default"
-      style={{ height: "100vh" }}
+      style={{
+        height: "100dvh",
+        maxHeight: "100dvh",
+        overflow: "hidden",
+        width: "100%",
+      }}
       onDisconnected={handleDisconnected}
     >
       <StreamerContent
