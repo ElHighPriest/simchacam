@@ -448,6 +448,9 @@ export default function MyEventsPage() {
                         event.recording?.status === "ready";
                       const recordingProcessing =
                         event.recording?.status === "processing";
+                      const isEndedFreeWithoutRecording =
+                        isEnded && event.plan !== "premium" && !event.recording;
+                      const isEndedPremium = isEnded && event.plan === "premium";
                       const canUpgrade =
                         event.plan === "free" && event.status !== "ended";
                       const isUpgrading = upgradingEventId === event.id;
@@ -517,7 +520,12 @@ export default function MyEventsPage() {
                               </div>
 
                               <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto">
-                                {isEnded && recordingReady ? (
+                                {isEndedFreeWithoutRecording ? (
+                                  <div className="max-w-xs rounded-xl border border-navy/10 bg-navy/[0.025] px-4 py-3 text-sm leading-6 text-muted-navy">
+                                    This free livestream has ended. No
+                                    recording is available.
+                                  </div>
+                                ) : isEnded && recordingReady ? (
                                   <Link
                                     href={`/e/${event.slug}`}
                                     className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] sm:w-auto"
@@ -565,40 +573,57 @@ export default function MyEventsPage() {
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-x-1 gap-y-2 border-t border-navy/8 bg-navy/[0.025] px-4 py-3 sm:px-6">
-                            <button
-                              onClick={() => shareEvent(event)}
-                              className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
-                            >
-                              Share
-                            </button>
-                            <button
-                              onClick={() => copyLink(event.slug)}
-                              className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
-                            >
-                              Copy Link
-                            </button>
-                            <Link
-                              href={`/edit-event/${event.id}`}
-                              className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
-                            >
-                              Edit
-                            </Link>
-                            <Link
-                              href={`/e/${event.slug}`}
-                              className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
-                            >
-                              View Page
-                            </Link>
-                            <button
-                              onClick={() =>
-                                deleteEvent(event.id, event.name)
-                              }
-                              className="rounded-lg px-3 py-2 text-sm font-medium text-recording-red/80 transition hover:bg-red-50 hover:text-recording-red sm:ml-auto"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          {isEndedFreeWithoutRecording ? (
+                            <div className="flex justify-end border-t border-navy/8 bg-navy/[0.015] px-4 py-3 sm:px-6">
+                              <button
+                                onClick={() =>
+                                  deleteEvent(event.id, event.name)
+                                }
+                                className="rounded-lg px-3 py-2 text-sm font-medium text-navy/45 transition hover:bg-white hover:text-recording-red"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-x-1 gap-y-2 border-t border-navy/8 bg-navy/[0.025] px-4 py-3 sm:px-6">
+                              <button
+                                onClick={() => shareEvent(event)}
+                                className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                              >
+                                Share
+                              </button>
+                              <button
+                                onClick={() => copyLink(event.slug)}
+                                className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                              >
+                                Copy Link
+                              </button>
+                              {!isEndedPremium && (
+                                <>
+                                  <Link
+                                    href={`/edit-event/${event.id}`}
+                                    className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                                  >
+                                    Edit
+                                  </Link>
+                                  <Link
+                                    href={`/e/${event.slug}`}
+                                    className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                                  >
+                                    View Page
+                                  </Link>
+                                </>
+                              )}
+                              <button
+                                onClick={() =>
+                                  deleteEvent(event.id, event.name)
+                                }
+                                className="rounded-lg px-3 py-2 text-sm font-medium text-recording-red/80 transition hover:bg-red-50 hover:text-recording-red sm:ml-auto"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
                         </article>
                       );
                     })}
