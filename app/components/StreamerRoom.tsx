@@ -28,6 +28,7 @@ type StreamerRoomProps = {
 function StreamerContent({
   eventId,
   hardEndsAt,
+  isLandscape,
   lifecycleMode,
   onEndStream,
   recordingEnabled,
@@ -35,6 +36,7 @@ function StreamerContent({
 }: {
   eventId?: string;
   hardEndsAt?: string;
+  isLandscape: boolean;
   lifecycleMode: "legacy" | "server-owned";
   onEndStream: () => Promise<void>;
   recordingEnabled: boolean;
@@ -130,14 +132,30 @@ function StreamerContent({
 
   return (
     <main
-      className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-black text-white"
+      className={
+        isLandscape
+          ? "flex min-h-screen w-full flex-col bg-black text-white"
+          : "flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-black text-white"
+      }
       data-stream-session-id={sessionId}
       data-stream-hard-ends-at={hardEndsAt}
     >
-      <header className="flex shrink-0 items-start justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
+      <header
+        className={
+          isLandscape
+            ? "flex items-start justify-between gap-4 p-4"
+            : "flex shrink-0 items-start justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3"
+        }
+      >
         <div className="min-w-0">
-          <h1 className="text-xl font-bold sm:text-2xl">SimchaCam</h1>
-          <p className="text-xs text-gray-400 sm:text-sm">Camera active</p>
+          <h1
+            className={isLandscape ? "text-2xl font-bold" : "text-xl font-bold sm:text-2xl"}
+          >
+            SimchaCam
+          </h1>
+          <p className={isLandscape ? "text-sm text-gray-400" : "text-xs text-gray-400 sm:text-sm"}>
+            Camera active
+          </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-right">
           <p className="text-sm text-gray-300">
@@ -151,19 +169,33 @@ function StreamerContent({
         </div>
       </header>
 
-      <section className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-1 sm:px-4 sm:py-2">
+      <section
+        className={
+          isLandscape
+            ? "flex flex-1 items-center justify-center p-4"
+            : "flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-1 sm:px-4 sm:py-2"
+        }
+      >
         {localCameraTrack ? (
           <ParticipantTile
             trackRef={localCameraTrack}
-            className="h-full max-h-full w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
+            className={
+              isLandscape
+                ? "w-full max-w-5xl overflow-hidden rounded-2xl"
+                : "h-full max-h-full w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
+            }
           />
         ) : (
           <div className="text-center text-gray-400">Starting camera...</div>
         )}
       </section>
 
-      <footer className="shrink-0 px-3 py-2 sm:px-4 sm:py-3">
-        <div className="overflow-hidden">
+      <footer
+        className={
+          isLandscape ? "p-4" : "shrink-0 px-3 py-2 sm:px-4 sm:py-3"
+        }
+      >
+        <div className={isLandscape ? "" : "overflow-hidden"}>
           <ControlBar
             controls={{
               microphone: true,
@@ -179,7 +211,11 @@ function StreamerContent({
             type="button"
             onClick={endStream}
             disabled={isEndingStream}
-            className="mt-2 min-h-11 w-full rounded-xl bg-recording-red px-6 py-2.5 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55 sm:mt-3 sm:min-h-12 sm:py-3"
+            className={
+              isLandscape
+                ? "mt-3 min-h-12 w-full rounded-xl bg-recording-red px-6 py-3 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
+                : "mt-2 min-h-11 w-full rounded-xl bg-recording-red px-6 py-2.5 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55 sm:mt-3 sm:min-h-12 sm:py-3"
+            }
           >
             {isEndingStream ? "Ending Stream..." : "End Stream"}
           </button>
@@ -201,6 +237,19 @@ export default function StreamerRoom({
   recordingEnabled = false,
 }: StreamerRoomProps) {
   const explicitEndRequested = useRef(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const orientationQuery = window.matchMedia("(orientation: landscape)");
+    const updateOrientation = () => setIsLandscape(orientationQuery.matches);
+
+    updateOrientation();
+    orientationQuery.addEventListener("change", updateOrientation);
+
+    return () => {
+      orientationQuery.removeEventListener("change", updateOrientation);
+    };
+  }, []);
 
   async function endServerOwnedStream() {
     if (!eventId) {
@@ -317,18 +366,26 @@ export default function StreamerRoom({
       serverUrl={serverUrl}
       connect={true}
       data-lk-theme="default"
-      style={{
-        height: "100dvh",
-        maxHeight: "100dvh",
-        overflow: "hidden",
-        width: "100%",
-      }}
+      style={
+        isLandscape
+          ? {
+              minHeight: "100vh",
+              width: "100%",
+            }
+          : {
+              height: "100dvh",
+              maxHeight: "100dvh",
+              overflow: "hidden",
+              width: "100%",
+            }
+      }
       onDisconnected={handleDisconnected}
     >
       <StreamerContent
         eventId={eventId}
         sessionId={sessionId}
         hardEndsAt={hardEndsAt}
+        isLandscape={isLandscape}
         lifecycleMode={lifecycleMode}
         onEndStream={endServerOwnedStream}
         recordingEnabled={recordingEnabled}
