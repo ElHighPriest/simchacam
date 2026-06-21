@@ -4,29 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 
 type CreateEventFormProps = {
-  eventDate: string;
   eventName: string;
-  eventTime: string;
   isCreating: boolean;
   onBack: () => void;
   onCreate: () => void;
-  onEventDateChange: (value: string) => void;
   onEventNameChange: (value: string) => void;
-  onEventTimeChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   password: string;
 };
 
 export default function CreateEventForm({
-  eventDate,
   eventName,
-  eventTime,
   isCreating,
   onBack,
   onCreate,
-  onEventDateChange,
   onEventNameChange,
-  onEventTimeChange,
   onPasswordChange,
   password,
 }: CreateEventFormProps) {
@@ -92,52 +84,14 @@ export default function CreateEventForm({
             </label>
             <input
               id="event-name"
+              name="simchacam_event_title"
+              type="text"
+              autoComplete="off"
               className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/60"
               placeholder="Aryeh & Devorah Wedding"
               value={eventName}
               onChange={(event) => onEventNameChange(event.target.value)}
             />
-          </section>
-
-          <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.06)] sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Date and time
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold">
-              When is the event?
-            </h2>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  className="block text-sm font-semibold"
-                  htmlFor="event-date"
-                >
-                  Event date
-                </label>
-                <input
-                  id="event-date"
-                  type="date"
-                  className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5"
-                  value={eventDate}
-                  onChange={(event) => onEventDateChange(event.target.value)}
-                />
-              </div>
-              <div>
-                <label
-                  className="block text-sm font-semibold"
-                  htmlFor="event-time"
-                >
-                  Event time
-                </label>
-                <input
-                  id="event-time"
-                  type="time"
-                  className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5"
-                  value={eventTime}
-                  onChange={(event) => onEventTimeChange(event.target.value)}
-                />
-              </div>
-            </div>
           </section>
 
           <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.06)] sm:p-7">
@@ -160,7 +114,11 @@ export default function CreateEventForm({
             </label>
             <input
               id="event-password"
+              name="simchacam_event_access_code"
               type="password"
+              autoComplete="new-password"
+              data-1p-ignore="true"
+              data-lpignore="true"
               className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/60"
               placeholder="Choose a password"
               value={password}

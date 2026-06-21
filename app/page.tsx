@@ -90,21 +90,9 @@ export default function Home() {
       return;
     }
 
-    if (!eventDate || !eventTime) {
-      alert("Please enter an event date and time");
-      return;
-    }
-
     setIsCreating(true);
 
     const slug = makeSlug(eventName);
-    const eventAt = new Date(`${eventDate}T${eventTime}`);
-
-    if (Number.isNaN(eventAt.getTime())) {
-      setIsCreating(false);
-      alert("Please enter a valid event date and time");
-      return;
-    }
 
     const {
       data: { session },
@@ -125,7 +113,6 @@ export default function Home() {
       body: JSON.stringify({
         name: eventName,
         slug,
-        eventAt: eventAt.toISOString(),
         password: password || null,
       }),
     });
@@ -274,14 +261,17 @@ export default function Home() {
   }
 
   if (eventCreated) {
-    const formattedEventDate = new Intl.DateTimeFormat("en-GB", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(`${eventDate}T${eventTime}`));
+    const formattedEventDate =
+      eventDate && eventTime
+        ? new Intl.DateTimeFormat("en-GB", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date(`${eventDate}T${eventTime}`))
+        : null;
 
     return (
       <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-warm-white text-navy">
@@ -332,9 +322,11 @@ export default function Home() {
             <h2 className="wrap-anywhere mt-6 max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
               {eventName}
             </h2>
-            <p className="mt-3 text-base font-medium text-muted-navy">
-              {formattedEventDate}
-            </p>
+            {formattedEventDate && (
+              <p className="mt-3 text-base font-medium text-muted-navy">
+                {formattedEventDate}
+              </p>
+            )}
           </div>
 
           <section className="mt-10 rounded-[1.5rem] border border-gold/30 bg-white/75 p-5 shadow-[0_18px_50px_rgba(11,31,58,0.07)] sm:p-7">
@@ -439,15 +431,11 @@ export default function Home() {
   if (showForm) {
     return (
       <CreateEventForm
-        eventDate={eventDate}
         eventName={eventName}
-        eventTime={eventTime}
         isCreating={isCreating}
         onBack={() => setShowForm(false)}
         onCreate={createEvent}
-        onEventDateChange={setEventDate}
         onEventNameChange={setEventName}
-        onEventTimeChange={setEventTime}
         onPasswordChange={setPassword}
         password={password}
       />

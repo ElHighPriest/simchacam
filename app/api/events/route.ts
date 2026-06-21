@@ -32,16 +32,16 @@ export async function POST(request: NextRequest) {
 
   const { name, slug, eventAt, password } = await request.json();
 
-  if (!name?.trim() || !slug || !eventAt) {
+  if (!name?.trim() || !slug) {
     return NextResponse.json(
-      { error: "Missing event name, slug, or date" },
+      { error: "Missing event name or slug" },
       { status: 400 }
     );
   }
 
-  const eventDate = new Date(eventAt);
+  const eventDate = eventAt ? new Date(eventAt) : null;
 
-  if (Number.isNaN(eventDate.getTime())) {
+  if (eventDate && Number.isNaN(eventDate.getTime())) {
     return NextResponse.json({ error: "Invalid event date" }, { status: 400 });
   }
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     .insert({
       name,
       slug,
-      event_at: eventDate.toISOString(),
+      event_at: eventDate ? eventDate.toISOString() : null,
       password: password ? await hashPassword(password) : null,
       user_id: user.id,
       status: "offline",
