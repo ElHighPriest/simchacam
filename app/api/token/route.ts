@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
 import { isEmailVerified } from "@/lib/auth";
+import { cleanupExpiredStreamSessionForRoom } from "@/lib/stream-lifecycle";
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +30,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     let canPublish = false;
+    const streamState = await cleanupExpiredStreamSessionForRoom(roomName);
+
+    if (streamState.expired) {
+      return NextResponse.json(
+        { error: "Livestream has ended", code: "STREAM_ENDED" },
+        { status: 410 }
+      );
+    }
 
     if (participantName === "streamer") {
       const authorization = request.headers.get("authorization");

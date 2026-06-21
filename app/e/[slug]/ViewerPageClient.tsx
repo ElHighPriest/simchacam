@@ -137,6 +137,17 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
         const data = await response.json();
 
         if (!response.ok) {
+          if (response.status === 410 || data.code === "STREAM_ENDED") {
+            autoJoinStarted.current = false;
+            setToken("");
+            setServerUrl("");
+            setEventError("");
+            setEvent((currentEvent) =>
+              currentEvent ? { ...currentEvent, status: "ended" } : currentEvent
+            );
+            return;
+          }
+
           throw new Error(data.error);
         }
 
@@ -231,6 +242,17 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 410 || data.code === "STREAM_ENDED") {
+          autoJoinStarted.current = false;
+          setToken("");
+          setServerUrl("");
+          setEventError("");
+          setEvent((currentEvent) =>
+            currentEvent ? { ...currentEvent, status: "ended" } : currentEvent
+          );
+          return;
+        }
+
         throw new Error(data.error);
       }
 
