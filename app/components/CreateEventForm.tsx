@@ -128,22 +128,41 @@ export default function CreateEventForm({
 
           <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
             <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-              Premium recording
+              Premium upgrade
             </div>
             <h2 className="mt-4 font-display text-3xl font-semibold">
-              Recording, Replay & Download
+              More time, more guests, and a lasting replay
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-navy">
-              Create your event first, then upgrade to Premium for recording,
-              replay and download.
+              Create your event first, then upgrade that event to Premium when
+              you are ready. Premium gives families a fuller livestream
+              experience for bigger simchas.
             </p>
+            <div className="mt-5 grid gap-2 text-sm font-medium text-navy sm:grid-cols-2">
+              {[
+                "Event Scheduling (date and time)",
+                "Automatic recording",
+                "Replay for 30 days",
+                "Download recording",
+                "Up to 500 viewers",
+                "Up to 6 hour livestreams",
+              ].map((feature) => (
+                <div
+                  key={feature}
+                  className="flex items-start gap-2 rounded-xl bg-white/45 px-3 py-2"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
             <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
               <p className="text-sm font-semibold text-navy">
                 £4.99 Premium Feature
               </p>
               <p className="mt-1 text-xs leading-5 text-muted-navy">
-                Premium is added to a specific event after it has a private
-                event link.
+                Premium is purchased after event creation and applies only to
+                this specific event.
               </p>
             </div>
           </section>
