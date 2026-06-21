@@ -569,13 +569,13 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden items-center lg:flex">
               <Link
-                href="/how-it-works"
+                href="/#how-it-works"
                 className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
               >
                 How It Works
               </Link>
               <Link
-                href="/pricing"
+                href="/#pricing"
                 className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
               >
                 Pricing
@@ -700,6 +700,246 @@ export default function Home() {
                 LIVE
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="how-it-works"
+        className="border-y border-gold/20 bg-white/45 px-5 py-16 sm:px-8 sm:py-20 lg:px-12"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+              How it works
+            </p>
+            <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
+              A private livestream in four simple steps.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
+              SimchaCam is designed for families: create the event, share one
+              private link, and go live from your phone.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                title: "Create a private event",
+                body: "Set up a livestream page in moments, with an optional password.",
+              },
+              {
+                title: "Share the link",
+                body: "Send the private event link by WhatsApp, email, or message.",
+              },
+              {
+                title: "Go live from your phone",
+                body: "Start the livestream when the celebration begins. No app required.",
+              },
+              {
+                title: "Family watches anywhere",
+                body: "Loved ones can join securely from wherever they are.",
+              },
+            ].map((step, index) => (
+              <article
+                key={step.title}
+                className="rounded-[1.35rem] border border-navy/10 bg-warm-white p-5 shadow-[0_14px_36px_rgba(11,31,58,0.05)]"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pale-gold text-sm font-bold text-[#80652f]">
+                  {index + 1}
+                </div>
+                <h3 className="mt-5 font-display text-2xl font-semibold text-navy">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted-navy">
+                  {step.body}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="pricing"
+        className="bg-warm-white px-5 py-16 sm:px-8 sm:py-20 lg:px-12"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+              Simple pricing
+            </p>
+            <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
+              Start free. Upgrade only if you need more.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
+              Every event starts with a private livestream link. Premium is a
+              one-off upgrade for a specific event.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            <article className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.06)] sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-navy">
+                Free
+              </p>
+              <h3 className="mt-3 font-display text-4xl font-semibold text-navy">
+                Private livestream
+              </h3>
+              <p className="mt-3 text-muted-navy">
+                Perfect for a simple, private family livestream.
+              </p>
+              <div className="mt-6 rounded-2xl bg-navy/[0.03] p-4">
+                <p className="font-semibold text-navy">Included</p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-navy">
+                  <li>45 minute livestream</li>
+                  <li>Up to 30 viewers</li>
+                  <li>Private event link</li>
+                  <li>Password protection</li>
+                  <li>No recording, replay, or download</li>
+                </ul>
+              </div>
+            </article>
+
+            <article className="rounded-[1.5rem] border border-gold/45 bg-pale-gold/70 p-6 shadow-[0_20px_56px_rgba(200,169,107,0.18)] sm:p-8">
+              <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
+                Premium
+              </div>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <h3 className="font-display text-4xl font-semibold text-navy">
+                  £4.99 per event
+                </h3>
+                <p className="text-sm font-semibold text-[#80652f]">
+                  One-off upgrade
+                </p>
+              </div>
+              <p className="mt-3 text-muted-navy">
+                For longer events, more guests, and a family replay.
+              </p>
+              <div className="mt-6 grid gap-2 text-sm font-medium text-navy sm:grid-cols-2">
+                {[
+                  "Event scheduling with date/time",
+                  "Up to 6 hour livestream",
+                  "Up to 500 viewers",
+                  "Automatic recording",
+                  "Replay for 30 days",
+                  "Download recording",
+                ].map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-start gap-2 rounded-xl bg-white/55 px-3 py-2"
+                  >
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-navy px-5 py-16 text-warm-white sm:px-8 sm:py-20 lg:px-12">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+              Why families use it
+            </p>
+            <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] sm:text-5xl">
+              Built for relatives near and far.
+            </h2>
+            <p className="mt-4 leading-7 text-warm-white/72">
+              SimchaCam keeps the setup simple for hosts and the viewing simple
+              for guests. Share a private link, protect it with a password if
+              needed, and let family join without installing an app.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              "Private links",
+              "Password protection",
+              "No app required",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-[1.25rem] border border-white/10 bg-white/7 p-5"
+              >
+                <span className="block h-1.5 w-8 rounded-full bg-gold" />
+                <p className="mt-5 font-semibold">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-warm-white px-5 py-16 sm:px-8 sm:py-20 lg:px-12">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2 lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+              Recording & replay
+            </p>
+            <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
+              Keep the moment available after the livestream.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
+              Premium events are automatically recorded, then made available
+              for replay and download for 30 days.
+            </p>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-gold/35 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.06)] sm:p-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-recording-red">
+              <span className="h-2 w-2 rounded-full bg-recording-red" />
+              Premium recording
+            </div>
+            <h3 className="mt-5 font-display text-3xl font-semibold text-navy">
+              Replay for family, download for keeps.
+            </h3>
+            <p className="mt-3 text-sm leading-6 text-muted-navy">
+              Ideal for relatives in different time zones, family who cannot
+              attend live, or anyone who wants to watch the simcha again.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-gold/20 bg-pale-gold/55 px-5 py-16 text-center sm:px-8 sm:py-20 lg:px-12">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
+            Ready when you are
+          </p>
+          <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
+            Create the event free. Upgrade only if you need Premium.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-navy sm:text-lg">
+            Start with a private link today, then add scheduling, recording,
+            replay and download when the event needs it.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            {isEmailVerified(user) ? (
+              <>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
+                >
+                  Create Your Livestream
+                </button>
+                <Link
+                  href="/my-events"
+                  className="min-h-13 rounded-xl border border-navy/20 bg-white/40 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-white/65"
+                >
+                  My Events
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/auth"
+                className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
+              >
+                Create Your Livestream
+              </Link>
+            )}
           </div>
         </div>
       </section>
