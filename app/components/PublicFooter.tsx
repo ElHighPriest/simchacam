@@ -9,10 +9,10 @@ export default function PublicFooter() {
           aria-label="Footer navigation"
           className="flex flex-wrap items-center gap-x-5 gap-y-2"
         >
-          <Link href="/how-it-works" className="transition hover:text-navy">
+          <Link href="/#how-it-works" className="transition hover:text-navy">
             How It Works
           </Link>
-          <Link href="/pricing" className="transition hover:text-navy">
+          <Link href="/#pricing" className="transition hover:text-navy">
             Pricing
           </Link>
           <Link href="/privacy" className="transition hover:text-navy">

@@ -51,7 +51,7 @@ export default function HowItWorksPage() {
 
           <div className="flex items-center gap-2 sm:gap-5">
             <Link
-              href="/pricing"
+              href="/#pricing"
               className="px-2 py-2 text-sm font-semibold text-navy/70 transition hover:text-navy"
             >
               Pricing
