@@ -19,6 +19,13 @@ type EventRecord = {
     status: "ready" | "processing" | "failed";
     expiresAt: string | null;
     downloadEnabled: boolean;
+    segments?: {
+      id: string | null;
+      segmentIndex: number;
+      readyAt: string | null;
+      durationMs: number | null;
+      sizeBytes: number | null;
+    }[];
   } | null;
 };
 
@@ -67,9 +74,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [streamLoading, setStreamLoading] = useState(false);
-  const [recordingAction, setRecordingAction] = useState<
-    "watch" | "download" | null
-  >(null);
+  const [recordingAction, setRecordingAction] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState("");
   const autoJoinStarted = useRef(false);
 
@@ -200,8 +205,12 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
     }
   }
 
-  async function openRecording(action: "watch" | "download") {
-    setRecordingAction(action);
+  async function openRecording(
+    action: "watch" | "download",
+    segmentId?: string | null
+  ) {
+    const actionKey = segmentId ? `${action}:${segmentId}` : action;
+    setRecordingAction(actionKey);
     setRecordingError("");
 
     try {
@@ -215,6 +224,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
           body: JSON.stringify({
             action,
             password: enteredPassword,
+            segmentId: segmentId || undefined,
           }),
         }
       );
@@ -224,7 +234,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
         throw new Error(data.error);
       }
 
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (error) {
       console.error(error);
       setRecordingError("Could not access recording.");
@@ -265,6 +275,9 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   }
 
   const formattedDate = formatEventDate(event.eventAt);
+  const readyRecordingSegments =
+    event.recording?.status === "ready" ? event.recording.segments ?? [] : [];
+  const hasMultipleRecordingSegments = readyRecordingSegments.length > 1;
 
   if (eventHasPassword && !passwordPassed) {
     return (
@@ -405,29 +418,80 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
                     </p>
                   )}
 
-                  <div className="mt-5 grid gap-3">
-                    <button
-                      onClick={() => openRecording("watch")}
-                      disabled={recordingAction !== null}
-                      className="min-h-13 w-full rounded-xl bg-navy px-6 py-3.5 text-lg font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
-                    >
-                      {recordingAction === "watch"
-                        ? "Opening..."
-                        : "Watch Recording"}
-                    </button>
+                  {hasMultipleRecordingSegments ? (
+                    <div className="mt-5 grid gap-4">
+                      {readyRecordingSegments.map((segment) => {
+                        const watchKey = segment.id
+                          ? `watch:${segment.id}`
+                          : "watch";
+                        const downloadKey = segment.id
+                          ? `download:${segment.id}`
+                          : "download";
 
-                    {event.recording.downloadEnabled && (
+                        return (
+                          <div
+                            key={`${segment.segmentIndex}-${segment.id || "legacy"}`}
+                            className="rounded-2xl border border-gold/25 bg-warm-white/80 p-4 text-left"
+                          >
+                            <p className="text-sm font-semibold text-navy">
+                              Part {segment.segmentIndex}
+                            </p>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                              <button
+                                onClick={() =>
+                                  openRecording("watch", segment.id)
+                                }
+                                disabled={recordingAction !== null}
+                                className="min-h-12 rounded-xl bg-navy px-4 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+                              >
+                                {recordingAction === watchKey
+                                  ? "Opening..."
+                                  : "Watch"}
+                              </button>
+
+                              {event.recording?.downloadEnabled && (
+                                <button
+                                  onClick={() =>
+                                    openRecording("download", segment.id)
+                                  }
+                                  disabled={recordingAction !== null}
+                                  className="min-h-12 rounded-xl border border-gold/50 bg-pale-gold/45 px-4 py-3 font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                                >
+                                  {recordingAction === downloadKey
+                                    ? "Preparing..."
+                                    : "Download"}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="mt-5 grid gap-3">
                       <button
-                        onClick={() => openRecording("download")}
+                        onClick={() => openRecording("watch")}
                         disabled={recordingAction !== null}
-                        className="min-h-13 w-full rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3.5 text-lg font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                        className="min-h-13 w-full rounded-xl bg-navy px-6 py-3.5 text-lg font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
                       >
-                        {recordingAction === "download"
-                          ? "Preparing..."
-                          : "Download Recording"}
+                        {recordingAction === "watch"
+                          ? "Opening..."
+                          : "Watch Recording"}
                       </button>
-                    )}
-                  </div>
+
+                      {event.recording.downloadEnabled && (
+                        <button
+                          onClick={() => openRecording("download")}
+                          disabled={recordingAction !== null}
+                          className="min-h-13 w-full rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3.5 text-lg font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                        >
+                          {recordingAction === "download"
+                            ? "Preparing..."
+                            : "Download Recording"}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   <p className="mt-5 text-xs leading-5 text-muted-navy">
                     Please share this private recording only with invited

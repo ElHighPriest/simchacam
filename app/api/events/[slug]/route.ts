@@ -75,7 +75,7 @@ export async function GET(
     ) {
       const { data, error: recordingError } = await recordingClient
         .from("event_recordings")
-        .select("status, expires_at")
+        .select("status, object_key, expires_at")
         .eq("event_id", event.id)
         .maybeSingle();
 
@@ -92,10 +92,48 @@ export async function GET(
         };
       } else if (data?.status === "ready") {
         if (data.expires_at && new Date(data.expires_at) > new Date()) {
+          const { data: segments, error: segmentsError } =
+            await recordingClient
+              .from("event_recording_segments")
+              .select("id, segment_index, ready_at, duration_ms, size_bytes")
+              .eq("event_id", event.id)
+              .eq("status", "ready")
+              .not("object_key", "is", null)
+              .order("segment_index", { ascending: true });
+
+          if (segmentsError) {
+            console.error(
+              "Could not load viewer recording segments",
+              segmentsError
+            );
+          }
+
+          const readySegments =
+            segments && segments.length > 0
+              ? segments.map((segment) => ({
+                  id: segment.id,
+                  segmentIndex: segment.segment_index,
+                  readyAt: segment.ready_at,
+                  durationMs: segment.duration_ms,
+                  sizeBytes: segment.size_bytes,
+                }))
+              : data.object_key
+                ? [
+                    {
+                      id: null,
+                      segmentIndex: 1,
+                      readyAt: null,
+                      durationMs: null,
+                      sizeBytes: null,
+                    },
+                  ]
+                : [];
+
           recording = {
             status: data.status,
             expiresAt: data.expires_at,
             downloadEnabled: entitlement.download_enabled,
+            segments: readySegments,
           };
         }
       }

@@ -20,10 +20,18 @@ export async function POST(
   }
 
   const { slug } = await params;
-  const { action, password } = await request.json();
+  const { action, password, segmentId } = (await request.json()) as {
+    action?: unknown;
+    password?: unknown;
+    segmentId?: unknown;
+  };
 
   if (action !== "watch" && action !== "download") {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  }
+
+  if (segmentId !== undefined && typeof segmentId !== "string") {
+    return NextResponse.json({ error: "Invalid recording segment" }, { status: 400 });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -44,7 +52,7 @@ export async function POST(
 
   if (
     event.password &&
-    !(await verifyPassword(password || "", event.password))
+    !(await verifyPassword(typeof password === "string" ? password : "", event.password))
   ) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
@@ -100,7 +108,6 @@ export async function POST(
   if (
     !recording ||
     recording.status !== "ready" ||
-    !recording.object_key ||
     !recording.expires_at ||
     new Date(recording.expires_at) <= new Date()
   ) {
@@ -115,9 +122,75 @@ export async function POST(
       .replace(/[^a-z0-9 _-]/gi, "")
       .trim() || "SimchaCam recording"}.mp4`;
 
+  let objectKey = recording.object_key;
+  let downloadFilename = filename;
+
+  if (segmentId) {
+    const { data: segment, error: segmentError } = await supabase
+      .from("event_recording_segments")
+      .select("object_key, segment_index")
+      .eq("id", segmentId)
+      .eq("event_id", event.id)
+      .eq("status", "ready")
+      .maybeSingle();
+
+    if (segmentError) {
+      console.error("Could not load recording segment", segmentError);
+      return NextResponse.json(
+        { error: "Could not load recording segment" },
+        { status: 500 }
+      );
+    }
+
+    if (!segment?.object_key) {
+      return NextResponse.json(
+        { error: "Recording segment is not available" },
+        { status: 404 }
+      );
+    }
+
+    objectKey = segment.object_key;
+    downloadFilename = filename.replace(
+      /\.mp4$/i,
+      ` - Part ${segment.segment_index}.mp4`
+    );
+  } else if (!objectKey) {
+    const { data: segments, error: segmentsError } = await supabase
+      .from("event_recording_segments")
+      .select("object_key, segment_index")
+      .eq("event_id", event.id)
+      .eq("status", "ready")
+      .not("object_key", "is", null)
+      .order("segment_index", { ascending: true });
+
+    if (segmentsError) {
+      console.error("Could not load recording segments", segmentsError);
+      return NextResponse.json(
+        { error: "Could not load recording segments" },
+        { status: 500 }
+      );
+    }
+
+    if (segments.length !== 1 || !segments[0].object_key) {
+      return NextResponse.json(
+        { error: "Recording segment must be selected" },
+        { status: 400 }
+      );
+    }
+
+    objectKey = segments[0].object_key;
+  }
+
+  if (!objectKey) {
+    return NextResponse.json(
+      { error: "Recording is not available" },
+      { status: 404 }
+    );
+  }
+
   try {
-    const url = createSignedR2Url(recording.object_key, {
-      downloadFilename: action === "download" ? filename : undefined,
+    const url = createSignedR2Url(objectKey, {
+      downloadFilename: action === "download" ? downloadFilename : undefined,
       expiresInSeconds: 300,
     });
 
