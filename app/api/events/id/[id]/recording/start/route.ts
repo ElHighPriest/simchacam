@@ -75,6 +75,10 @@ export async function POST(
       {
         event_id: id,
         status: "pending",
+        livekit_egress_id: null,
+        object_key: null,
+        started_at: null,
+        ended_at: null,
         error_message: null,
         updated_at: now,
       },
@@ -89,11 +93,12 @@ export async function POST(
     );
   }
 
+  const startingAt = new Date().toISOString();
   const { error: startingError } = await ownedEvent.serviceSupabase
     .from("event_recordings")
     .update({
       status: "starting",
-      updated_at: new Date().toISOString(),
+      updated_at: startingAt,
     })
     .eq("event_id", id);
 
@@ -105,15 +110,55 @@ export async function POST(
     );
   }
 
+  const { error: segmentStartingError } = await ownedEvent.serviceSupabase
+    .from("event_recording_segments")
+    .upsert(
+      {
+        event_recording_id: id,
+        event_id: id,
+        segment_index: 1,
+        status: "starting",
+        livekit_egress_id: null,
+        object_key: null,
+        started_at: null,
+        ended_at: null,
+        ready_at: null,
+        duration_ms: null,
+        size_bytes: null,
+        error_message: null,
+        updated_at: startingAt,
+      },
+      { onConflict: "event_recording_id,segment_index" }
+    );
+
+  if (segmentStartingError) {
+    console.error(segmentStartingError);
+    return NextResponse.json(
+      { error: "Could not initialize recording segment" },
+      { status: 500 }
+    );
+  }
+
   if (!isEgressConfigured()) {
+    const failedAt = new Date().toISOString();
     await ownedEvent.serviceSupabase
       .from("event_recordings")
       .update({
         status: "failed",
         error_message: "LiveKit Egress or R2 is not configured",
-        updated_at: new Date().toISOString(),
+        updated_at: failedAt,
       })
       .eq("event_id", id);
+
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .update({
+        status: "failed",
+        error_message: "LiveKit Egress or R2 is not configured",
+        updated_at: failedAt,
+      })
+      .eq("event_recording_id", id)
+      .eq("segment_index", 1);
 
     return NextResponse.json(
       {
@@ -132,6 +177,31 @@ export async function POST(
       orientation
     );
     const startedAt = new Date().toISOString();
+    const { error: segmentRecordingError } = await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .update({
+        status: "recording",
+        livekit_egress_id: egressId,
+        object_key: objectKey,
+        started_at: startedAt,
+        ended_at: null,
+        ready_at: null,
+        duration_ms: null,
+        size_bytes: null,
+        error_message: null,
+        updated_at: startedAt,
+      })
+      .eq("event_recording_id", id)
+      .eq("segment_index", 1);
+
+    if (segmentRecordingError) {
+      console.error(segmentRecordingError);
+      return NextResponse.json(
+        { error: "Egress started but recording segment could not be saved" },
+        { status: 500 }
+      );
+    }
+
     const { error: recordingError } = await ownedEvent.serviceSupabase
       .from("event_recordings")
       .update({
@@ -160,15 +230,28 @@ export async function POST(
   } catch (error) {
     console.error(error);
 
+    const failedAt = new Date().toISOString();
+    const errorMessage =
+      error instanceof Error ? error.message : "Could not start Egress";
+
     await ownedEvent.serviceSupabase
       .from("event_recordings")
       .update({
         status: "failed",
-        error_message:
-          error instanceof Error ? error.message : "Could not start Egress",
-        updated_at: new Date().toISOString(),
+        error_message: errorMessage,
+        updated_at: failedAt,
       })
       .eq("event_id", id);
+
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .update({
+        status: "failed",
+        error_message: errorMessage,
+        updated_at: failedAt,
+      })
+      .eq("event_recording_id", id)
+      .eq("segment_index", 1);
 
     return NextResponse.json(
       { error: "Could not start recording Egress" },
