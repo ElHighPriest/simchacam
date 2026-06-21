@@ -50,7 +50,7 @@ function ViewerHeader() {
       <div className="mx-auto flex h-20 max-w-5xl items-center justify-center px-5">
         <div className="relative h-10 w-36 overflow-hidden sm:h-12 sm:w-44">
           <Image
-            src="/simchacam-logo.png"
+            src="/simchacam-logo.svg"
             alt="SimchaCam"
             fill
             sizes="(max-width: 640px) 144px, 176px"

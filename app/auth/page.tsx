@@ -90,7 +90,7 @@ export default function AuthPage() {
           className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
         >
           <Image
-            src="/simchacam-logo.png"
+            src="/simchacam-logo.svg"
             alt="SimchaCam"
             fill
             sizes="(max-width: 640px) 144px, 176px"

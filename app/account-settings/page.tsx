@@ -88,7 +88,7 @@ export default function AccountSettingsPage() {
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
             <Image
-              src="/simchacam-logo.png"
+              src="/simchacam-logo.svg"
               alt="SimchaCam"
               fill
               sizes="(max-width: 640px) 144px, 176px"
