@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { EgressStatus } from "livekit-server-sdk";
 import {
+  getCompletedEgressSegmentUpdates,
+  getEgressInfo,
   getOwnedRecordingEvent,
+  getSafeEgressFailureMessage,
   isEgressConfigured,
+  isLiveKitEgressActive,
+  recomputeParentRecordingSummary,
   startParticipantRecording,
 } from "@/lib/recordings";
 
@@ -44,12 +50,11 @@ export async function POST(
     );
   }
 
-  const { data: existingRecording, error: existingRecordingError } =
-    await ownedEvent.serviceSupabase
-      .from("event_recordings")
-      .select("status")
-      .eq("event_id", id)
-      .maybeSingle();
+  const { error: existingRecordingError } = await ownedEvent.serviceSupabase
+    .from("event_recordings")
+    .select("status")
+    .eq("event_id", id)
+    .maybeSingle();
 
   if (existingRecordingError) {
     console.error(existingRecordingError);
@@ -59,13 +64,96 @@ export async function POST(
     );
   }
 
-  if (
-    existingRecording &&
-    ["starting", "recording", "processing", "ready"].includes(
-      existingRecording.status
-    )
-  ) {
-    return NextResponse.json({ status: existingRecording.status });
+  const { data: activeSegment, error: activeSegmentError } =
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .select("id, segment_index, status, livekit_egress_id")
+      .eq("event_id", id)
+      .in("status", ["pending", "starting", "recording"])
+      .order("segment_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  if (activeSegmentError) {
+    console.error(activeSegmentError);
+    return NextResponse.json(
+      { error: "Could not load recording segment" },
+      { status: 500 }
+    );
+  }
+
+  let recovered = false;
+
+  if (activeSegment) {
+    if (!activeSegment.livekit_egress_id) {
+      recovered = true;
+      await ownedEvent.serviceSupabase
+        .from("event_recording_segments")
+        .update({
+          status: "failed",
+          error_message: "LiveKit Egress ID is missing",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", activeSegment.id);
+      await recomputeParentRecordingSummary(ownedEvent.serviceSupabase, id);
+    } else {
+      const egress = await getEgressInfo(activeSegment.livekit_egress_id);
+
+      if (egress && isLiveKitEgressActive(egress.status)) {
+        return NextResponse.json({
+          status: "recording",
+          egressStarted: true,
+          reused: true,
+          recovered: false,
+        });
+      }
+
+      recovered = true;
+      const now = new Date().toISOString();
+      let segmentUpdates: Record<string, string | number | null>;
+
+      if (!egress) {
+        segmentUpdates = {
+          status: "failed",
+          error_message: "LiveKit Egress is no longer available",
+          ended_at: now,
+          updated_at: now,
+        };
+      } else if (egress.status === EgressStatus.EGRESS_COMPLETE) {
+        segmentUpdates = {
+          ...getCompletedEgressSegmentUpdates(egress),
+          ended_at: now,
+        };
+      } else if (egress.status === EgressStatus.EGRESS_ENDING) {
+        segmentUpdates = {
+          status: "processing",
+          ended_at: now,
+          updated_at: now,
+        };
+      } else {
+        segmentUpdates = {
+          status: "failed",
+          error_message: getSafeEgressFailureMessage(egress.status),
+          ended_at: now,
+          updated_at: now,
+        };
+      }
+
+      const { error: staleSegmentError } = await ownedEvent.serviceSupabase
+        .from("event_recording_segments")
+        .update(segmentUpdates)
+        .eq("id", activeSegment.id);
+
+      if (staleSegmentError) {
+        console.error(staleSegmentError);
+        return NextResponse.json(
+          { error: "Could not update stale recording segment" },
+          { status: 500 }
+        );
+      }
+
+      await recomputeParentRecordingSummary(ownedEvent.serviceSupabase, id);
+    }
   }
 
   const now = new Date().toISOString();
@@ -110,31 +198,48 @@ export async function POST(
     );
   }
 
-  const { error: segmentStartingError } = await ownedEvent.serviceSupabase
-    .from("event_recording_segments")
-    .upsert(
-      {
+  const { data: latestSegment, error: latestSegmentError } =
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .select("segment_index")
+      .eq("event_id", id)
+      .order("segment_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  if (latestSegmentError) {
+    console.error(latestSegmentError);
+    return NextResponse.json(
+      { error: "Could not load recording segments" },
+      { status: 500 }
+    );
+  }
+
+  const segmentIndex = (latestSegment?.segment_index ?? 0) + 1;
+  const { data: newSegment, error: segmentStartingError } =
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .insert({
         event_recording_id: id,
         event_id: id,
-        segment_index: 1,
+        segment_index: segmentIndex,
         status: "starting",
-        livekit_egress_id: null,
-        object_key: null,
-        started_at: null,
-        ended_at: null,
-        ready_at: null,
-        duration_ms: null,
-        size_bytes: null,
-        error_message: null,
         updated_at: startingAt,
-      },
-      { onConflict: "event_recording_id,segment_index" }
-    );
+      })
+      .select("id")
+      .single();
 
   if (segmentStartingError) {
     console.error(segmentStartingError);
     return NextResponse.json(
       { error: "Could not initialize recording segment" },
+      { status: 500 }
+    );
+  }
+
+  if (!newSegment) {
+    return NextResponse.json(
+      { error: "Could not create recording segment" },
       { status: 500 }
     );
   }
@@ -157,8 +262,7 @@ export async function POST(
         error_message: "LiveKit Egress or R2 is not configured",
         updated_at: failedAt,
       })
-      .eq("event_recording_id", id)
-      .eq("segment_index", 1);
+      .eq("id", newSegment.id);
 
     return NextResponse.json(
       {
@@ -191,8 +295,7 @@ export async function POST(
         error_message: null,
         updated_at: startedAt,
       })
-      .eq("event_recording_id", id)
-      .eq("segment_index", 1);
+      .eq("id", newSegment.id);
 
     if (segmentRecordingError) {
       console.error(segmentRecordingError);
@@ -226,6 +329,7 @@ export async function POST(
     return NextResponse.json({
       status: "recording",
       egressStarted: true,
+      recovered,
     });
   } catch (error) {
     console.error(error);
@@ -250,8 +354,7 @@ export async function POST(
         error_message: errorMessage,
         updated_at: failedAt,
       })
-      .eq("event_recording_id", id)
-      .eq("segment_index", 1);
+      .eq("id", newSegment.id);
 
     return NextResponse.json(
       { error: "Could not start recording Egress" },

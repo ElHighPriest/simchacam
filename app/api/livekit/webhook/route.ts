@@ -1,10 +1,11 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import {
-  EgressStatus,
-  type EgressInfo,
-  WebhookReceiver,
-} from "livekit-server-sdk";
+import { createClient } from "@supabase/supabase-js";
+import { EgressStatus, WebhookReceiver } from "livekit-server-sdk";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getCompletedEgressSegmentUpdates,
+  getSafeEgressFailureMessage,
+  recomputeParentRecordingSummary,
+} from "@/lib/recordings";
 
 export const runtime = "nodejs";
 
@@ -24,137 +25,6 @@ function getServerConfig() {
     supabaseUrl,
     supabaseServiceRoleKey,
   };
-}
-
-function getFileResult(egress: EgressInfo) {
-  if (egress.fileResults.length > 0) {
-    return egress.fileResults[0];
-  }
-
-  return egress.result.case === "file" ? egress.result.value : undefined;
-}
-
-function getSafeFailureMessage(status: EgressStatus) {
-  if (status === EgressStatus.EGRESS_ABORTED) {
-    return "LiveKit Egress was aborted";
-  }
-
-  if (status === EgressStatus.EGRESS_LIMIT_REACHED) {
-    return "LiveKit Egress limit was reached";
-  }
-
-  return "LiveKit Egress failed";
-}
-
-type RecordingSegment = {
-  status: string;
-  livekit_egress_id: string | null;
-  object_key: string | null;
-  started_at: string | null;
-  ended_at: string | null;
-  ready_at: string | null;
-  duration_ms: number | null;
-  size_bytes: number | null;
-  error_message: string | null;
-  segment_index: number;
-};
-
-async function recomputeParentRecordingSummary(
-  supabase: SupabaseClient,
-  eventId: string
-) {
-  const { data: segments, error: segmentsError } = await supabase
-    .from("event_recording_segments")
-    .select(
-      "status, livekit_egress_id, object_key, started_at, ended_at, ready_at, duration_ms, size_bytes, error_message, segment_index"
-    )
-    .eq("event_id", eventId)
-    .order("segment_index", { ascending: true });
-
-  if (segmentsError) {
-    throw segmentsError;
-  }
-
-  if (!segments || segments.length === 0) {
-    return;
-  }
-
-  const recordingSegments = segments as RecordingSegment[];
-  const activeSegment = recordingSegments.find((segment) =>
-    ["pending", "starting", "recording"].includes(segment.status)
-  );
-  const processingSegment = recordingSegments.find(
-    (segment) => segment.status === "processing"
-  );
-  const readySegments = recordingSegments.filter(
-    (segment) => segment.status === "ready"
-  );
-  const failedSegments = recordingSegments.filter(
-    (segment) => segment.status === "failed"
-  );
-  const representativeSegment =
-    activeSegment ?? processingSegment ?? readySegments[0] ?? failedSegments[0];
-  const now = new Date().toISOString();
-
-  const updates: Record<string, string | number | null> = {
-    updated_at: now,
-    livekit_egress_id: representativeSegment?.livekit_egress_id ?? null,
-    object_key: representativeSegment?.object_key ?? null,
-    started_at:
-      recordingSegments.find((segment) => segment.started_at)?.started_at ??
-      null,
-    ended_at:
-      activeSegment || processingSegment
-        ? representativeSegment?.ended_at ?? null
-        : [...recordingSegments]
-            .reverse()
-            .find((segment) => segment.ended_at)?.ended_at ?? null,
-    error_message:
-      failedSegments.length > 0 && readySegments.length === 0
-        ? failedSegments[0].error_message
-        : null,
-  };
-
-  if (activeSegment) {
-    updates.status = "recording";
-  } else if (processingSegment) {
-    updates.status = "processing";
-  } else if (readySegments.length > 0) {
-    const readyAt =
-      [...readySegments].reverse().find((segment) => segment.ready_at)
-        ?.ready_at ?? now;
-    const expiresAt = new Date(readyAt);
-    expiresAt.setUTCDate(expiresAt.getUTCDate() + 30);
-
-    updates.status = "ready";
-    updates.ready_at = readyAt;
-    updates.expires_at = expiresAt.toISOString();
-    updates.duration_ms = readySegments.reduce(
-      (total, segment) => total + (segment.duration_ms ?? 0),
-      0
-    );
-    updates.size_bytes = readySegments.reduce(
-      (total, segment) => total + (segment.size_bytes ?? 0),
-      0
-    );
-  } else if (failedSegments.length === recordingSegments.length) {
-    updates.status = "failed";
-    updates.ready_at = null;
-    updates.expires_at = null;
-    updates.duration_ms = null;
-    updates.size_bytes = null;
-  } else {
-    updates.status = "pending";
-  }
-
-  const { error } = await supabase
-    .from("event_recordings")
-    .update(updates)
-    .eq("event_id", eventId);
-
-  if (error) {
-    throw error;
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -263,24 +133,7 @@ export async function POST(request: NextRequest) {
 
   if (egress.status === EgressStatus.EGRESS_COMPLETE) {
     const readyAt = new Date();
-    const fileResult = getFileResult(egress);
-    const updates: Record<string, string | number | null> = {
-      status: "ready",
-      ready_at: readyAt.toISOString(),
-      error_message: null,
-      updated_at: readyAt.toISOString(),
-    };
-
-    const durationNanoseconds = Number(fileResult?.duration ?? 0);
-    const sizeBytes = Number(fileResult?.size ?? 0);
-
-    if (durationNanoseconds > 0) {
-      updates.duration_ms = Math.floor(durationNanoseconds / 1_000_000);
-    }
-
-    if (sizeBytes > 0) {
-      updates.size_bytes = sizeBytes;
-    }
+    const updates = getCompletedEgressSegmentUpdates(egress);
 
     if (segment) {
       const { error } = await supabase
@@ -335,7 +188,7 @@ export async function POST(request: NextRequest) {
   ) {
     const failedUpdates = {
       status: "failed",
-      error_message: getSafeFailureMessage(egress.status),
+      error_message: getSafeEgressFailureMessage(egress.status),
       updated_at: new Date().toISOString(),
     };
 

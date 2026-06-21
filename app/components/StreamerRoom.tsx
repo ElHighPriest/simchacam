@@ -47,6 +47,8 @@ function StreamerContent({
   const room = useRoomContext();
   const recordingStartRequested = useRef(false);
   const [isEndingStream, setIsEndingStream] = useState(false);
+  const [recordingNotice, setRecordingNotice] = useState("");
+  const [recordingWarning, setRecordingWarning] = useState("");
   const participants = useParticipants();
   const viewerCount = participants.filter(
     (participant) => participant.identity !== localParticipant.identity
@@ -85,33 +87,66 @@ function StreamerContent({
         : "landscape";
 
     async function startRecording() {
+      setRecordingNotice("");
+      setRecordingWarning("");
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
+        setRecordingWarning("Recording could not start because you are not signed in.");
         return;
       }
 
-      const response = await fetch(
-        `/api/events/id/${encodeURIComponent(eventId!)}/recording/start`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ orientation }),
-        }
-      );
+      try {
+        const response = await fetch(
+          `/api/events/id/${encodeURIComponent(eventId!)}/recording/start`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ orientation }),
+          }
+        );
+        const data = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        console.error("Could not initialize recording");
+        if (!response.ok) {
+          console.error("Could not initialize recording", data);
+          setRecordingWarning("Recording could not resume. Please end and restart if this continues.");
+          return;
+        }
+
+        if (data?.recovered) {
+          setRecordingNotice("Recording resumed after reconnect.");
+        }
+      } catch (error) {
+        console.error("Could not initialize recording", error);
+        setRecordingWarning("Recording could not resume. Please check your connection.");
       }
     }
 
     startRecording();
   }, [eventId, localCameraTrack, localParticipant, recordingEnabled]);
+
+  useEffect(() => {
+    if (!recordingEnabled || isEndingStream) {
+      return;
+    }
+
+    function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue =
+        "Your Premium livestream is still active. Leaving may interrupt recording.";
+    }
+
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+
+    return () => {
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
+    };
+  }, [isEndingStream, recordingEnabled]);
 
   async function endStream() {
     if (isEndingStream) {
@@ -196,6 +231,18 @@ function StreamerContent({
             {recordingEnabled && (
               <div className="inline-flex rounded-full bg-recording-red/20 px-3 py-1.5 text-xs font-semibold text-[#ff7774]">
                 Recording enabled
+              </div>
+            )}
+
+            {recordingNotice && (
+              <div className="inline-flex rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-200">
+                {recordingNotice}
+              </div>
+            )}
+
+            {recordingWarning && (
+              <div className="inline-flex rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-200">
+                {recordingWarning}
               </div>
             )}
           </div>
@@ -334,6 +381,16 @@ function StreamerContent({
           {recordingEnabled && (
             <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774]">
               Recording enabled
+            </p>
+          )}
+          {recordingNotice && (
+            <p className="max-w-52 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
+              {recordingNotice}
+            </p>
+          )}
+          {recordingWarning && (
+            <p className="max-w-52 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
+              {recordingWarning}
             </p>
           )}
         </div>
