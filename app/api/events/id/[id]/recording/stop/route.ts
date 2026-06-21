@@ -43,22 +43,45 @@ export async function POST(
     );
   }
 
+  const { data: activeSegment, error: activeSegmentError } =
+    await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .select("id, status, livekit_egress_id")
+      .eq("event_id", id)
+      .in("status", ["starting", "recording"])
+      .order("segment_index", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+  if (activeSegmentError) {
+    console.error(activeSegmentError);
+    return NextResponse.json(
+      { error: "Could not load recording segment" },
+      { status: 500 }
+    );
+  }
+
   if (!recording) {
     return NextResponse.json({ error: "Recording not found" }, { status: 404 });
   }
 
-  if (recording.status === "processing" || recording.status === "ready") {
+  if (
+    !activeSegment &&
+    (recording.status === "processing" || recording.status === "ready")
+  ) {
     return NextResponse.json({ status: recording.status });
   }
 
-  if (recording.status !== "recording") {
+  if (!activeSegment && recording.status !== "recording") {
     return NextResponse.json(
       { error: "Recording is not active", status: recording.status },
       { status: 409 }
     );
   }
 
-  if (!recording.livekit_egress_id) {
+  const egressId = activeSegment?.livekit_egress_id ?? recording.livekit_egress_id;
+
+  if (!egressId) {
     return NextResponse.json(
       { error: "Recording Egress ID is missing" },
       { status: 500 }
@@ -66,7 +89,7 @@ export async function POST(
   }
 
   try {
-    await stopParticipantRecording(recording.livekit_egress_id);
+    await stopParticipantRecording(egressId);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -75,12 +98,33 @@ export async function POST(
     );
   }
 
+  const endedAt = new Date().toISOString();
+
+  if (activeSegment) {
+    const { error: segmentProcessingError } = await ownedEvent.serviceSupabase
+      .from("event_recording_segments")
+      .update({
+        status: "processing",
+        ended_at: endedAt,
+        updated_at: endedAt,
+      })
+      .eq("id", activeSegment.id);
+
+    if (segmentProcessingError) {
+      console.error(segmentProcessingError);
+      return NextResponse.json(
+        { error: "Could not stop recording segment" },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error: processingError } = await ownedEvent.serviceSupabase
     .from("event_recordings")
     .update({
       status: "processing",
-      ended_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      ended_at: endedAt,
+      updated_at: endedAt,
     })
     .eq("event_id", id);
 
