@@ -48,7 +48,7 @@ export async function GET(
   const { id } = await params;
   const { data: event, error } = await authenticated.supabase
     .from("events")
-    .select("id, name, user_id")
+    .select("id, name, user_id, event_at")
     .eq("id", id)
     .single();
 
@@ -82,10 +82,23 @@ export async function GET(
 
   const hasRecording = recordingError ? false : Boolean(recording);
 
+  const { data: entitlement, error: entitlementError } =
+    await authenticated.supabase
+      .from("event_entitlements")
+      .select("plan")
+      .eq("event_id", id)
+      .maybeSingle();
+
+  if (entitlementError) {
+    console.error("Could not load event entitlement:", entitlementError);
+  }
+
   return NextResponse.json({
     id: event.id,
     name: event.name,
+    eventAt: event.event_at,
     hasRecording,
+    plan: entitlement?.plan === "premium" ? "premium" : "free",
   });
 }
 
@@ -107,10 +120,53 @@ export async function PATCH(
     return NextResponse.json({ error: "Missing event name" }, { status: 400 });
   }
 
-  const updates: { name: string; password?: string | null } = { name };
+  const updates: {
+    event_at?: string | null;
+    name: string;
+    password?: string | null;
+  } = { name };
 
   if (Object.hasOwn(body, "password")) {
     updates.password = body.password ? await hashPassword(body.password) : null;
+  }
+
+  if (Object.hasOwn(body, "eventAt")) {
+    const { data: entitlement, error: entitlementError } =
+      await authenticated.supabase
+        .from("event_entitlements")
+        .select("plan")
+        .eq("event_id", id)
+        .maybeSingle();
+
+    if (entitlementError) {
+      console.error("Could not load event entitlement:", entitlementError);
+      return NextResponse.json(
+        { error: "Could not verify Premium access" },
+        { status: 500 }
+      );
+    }
+
+    if (entitlement?.plan !== "premium") {
+      return NextResponse.json(
+        { error: "Event scheduling requires Premium" },
+        { status: 403 }
+      );
+    }
+
+    if (body.eventAt) {
+      const eventDate = new Date(body.eventAt);
+
+      if (Number.isNaN(eventDate.getTime())) {
+        return NextResponse.json(
+          { error: "Invalid event date" },
+          { status: 400 }
+        );
+      }
+
+      updates.event_at = eventDate.toISOString();
+    } else {
+      updates.event_at = null;
+    }
   }
 
   const { data, error } = await authenticated.supabase
