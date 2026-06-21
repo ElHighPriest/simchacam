@@ -21,6 +21,9 @@ export default function PublicFooter() {
           <Link href="/terms" className="transition hover:text-navy">
             Terms
           </Link>
+          <Link href="/support" className="transition hover:text-navy">
+            Support
+          </Link>
         </nav>
       </div>
     </footer>
