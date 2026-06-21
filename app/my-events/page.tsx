@@ -359,7 +359,7 @@ export default function MyEventsPage() {
 
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
-              href="/"
+              href="/#create-event"
               className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
             >
               Create Event
@@ -389,7 +389,7 @@ export default function MyEventsPage() {
             return to past recordings.
           </p>
           <Link
-            href="/"
+            href="/#create-event"
             className="mt-7 inline-flex min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
           >
             Create Your Livestream
@@ -415,7 +415,7 @@ export default function MyEventsPage() {
               celebration begins.
             </p>
             <Link
-              href="/"
+              href="/#create-event"
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white"
             >
               Create Event

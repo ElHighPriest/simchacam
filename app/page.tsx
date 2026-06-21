@@ -54,6 +54,25 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authLoading || !isEmailVerified(user)) {
+      return;
+    }
+
+    function openCreateEventFromHash() {
+      if (window.location.hash === "#create-event") {
+        setShowForm(true);
+      }
+    }
+
+    openCreateEventFromHash();
+    window.addEventListener("hashchange", openCreateEventFromHash);
+
+    return () => {
+      window.removeEventListener("hashchange", openCreateEventFromHash);
+    };
+  }, [authLoading, user]);
+
   const eventLink = eventSlug ? `https://simcha.cam/e/${eventSlug}` : "";
 
   const whatsAppMessage = encodeURIComponent(

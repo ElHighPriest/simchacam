@@ -23,7 +23,7 @@ export default function CreateEventForm({
   password,
 }: CreateEventFormProps) {
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main id="create-event" className="min-h-screen bg-warm-white text-navy">
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-4xl items-center justify-between px-5 sm:px-8">
           <Link
