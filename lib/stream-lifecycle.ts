@@ -15,6 +15,10 @@ type ActiveStreamSession = {
   hard_ends_at: string;
 };
 
+export type ActiveStreamSessionForRoom = ActiveStreamSession & {
+  viewer_limit: number;
+};
+
 type ActiveRecordingSegment = {
   id: string;
   livekit_egress_id: string | null;
@@ -310,4 +314,20 @@ export async function cleanupExpiredStreamSessionForRoom(roomName: string) {
     cleaned: result.status !== "skipped",
     result,
   };
+}
+
+export async function loadActiveStreamSessionForRoom(roomName: string) {
+  const supabase = getServiceSupabase();
+  const { data: session, error } = await supabase
+    .from("event_stream_sessions")
+    .select("id, event_id, room_name, status, hard_ends_at, viewer_limit")
+    .eq("room_name", roomName)
+    .in("status", ["starting", "live"])
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return session as ActiveStreamSessionForRoom | null;
 }

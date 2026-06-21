@@ -42,6 +42,18 @@ export async function createStreamRoom(roomName: string) {
   });
 }
 
+export async function createLimitedStreamRoom(
+  roomName: string,
+  viewerLimit: number
+) {
+  return getRoomServiceClient().createRoom({
+    name: roomName,
+    emptyTimeout: 300,
+    departureTimeout: 120,
+    maxParticipants: viewerLimit + 1,
+  });
+}
+
 export async function deleteStreamRoom(roomName: string) {
   try {
     await getRoomServiceClient().deleteRoom(roomName);
@@ -51,6 +63,25 @@ export async function deleteStreamRoom(roomName: string) {
       (error.status === 404 || error.code === "not_found")
     ) {
       return;
+    }
+
+    throw error;
+  }
+}
+
+export async function getActiveViewerCount(roomName: string) {
+  try {
+    const participants = await getRoomServiceClient().listParticipants(roomName);
+
+    return participants.filter(
+      (participant) => participant.identity !== "streamer"
+    ).length;
+  } catch (error) {
+    if (
+      error instanceof TwirpError &&
+      (error.status === 404 || error.code === "not_found")
+    ) {
+      return 0;
     }
 
     throw error;

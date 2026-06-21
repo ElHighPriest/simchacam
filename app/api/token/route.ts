@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
 import { isEmailVerified } from "@/lib/auth";
-import { cleanupExpiredStreamSessionForRoom } from "@/lib/stream-lifecycle";
+import { getActiveViewerCount } from "@/lib/livekit-rooms";
+import {
+  cleanupExpiredStreamSessionForRoom,
+  loadActiveStreamSessionForRoom,
+} from "@/lib/stream-lifecycle";
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,6 +98,24 @@ export async function POST(request: NextRequest) {
         !(await verifyPassword(password || "", event.password))
       ) {
         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
+      }
+
+      const activeSession = await loadActiveStreamSessionForRoom(roomName);
+
+      if (activeSession) {
+        const viewerCount = await getActiveViewerCount(roomName);
+
+        // The LiveKit room max participant count is the hard guard against
+        // simultaneous joins. This pre-check gives viewers a friendlier error.
+        if (viewerCount >= activeSession.viewer_limit) {
+          return NextResponse.json(
+            {
+              error: "This livestream is full",
+              code: "EVENT_FULL",
+            },
+            { status: 403 }
+          );
+        }
       }
     }
 

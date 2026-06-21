@@ -74,6 +74,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
   const [token, setToken] = useState("");
   const [serverUrl, setServerUrl] = useState("");
   const [streamLoading, setStreamLoading] = useState(false);
+  const [streamError, setStreamError] = useState("");
   const [recordingAction, setRecordingAction] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState("");
   const autoJoinStarted = useRef(false);
@@ -137,6 +138,15 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
         const data = await response.json();
 
         if (!response.ok) {
+          if (response.status === 403 && data.code === "EVENT_FULL") {
+            setToken("");
+            setServerUrl("");
+            setStreamError(
+              "This livestream is currently full. Please try again shortly."
+            );
+            return;
+          }
+
           if (response.status === 410 || data.code === "STREAM_ENDED") {
             autoJoinStarted.current = false;
             setToken("");
@@ -151,6 +161,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
           throw new Error(data.error);
         }
 
+        setStreamError("");
         setToken(data.token);
         setServerUrl(data.url);
       } catch (error) {
@@ -184,6 +195,7 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
 
   async function joinLivestream() {
     setStreamLoading(true);
+    setStreamError("");
 
     try {
       const response = await fetch("/api/token", {
@@ -203,9 +215,30 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 403 && data.code === "EVENT_FULL") {
+          setToken("");
+          setServerUrl("");
+          setStreamError(
+            "This livestream is currently full. Please try again shortly."
+          );
+          return;
+        }
+
+        if (response.status === 410 || data.code === "STREAM_ENDED") {
+          autoJoinStarted.current = false;
+          setToken("");
+          setServerUrl("");
+          setEventError("");
+          setEvent((currentEvent) =>
+            currentEvent ? { ...currentEvent, status: "ended" } : currentEvent
+          );
+          return;
+        }
+
         throw new Error(data.error);
       }
 
+      setStreamError("");
       setToken(data.token);
       setServerUrl(data.url);
     } catch (error) {
@@ -585,6 +618,12 @@ export default function ViewerPageClient({ slug }: ViewerPageClientProps) {
         <p className="mt-5 text-muted-navy">
           The livestream is ready to watch.
         </p>
+
+        {streamError && (
+          <p className="mt-5 rounded-xl border border-gold/30 bg-white/75 px-4 py-3 text-sm font-semibold text-navy shadow-[0_12px_28px_rgba(11,31,58,0.08)]">
+            {streamError}
+          </p>
+        )}
 
         <button
           onClick={joinLivestream}

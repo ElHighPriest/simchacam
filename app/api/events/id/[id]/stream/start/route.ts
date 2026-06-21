@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createPublisherToken,
-  createStreamRoom,
+  createLimitedStreamRoom,
   deleteStreamRoom,
 } from "@/lib/livekit-rooms";
 import {
@@ -40,7 +40,10 @@ export async function POST(
     }
 
     createdSession = await createOrReuseStreamSession(context);
-    await createStreamRoom(createdSession.session.room_name);
+    await createLimitedStreamRoom(
+      createdSession.session.room_name,
+      createdSession.session.viewer_limit
+    );
     const publisher = await createPublisherToken(
       createdSession.session.room_name
     );
