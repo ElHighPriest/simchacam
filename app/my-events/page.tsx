@@ -462,6 +462,8 @@ export default function MyEventsPage() {
                       const canUpgrade =
                         event.plan === "free" && event.status !== "ended";
                       const isUpgrading = upgradingEventId === event.id;
+                      const showEventDate =
+                        Boolean(event.event_at) || event.plan === "premium";
 
                       return (
                         <article
@@ -524,9 +526,11 @@ export default function MyEventsPage() {
                                 <h3 className="wrap-anywhere max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
                                   {event.name}
                                 </h3>
-                                <p className="mt-3 text-base font-semibold text-navy/80">
-                                  {formatEventDate(event.event_at)}
-                                </p>
+                                {showEventDate && (
+                                  <p className="mt-3 text-base font-semibold text-navy/80">
+                                    {formatEventDate(event.event_at)}
+                                  </p>
+                                )}
                                 <p className="mt-3 max-w-full truncate text-sm text-muted-navy">
                                   simcha.cam/e/{event.slug}
                                 </p>
