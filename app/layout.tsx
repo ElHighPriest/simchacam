@@ -19,9 +19,35 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
+const siteUrl = "https://simcha.cam";
+const socialImage = "/simchacam-social.png";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "SimchaCam",
   description: "Simple livestreaming for simchas",
+  openGraph: {
+    title: "SimchaCam",
+    description: "Simple livestreaming for simchas",
+    url: siteUrl,
+    siteName: "SimchaCam",
+    images: [
+      {
+        url: socialImage,
+        width: 1200,
+        height: 630,
+        alt: "SimchaCam - Simple livestreaming for simchas",
+      },
+    ],
+    locale: "en_GB",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SimchaCam",
+    description: "Simple livestreaming for simchas",
+    images: [socialImage],
+  },
 };
 
 export default function RootLayout({
