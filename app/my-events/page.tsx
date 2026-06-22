@@ -35,7 +35,8 @@ export default function MyEventsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copyMessage, setCopyMessage] = useState("");
+  const [copiedSlug, setCopiedSlug] = useState("");
+  const [copyFailedSlug, setCopyFailedSlug] = useState("");
   const [upgradingEventId, setUpgradingEventId] = useState("");
 
   const [livekitToken, setLivekitToken] = useState("");
@@ -149,9 +150,19 @@ export default function MyEventsPage() {
 
     try {
       await navigator.clipboard.writeText(link);
-      setCopyMessage("Link copied");
+      setCopyFailedSlug("");
+      setCopiedSlug(slug);
+      window.setTimeout(() => {
+        setCopiedSlug((currentSlug) => (currentSlug === slug ? "" : currentSlug));
+      }, 2000);
     } catch {
-      setCopyMessage("Could not copy link");
+      setCopiedSlug("");
+      setCopyFailedSlug(slug);
+      window.setTimeout(() => {
+        setCopyFailedSlug((currentSlug) =>
+          currentSlug === slug ? "" : currentSlug
+        );
+      }, 2000);
     }
   }
 
@@ -398,15 +409,6 @@ export default function MyEventsPage() {
           </Link>
         </div>
 
-        {copyMessage && (
-          <div
-            role="status"
-            className="mb-8 rounded-xl border border-gold/30 bg-pale-gold px-4 py-3 text-sm font-medium text-navy"
-          >
-            {copyMessage}
-          </div>
-        )}
-
         {events.length === 0 ? (
           <section className="rounded-[1.5rem] border border-gold/30 bg-white/70 px-6 py-14 text-center shadow-[0_18px_50px_rgba(11,31,58,0.06)]">
             <p className="font-display text-3xl font-semibold text-navy">
@@ -464,6 +466,12 @@ export default function MyEventsPage() {
                       const isUpgrading = upgradingEventId === event.id;
                       const showEventDate =
                         Boolean(event.event_at) || event.plan === "premium";
+                      const copyButtonText =
+                        copiedSlug === event.slug
+                          ? "Copied"
+                          : copyFailedSlug === event.slug
+                            ? "Could not copy"
+                            : "Copy Link";
 
                       return (
                         <article
@@ -611,9 +619,15 @@ export default function MyEventsPage() {
                               </button>
                               <button
                                 onClick={() => copyLink(event.slug)}
-                                className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                                className={
+                                  copiedSlug === event.slug
+                                    ? "rounded-lg bg-pale-gold px-3 py-2 text-sm font-semibold text-navy transition hover:bg-pale-gold"
+                                    : copyFailedSlug === event.slug
+                                      ? "rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-recording-red transition hover:bg-red-50"
+                                      : "rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                                }
                               >
-                                Copy Link
+                                {copyButtonText}
                               </button>
                               {!isEndedPremium && (
                                 <>
