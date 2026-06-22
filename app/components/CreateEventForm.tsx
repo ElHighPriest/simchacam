@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import EventPasswordInput from "@/app/components/EventPasswordInput";
 
 type CreateEventFormProps = {
   eventName: string;
@@ -112,17 +113,12 @@ export default function CreateEventForm({
               Event password{" "}
               <span className="font-normal text-muted-navy">(optional)</span>
             </label>
-            <input
+            <EventPasswordInput
               id="event-password"
               name="simchacam_event_access_code"
-              type="password"
-              autoComplete="new-password"
-              data-1p-ignore="true"
-              data-lpignore="true"
-              className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/60"
               placeholder="Choose a password"
               value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
+              onChange={onPasswordChange}
             />
           </section>
 

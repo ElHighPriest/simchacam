@@ -16,6 +16,7 @@ type Event = {
   slug: string;
   status: string | null;
   event_at: string | null;
+  hasPassword: boolean;
   plan: "free" | "premium" | null;
   recording: {
     status: "ready" | "processing" | "failed";
@@ -105,17 +106,18 @@ export default function MyEventsPage() {
             );
 
             if (!response.ok) {
-              return { ...eventWithPlan, recording: null };
+              return { ...eventWithPlan, hasPassword: false, recording: null };
             }
 
             const metadata = await response.json();
             return {
               ...eventWithPlan,
+              hasPassword: Boolean(metadata.hasPassword),
               recording: metadata.recording ?? null,
             };
           } catch (metadataError) {
             console.error(metadataError);
-            return { ...eventWithPlan, recording: null };
+            return { ...eventWithPlan, hasPassword: false, recording: null };
           }
         })
       );
@@ -512,6 +514,11 @@ export default function MyEventsPage() {
                                       Recording processing
                                     </span>
                                   )}
+                                  {event.hasPassword && (
+                                    <span className="rounded-full border border-navy/10 bg-white px-3 py-1 text-xs font-semibold text-navy/65">
+                                      Password protected
+                                    </span>
+                                  )}
                                 </div>
 
                                 <h3 className="wrap-anywhere max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
@@ -610,7 +617,7 @@ export default function MyEventsPage() {
                                     href={`/edit-event/${event.id}`}
                                     className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
                                   >
-                                    Edit
+                                    Edit Event
                                   </Link>
                                   <Link
                                     href={`/e/${event.slug}`}

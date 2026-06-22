@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import EventPasswordInput from "@/app/components/EventPasswordInput";
 import { isEmailVerified } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -313,14 +314,13 @@ export default function EditEventPage() {
               New event password{" "}
               <span className="font-normal text-muted-navy">(optional)</span>
             </label>
-            <input
+            <EventPasswordInput
               id="edit-event-password"
-              className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/60"
-              type="password"
+              name="simchacam_new_event_access_code"
               placeholder="Leave blank to keep current password"
               value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
+              onChange={(value) => {
+                setPassword(value);
                 setPasswordChanged(true);
               }}
             />
