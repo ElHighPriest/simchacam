@@ -140,7 +140,7 @@ export default function PricingPage() {
                 could not be there.
               </p>
               <div className="relative mt-7 flex items-end gap-2">
-                <p className="font-display text-5xl font-semibold">£4.99</p>
+                <p className="font-display text-5xl font-semibold">£9.99</p>
                 <p className="pb-1 text-sm text-warm-white/65">per event</p>
               </div>
 

@@ -421,7 +421,7 @@ export default function Home() {
               >
                 {isStartingCheckout
                   ? "Creating checkout..."
-                  : "Upgrade to Premium — £4.99"}
+                  : "Upgrade to Premium — £9.99"}
               </button>
             </div>
           </section>
@@ -522,7 +522,7 @@ export default function Home() {
                   Available for 30 days after the event
                 </p>
                 <p className="text-sm font-medium text-amber-800 mt-2">
-                  £4.99 Premium Feature
+                  £9.99 Premium Feature
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Create the event first, then upgrade to Premium.
@@ -826,7 +826,7 @@ export default function Home() {
               </div>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="font-display text-4xl font-semibold text-navy">
-                  £4.99 per event
+                  £9.99 per event
                 </h3>
                 <p className="text-sm font-semibold text-[#80652f]">
                   One-off upgrade

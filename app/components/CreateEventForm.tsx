@@ -158,7 +158,7 @@ export default function CreateEventForm({
             </div>
             <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
               <p className="text-sm font-semibold text-navy">
-                £4.99 Premium Feature
+                £9.99 Premium Feature
               </p>
               <p className="mt-1 text-xs leading-5 text-muted-navy">
                 Premium is purchased after event creation and applies only to

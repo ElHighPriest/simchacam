@@ -566,7 +566,7 @@ export default function MyEventsPage() {
                                   >
                                     {isUpgrading
                                       ? "Creating checkout..."
-                                      : "Upgrade to Premium — £4.99"}
+                                      : "Upgrade to Premium — £9.99"}
                                   </button>
                                 )}
 

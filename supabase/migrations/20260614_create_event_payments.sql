@@ -28,7 +28,7 @@ create table public.event_payments (
   currency text not null default 'gbp'
     check (currency = lower(currency) and char_length(currency) = 3),
 
-  listed_amount integer not null default 499
+  listed_amount integer not null default 999
     check (listed_amount >= 0),
 
   amount_subtotal integer
