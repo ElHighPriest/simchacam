@@ -6,18 +6,35 @@ export const metadata: Metadata = {
   description: "SimchaCam terms of service",
 };
 
-// INTERNAL: This launch draft must be reviewed by a UK solicitor, and all
-// bracketed business/contact details completed, before public launch.
 export default function TermsPage() {
   return (
     <LegalPage
+      draftNotice={null}
       eyebrow="Using SimchaCam"
       title="Terms of Service"
       introduction="These terms govern the use of SimchaCam by event hosts, account holders and invited viewers. Please read them before creating or accessing an event."
+      lastUpdated="22 June 2026"
       sections={[
         {
           heading: "1. About SimchaCam",
-          body: "SimchaCam is operated by [LEGAL NAME], of [REGISTERED OR BUSINESS ADDRESS]. It provides tools for private livestreaming of family events and may offer optional paid recording, replay and download features. Contact us at [SUPPORT EMAIL].",
+          body: (
+            <>
+              SimchaCam is an online service for private livestreaming of family
+              events. It provides tools for event hosts to create private event
+              pages, share livestream links with invited viewers, and may offer
+              optional paid recording, replay and download features.
+              <br />
+              <br />
+              For support, contact{" "}
+              <a
+                href="mailto:support@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                support@simcha.cam
+              </a>
+              .
+            </>
+          ),
         },
         {
           heading: "2. Accepting these terms",
@@ -77,11 +94,45 @@ export default function TermsPage() {
         },
         {
           heading: "16. Governing law and disputes",
-          body: "These terms are governed by the laws of England and Wales. If you are a consumer living elsewhere in the United Kingdom, you keep any mandatory protections available under the law where you live and may be entitled to bring proceedings in your local courts. Please contact [SUPPORT EMAIL] first so we can try to resolve any dispute.",
+          body: (
+            <>
+              These terms are governed by the laws of England and Wales. If you
+              are a consumer living elsewhere in the United Kingdom, you keep
+              any mandatory protections available under the law where you live
+              and may be entitled to bring proceedings in your local courts.
+              Please contact{" "}
+              <a
+                href="mailto:support@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                support@simcha.cam
+              </a>{" "}
+              first so we can try to resolve any dispute.
+            </>
+          ),
         },
         {
           heading: "17. Contact",
-          body: "SimchaCam contact details: [LEGAL NAME], [COMPANY NUMBER IF APPLICABLE], [REGISTERED OR BUSINESS ADDRESS], [SUPPORT EMAIL], [PRIVACY EMAIL].",
+          body: (
+            <>
+              For support:{" "}
+              <a
+                href="mailto:support@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                support@simcha.cam
+              </a>
+              <br />
+              <br />
+              For privacy enquiries:{" "}
+              <a
+                href="mailto:privacy@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                privacy@simcha.cam
+              </a>
+            </>
+          ),
         },
       ]}
     />

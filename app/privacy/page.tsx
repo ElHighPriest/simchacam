@@ -6,18 +6,37 @@ export const metadata: Metadata = {
   description: "SimchaCam privacy policy",
 };
 
-// INTERNAL: This launch draft must be reviewed by a UK solicitor or qualified
-// data-protection adviser, and all bracketed details completed, before launch.
 export default function PrivacyPage() {
   return (
     <LegalPage
       eyebrow="Your privacy"
       title="Privacy Policy"
       introduction="This policy explains how SimchaCam uses personal information when hosts create private family-event livestreams and when invited viewers watch, replay, or download them."
+      lastUpdated="22 June 2026"
       sections={[
         {
           heading: "1. Who we are",
-          body: "SimchaCam is operated by [LEGAL NAME], of [REGISTERED OR BUSINESS ADDRESS]. For questions about this policy or how we use personal information, contact [PRIVACY EMAIL]. Where SimchaCam decides how and why account and service information is used, it acts as the data controller.",
+          body: (
+            <>
+              SimchaCam is an online service for private livestreaming of family
+              events.
+              <br />
+              <br />
+              For questions about this policy or how we use personal
+              information, contact{" "}
+              <a
+                href="mailto:privacy@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                privacy@simcha.cam
+              </a>
+              .
+              <br />
+              <br />
+              Where SimchaCam decides how and why account and service
+              information is used, it acts as the data controller.
+            </>
+          ),
         },
         {
           heading: "2. Information we use",
@@ -49,7 +68,7 @@ export default function PrivacyPage() {
         },
         {
           heading: "9. International transfers",
-          body: "Some service providers may process information outside the United Kingdom. Where UK data-protection law requires safeguards for an international transfer, we will use an appropriate transfer mechanism or rely on another lawful basis for the transfer. The locations and safeguards should be confirmed in SimchaCam's supplier records before launch.",
+          body: "Some service providers used by SimchaCam may process personal information outside the United Kingdom. Where UK data-protection law requires safeguards for an international transfer, we rely on appropriate transfer mechanisms used by those providers, such as recognised contractual protections or other lawful safeguards.",
         },
         {
           heading: "10. How long we keep information",
@@ -57,11 +76,40 @@ export default function PrivacyPage() {
         },
         {
           heading: "11. Your rights",
-          body: "Under UK data-protection law, you may have rights to request access, correction, deletion, restriction or transfer of your personal information, and to object to certain uses. Where processing is based on consent, you may withdraw it. These rights are not absolute and may depend on the circumstances. Contact [PRIVACY EMAIL] to make a request. We may need to verify your identity.",
+          body: (
+            <>
+              Under UK data-protection law, you may have rights to request
+              access, correction, deletion, restriction or transfer of your
+              personal information, and to object to certain uses. Where
+              processing is based on consent, you may withdraw it. These rights
+              are not absolute and may depend on the circumstances. Contact{" "}
+              <a
+                href="mailto:privacy@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                privacy@simcha.cam
+              </a>{" "}
+              to make a request. We may need to verify your identity.
+            </>
+          ),
         },
         {
           heading: "12. Complaints",
-          body: "Please contact us first at [PRIVACY EMAIL] so we can try to resolve your concern. You also have the right to complain to the Information Commissioner's Office at ico.org.uk, or to another relevant data-protection authority where applicable.",
+          body: (
+            <>
+              Please contact us first at{" "}
+              <a
+                href="mailto:privacy@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                privacy@simcha.cam
+              </a>{" "}
+              so we can try to resolve your concern. You also have the right to
+              complain to the Information Commissioner&apos;s Office at
+              ico.org.uk, or to another relevant data-protection authority where
+              applicable.
+            </>
+          ),
         },
         {
           heading: "13. Security",
@@ -69,7 +117,31 @@ export default function PrivacyPage() {
         },
         {
           heading: "14. Changes and contact",
-          body: "We may update this policy as SimchaCam develops or legal requirements change. The latest version will appear on this page with its update date. Contact: [LEGAL NAME], [POSTAL ADDRESS], [PRIVACY EMAIL], [SUPPORT EMAIL].",
+          body: (
+            <>
+              We may update this policy as SimchaCam develops or legal
+              requirements change. The latest version will appear on this page
+              with its update date.
+              <br />
+              <br />
+              Privacy enquiries:{" "}
+              <a
+                href="mailto:privacy@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                privacy@simcha.cam
+              </a>
+              <br />
+              <br />
+              Support:{" "}
+              <a
+                href="mailto:support@simcha.cam"
+                className="font-semibold text-navy underline decoration-gold/60 underline-offset-4 transition hover:text-gold"
+              >
+                support@simcha.cam
+              </a>
+            </>
+          ),
         },
       ]}
     />

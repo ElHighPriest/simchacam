@@ -1,22 +1,27 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import PublicFooter from "./PublicFooter";
 
 type LegalSection = {
   heading: string;
-  body: string;
+  body: ReactNode;
 };
 
 type LegalPageProps = {
+  draftNotice?: ReactNode | null;
   eyebrow: string;
   introduction: string;
+  lastUpdated?: string;
   sections: LegalSection[];
   title: string;
 };
 
 export default function LegalPage({
+  draftNotice = null,
   eyebrow,
   introduction,
+  lastUpdated = "14 June 2026",
   sections,
   title,
 }: LegalPageProps) {
@@ -58,12 +63,13 @@ export default function LegalPage({
         </p>
 
         <div className="mt-10 rounded-[1.5rem] border border-gold/30 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.06)] sm:p-9">
-          <p className="rounded-xl bg-pale-gold/70 px-4 py-3 text-sm leading-6 text-navy">
-            Launch draft. Contact details and business information shown in
-            square brackets must be completed before publication.
-          </p>
+          {draftNotice && (
+            <p className="rounded-xl bg-pale-gold/70 px-4 py-3 text-sm leading-6 text-navy">
+              {draftNotice}
+            </p>
+          )}
 
-          <div className="mt-9 space-y-9">
+          <div className={draftNotice ? "mt-9 space-y-9" : "space-y-9"}>
             {sections.map((section) => (
               <section key={section.heading}>
                 <h2 className="font-display text-3xl font-semibold">
@@ -78,7 +84,7 @@ export default function LegalPage({
         </div>
 
         <p className="mt-7 text-sm text-muted-navy">
-          Last updated: 14 June 2026
+          Last updated: {lastUpdated}
         </p>
       </article>
 
