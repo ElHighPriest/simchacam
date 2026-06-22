@@ -131,7 +131,7 @@ export default function MyEventsPage() {
 
   function formatEventDate(eventAt: string | null) {
     if (!eventAt) {
-      return "Date not set";
+      return "Click Edit Event to add time and date";
     }
 
     return new Intl.DateTimeFormat("en-GB", {
