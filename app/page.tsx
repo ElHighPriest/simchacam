@@ -337,12 +337,15 @@ export default function Home() {
                 className="object-cover object-center mix-blend-multiply"
               />
             </Link>
-            <Link
-              href={getLocalizedPath(locale, "/my-events")}
-              className="text-sm font-semibold text-navy/70 transition hover:text-navy"
-            >
-              {messages.nav.myEvents}
-            </Link>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <LanguageSwitcher />
+              <Link
+                href={getLocalizedPath(locale, "/my-events")}
+                className="text-sm font-semibold text-navy/70 transition hover:text-navy"
+              >
+                {messages.nav.myEvents}
+              </Link>
+            </div>
           </nav>
         </header>
 

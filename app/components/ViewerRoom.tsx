@@ -9,6 +9,7 @@ import {
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import { getMessages, type Locale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -65,7 +66,10 @@ function ViewerContent({
 
   if (!streamerTrack && status === "ended") {
     return (
-      <main className="flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+      <main className="relative flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+        <div className="absolute right-4 top-4 z-10">
+          <LanguageSwitcher />
+        </div>
         <div className="min-w-0 max-w-full">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             SimchaCam
@@ -81,7 +85,10 @@ function ViewerContent({
 
   if (!streamerTrack) {
     return (
-      <main className="flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+      <main className="relative flex h-screen w-full max-w-full items-center justify-center overflow-hidden bg-navy px-6 text-center text-white">
+        <div className="absolute right-4 top-4 z-10">
+          <LanguageSwitcher />
+        </div>
         <div className="min-w-0 max-w-full">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full border-2 border-gold bg-gold/10" />
           <h1 className="wrap-anywhere mt-5 max-w-full font-display text-4xl font-semibold">
@@ -110,9 +117,12 @@ function ViewerContent({
             </p>
           )}
         </div>
-        <div className="ml-4 flex shrink-0 items-center gap-2 rounded-full bg-recording-red/15 px-3 py-1.5 text-xs font-semibold text-[#ff7774]">
-          <span className="h-2 w-2 rounded-full bg-recording-red" />
-          LIVE
+        <div className="ml-3 flex shrink-0 items-center gap-2">
+          <LanguageSwitcher />
+          <div className="flex items-center gap-2 rounded-full bg-recording-red/15 px-3 py-1.5 text-xs font-semibold text-[#ff7774]">
+            <span className="h-2 w-2 rounded-full bg-recording-red" />
+            LIVE
+          </div>
         </div>
       </header>
 

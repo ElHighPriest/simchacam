@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import EventPasswordInput from "@/app/components/EventPasswordInput";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import {
   getLocaleDirection,
   getMessages,
@@ -63,12 +64,15 @@ export default function CreateEventForm({
               className="object-cover object-center mix-blend-multiply"
             />
           </Link>
-          <button
-            onClick={onBack}
-            className="text-sm font-semibold text-navy/65 transition hover:text-navy"
-          >
-            {messages.common.cancel}
-          </button>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageSwitcher />
+            <button
+              onClick={onBack}
+              className="text-sm font-semibold text-navy/65 transition hover:text-navy"
+            >
+              {messages.common.cancel}
+            </button>
+          </div>
         </nav>
       </header>
 

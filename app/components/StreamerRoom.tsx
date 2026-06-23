@@ -13,6 +13,7 @@ import {
 } from "@livekit/components-react";
 import { Track, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import { getLocalizedPath, getMessages, type Locale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
@@ -215,6 +216,9 @@ function StreamerContent({
         </section>
 
         <aside className="flex w-56 shrink-0 flex-col border-l border-white/10 bg-zinc-950/95 p-3">
+          <div className="mb-3">
+            <LanguageSwitcher />
+          </div>
           <div className="flex flex-wrap gap-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
               <span className="h-2 w-2 rounded-full bg-[#68d391]" />
@@ -389,11 +393,13 @@ function StreamerContent({
           <h1 className="text-xl font-bold sm:text-2xl">SimchaCam</h1>
           <p className="text-xs text-gray-400 sm:text-sm">{t.cameraActive}</p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-          <p className="text-sm text-gray-300">
-            {viewerCount}{" "}
-            {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
-          </p>
+        <div className="flex shrink-0 items-start gap-2">
+          <LanguageSwitcher />
+          <div className="flex flex-col items-end gap-1 text-right">
+            <p className="text-sm text-gray-300">
+              {viewerCount}{" "}
+              {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
+            </p>
           {recordingEnabled && (
             <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774]">
               {t.recordingEnabled}
@@ -409,6 +415,7 @@ function StreamerContent({
               {recordingWarning}
             </p>
           )}
+          </div>
         </div>
       </header>
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import ViewerRoom from "@/app/components/ViewerRoom";
 import {
   getLocaleDirection,
@@ -69,7 +70,7 @@ function formatRecordingDate(eventAt: string | null, locale: Locale) {
 function ViewerHeader() {
   return (
     <header className="absolute inset-x-0 top-0 z-10">
-      <div className="mx-auto flex h-20 max-w-5xl items-center justify-center px-5">
+      <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5">
         <div className="relative h-10 w-36 overflow-hidden sm:h-12 sm:w-44">
           <Image
             src="/simchacam-logo.svg"
@@ -79,6 +80,7 @@ function ViewerHeader() {
             className="object-cover object-center mix-blend-multiply"
           />
         </div>
+        <LanguageSwitcher />
       </div>
     </header>
   );

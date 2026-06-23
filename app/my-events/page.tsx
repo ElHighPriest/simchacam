@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
 import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
@@ -396,6 +397,7 @@ export default function MyEventsPage() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageSwitcher />
             <Link
               href={createEventHref}
               className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
