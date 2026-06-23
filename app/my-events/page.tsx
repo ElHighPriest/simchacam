@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
+import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
 import { isEmailVerified } from "@/lib/auth";
 import {
   getLocaleDirection,
@@ -42,7 +43,8 @@ export default function MyEventsPage() {
   const pathname = usePathname();
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
-  const premiumPrice = getPremiumPriceDisplay(locale);
+  const { currency } = useCurrencyPreference(locale);
+  const premiumPrice = getPremiumPriceDisplay(currency);
   const homePath = getLocalizedPath(locale);
   const createEventHref = `${homePath}#create-event`;
   const [user, setUser] = useState<User | null>(null);
@@ -247,7 +249,7 @@ export default function MyEventsPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ locale }),
+          body: JSON.stringify({ locale, currency }),
         }
       );
       const data = await response.json();

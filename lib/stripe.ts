@@ -52,7 +52,9 @@ function getStripeClientConfig() {
   };
 }
 
-export function getStripeConfig(locale = "en"): StripeConfig {
+export function getStripeConfig(
+  preference: { currency?: "gbp" | "ils"; locale?: string } | string = "en"
+): StripeConfig {
   const config = getStripeClientConfig();
   const siteUrlValue = process.env.NEXT_PUBLIC_SITE_URL;
 
@@ -66,11 +68,18 @@ export function getStripeConfig(locale = "en"): StripeConfig {
     throw new Error("Invalid site URL");
   }
 
+  const requestedCurrency =
+    typeof preference === "object" ? preference.currency : undefined;
+  const locale = typeof preference === "string" ? preference : preference.locale;
+  const shouldUseIls =
+    requestedCurrency === "ils" ||
+    (!requestedCurrency && locale === "he" && Boolean(config.premiumPriceIls));
+
   return {
     client: config.client,
-    premiumCurrency: locale === "he" && config.premiumPriceIls ? "ils" : "gbp",
+    premiumCurrency: shouldUseIls && config.premiumPriceIls ? "ils" : "gbp",
     premiumPriceId:
-      locale === "he" && config.premiumPriceIls
+      shouldUseIls && config.premiumPriceIls
         ? config.premiumPriceIls
         : config.premiumPriceGbp,
     siteUrl,

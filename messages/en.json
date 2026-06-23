@@ -30,7 +30,7 @@
   "preferences": {
     "buttonLabel": "Select language and currency preferences",
     "currency": "Currency",
-    "currencyDescription": "Currency currently follows the selected language. Independent currency selection can be added later.",
+    "currencyDescription": "Currency controls displayed pricing and checkout currency. Your choice is saved for next time.",
     "english": "English",
     "gbp": "GBP — £",
     "hebrew": "עברית",

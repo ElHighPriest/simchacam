@@ -30,7 +30,7 @@
   "preferences": {
     "buttonLabel": "בחירת העדפות שפה ומטבע",
     "currency": "מטבע",
-    "currencyDescription": "המטבע נקבע כרגע לפי השפה שנבחרה. בחירת מטבע נפרדת תתווסף בהמשך.",
+    "currencyDescription": "המטבע קובע את המחיר המוצג ואת מטבע התשלום. הבחירה נשמרת לפעם הבאה.",
     "english": "English",
     "gbp": "GBP — £",
     "hebrew": "עברית",

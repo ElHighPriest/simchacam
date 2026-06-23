@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { isEmailVerified } from "@/lib/auth";
+import { isCurrency, type Currency } from "@/lib/i18n";
 import { getStripeConfig } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -10,10 +11,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let locale = "en";
+  let currency: Currency | undefined;
 
   try {
-    const body = (await request.json()) as { locale?: unknown };
+    const body = (await request.json()) as {
+      currency?: unknown;
+      locale?: unknown;
+    };
     locale = body.locale === "he" ? "he" : "en";
+    currency =
+      typeof body.currency === "string" && isCurrency(body.currency)
+        ? body.currency
+        : undefined;
   } catch {
     // Existing clients may POST without a JSON body. Keep GBP as the default.
   }
@@ -111,7 +120,7 @@ export async function POST(
 
   try {
     const { client, premiumCurrency, premiumPriceId, siteUrl } =
-      getStripeConfig(locale);
+      getStripeConfig({ currency, locale });
     const price = await client.prices.retrieve(premiumPriceId);
     const productId =
       typeof price.product === "string" ? price.product : price.product.id;
@@ -155,6 +164,7 @@ export async function POST(
     }
 
     const metadata = {
+      currency: premiumCurrency,
       event_id: event.id,
       locale,
       user_id: user.id,

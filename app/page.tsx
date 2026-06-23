@@ -9,6 +9,7 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import ProfileMenu from "./components/ProfileMenu";
 import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
+import { useCurrencyPreference } from "./components/useCurrencyPreference";
 import { supabase } from "@/lib/supabase";
 import { isEmailVerified } from "@/lib/auth";
 import {
@@ -36,7 +37,8 @@ export default function Home() {
   const pathname = usePathname();
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
-  const premiumPrice = getPremiumPriceDisplay(locale);
+  const { currency } = useCurrencyPreference(locale);
+  const premiumPrice = getPremiumPriceDisplay(currency);
   const homePath = getLocalizedPath(locale);
   const direction = getLocaleDirection(locale);
   const [user, setUser] = useState<User | null>(null);
@@ -223,7 +225,7 @@ export default function Home() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ locale }),
+          body: JSON.stringify({ locale, currency }),
         }
       );
       const data = await response.json();

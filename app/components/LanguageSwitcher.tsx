@@ -1,12 +1,15 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
 import {
   getLocaleDirection,
   getLocaleFromPathname,
   getMessages,
   isLocale,
+  type Currency,
   type Locale,
 } from "@/lib/i18n";
 
@@ -19,6 +22,7 @@ type PopoverPosition = {
 const POPOVER_WIDTH = 384;
 const POPOVER_MARGIN = 12;
 const POPOVER_GAP = 10;
+const DESKTOP_BREAKPOINT = 768;
 
 function buildLanguageHref(pathname: string, locale: Locale) {
   const segments = pathname.split("/").filter(Boolean);
@@ -63,7 +67,8 @@ export default function LanguageSwitcher() {
   const messages = getMessages(currentLocale);
   const t = messages.preferences;
   const direction = getLocaleDirection(currentLocale);
-  const currentCurrency = currentLocale === "he" ? "ils" : "gbp";
+  const { currency: currentCurrency, setCurrency } =
+    useCurrencyPreference(currentLocale);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<PreferenceTab>("language");
   const [popoverPosition, setPopoverPosition] =
@@ -77,15 +82,15 @@ export default function LanguageSwitcher() {
       return;
     }
 
-    const rect = trigger.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
 
-    if (viewportWidth < 640) {
+    if (viewportWidth < DESKTOP_BREAKPOINT) {
       setPopoverPosition(null);
       return;
     }
 
+    const rect = trigger.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
     const estimatedPopoverHeight = 360;
     const maxLeft = viewportWidth - POPOVER_WIDTH - POPOVER_MARGIN;
     const left = Math.max(
@@ -96,7 +101,10 @@ export default function LanguageSwitcher() {
     const top =
       belowTop + estimatedPopoverHeight <= viewportHeight - POPOVER_MARGIN
         ? belowTop
-        : Math.max(POPOVER_MARGIN, viewportHeight - estimatedPopoverHeight - POPOVER_MARGIN);
+        : Math.max(
+            POPOVER_MARGIN,
+            viewportHeight - estimatedPopoverHeight - POPOVER_MARGIN
+          );
 
     setPopoverPosition({ left, top });
   }
@@ -120,6 +128,191 @@ export default function LanguageSwitcher() {
     router.push(buildLanguageHref(pathname, locale));
   }
 
+  function selectCurrency(currency: Currency) {
+    setCurrency(currency);
+    setIsOpen(false);
+  }
+
+  function renderPreferenceContent(titleId: string, compact = false) {
+    return (
+      <>
+        <header
+          className={`flex items-center justify-between border-b border-navy/10 ${
+            compact ? "gap-3 px-4 py-3" : "gap-4 px-5 py-4"
+          }`}
+        >
+          <h2
+            id={titleId}
+            className={`font-display font-semibold ${
+              compact ? "text-xl" : "text-2xl"
+            }`}
+          >
+            {t.selectPreferences}
+          </h2>
+          <button
+            type="button"
+            aria-label={messages.common.cancel}
+            onClick={() => setIsOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-navy/55 transition hover:bg-navy/5 hover:text-navy"
+          >
+            <span aria-hidden="true" className="text-2xl leading-none">
+              ×
+            </span>
+          </button>
+        </header>
+
+        <div
+          className={`border-b border-navy/10 ${
+            compact ? "px-4 pt-2" : "px-5 pt-4"
+          }`}
+        >
+          <div className="grid grid-cols-2 rounded-full bg-white/70 p-1 text-sm font-semibold">
+            {(
+              [
+                ["language", t.language],
+                ["currency", t.currency],
+              ] as const
+            ).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={
+                  activeTab === tab
+                    ? `rounded-full bg-navy px-4 text-warm-white ${
+                        compact ? "py-2" : "py-2.5"
+                      }`
+                    : `rounded-full px-4 text-navy/65 transition hover:text-navy ${
+                        compact ? "py-2" : "py-2.5"
+                      }`
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div
+          className={`min-h-0 md:overflow-y-auto ${
+            compact ? "px-4 py-3" : "px-5 py-5"
+          }`}
+        >
+          {activeTab === "language" ? (
+            <div className={compact ? "space-y-2" : "space-y-3"}>
+              {(
+                [
+                  ["en", t.english],
+                  ["he", t.hebrew],
+                ] as const
+              ).map(([locale, label]) => (
+                <button
+                  key={locale}
+                  type="button"
+                  onClick={() => selectLanguage(locale)}
+                  className={`flex w-full items-center justify-between rounded-xl border border-navy/10 bg-white/70 px-4 text-start font-semibold text-navy transition hover:border-gold/50 hover:bg-white ${
+                    compact ? "min-h-11 py-2.5" : "min-h-12 py-3"
+                  }`}
+                >
+                  <span>{label}</span>
+                  {currentLocale === locale && (
+                    <span className="text-gold">
+                      <Checkmark />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className={compact ? "space-y-2" : "space-y-3"}>
+              {(
+                [
+                  ["gbp", t.gbp],
+                  ["ils", t.ils],
+                ] as const
+              ).map(([currency, label]) => (
+                <button
+                  key={currency}
+                  type="button"
+                  onClick={() => selectCurrency(currency)}
+                  className={`flex w-full items-center justify-between rounded-xl border border-navy/10 bg-white/70 px-4 text-start font-semibold text-navy transition hover:border-gold/50 hover:bg-white ${
+                    compact ? "min-h-11 py-2.5" : "min-h-12 py-3"
+                  }`}
+                >
+                  <span>{label}</span>
+                  {currentCurrency === currency && (
+                    <span className="text-gold">
+                      <Checkmark />
+                    </span>
+                  )}
+                </button>
+              ))}
+              <p
+                className={`text-sm text-muted-navy ${
+                  compact ? "leading-5" : "leading-6"
+                }`}
+              >
+                {t.currencyDescription}
+              </p>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  const preferencesDialog =
+    isOpen && typeof document !== "undefined"
+      ? createPortal(
+          <>
+            <div className="md:hidden">
+              <button
+                type="button"
+                aria-label={messages.common.cancel}
+                className="fixed inset-0 z-[90] bg-navy/45 backdrop-blur-sm"
+                onClick={() => setIsOpen(false)}
+              />
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="mobile-preferences-title"
+                dir={direction}
+                className="fixed inset-x-0 bottom-0 z-[100] h-auto max-h-[75dvh] w-full overflow-y-auto rounded-t-3xl border border-b-0 border-gold/25 bg-warm-white pb-[env(safe-area-inset-bottom)] text-navy shadow-[0_-20px_60px_rgba(11,31,58,0.24)]"
+              >
+                {renderPreferenceContent("mobile-preferences-title", true)}
+              </section>
+            </div>
+
+            <div className="hidden md:block">
+              <button
+                type="button"
+                aria-label={messages.common.cancel}
+                className="fixed inset-0 z-[90] bg-navy/45 backdrop-blur-sm"
+                onClick={() => setIsOpen(false)}
+              />
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="desktop-preferences-title"
+                dir={direction}
+                style={
+                  popoverPosition
+                    ? {
+                        left: popoverPosition.left,
+                        top: popoverPosition.top,
+                      }
+                    : undefined
+                }
+                className="fixed z-[100] flex max-h-[calc(100dvh-1.5rem)] w-[24rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-[1.5rem] border border-gold/25 bg-warm-white text-navy shadow-[0_24px_70px_rgba(11,31,58,0.24)]"
+              >
+                {renderPreferenceContent("desktop-preferences-title")}
+              </section>
+            </div>
+          </>,
+          document.body
+        )
+      : null;
+
   return (
     <>
       <button
@@ -137,126 +330,7 @@ export default function LanguageSwitcher() {
         <span>{currentLocale.toUpperCase()}</span>
       </button>
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-navy/45 backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="preferences-title"
-            dir={direction}
-            style={
-              popoverPosition
-                ? {
-                    left: popoverPosition.left,
-                    top: popoverPosition.top,
-                  }
-                : undefined
-            }
-            className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] top-auto flex max-h-[min(88dvh,34rem)] flex-col overflow-hidden rounded-[1.5rem] border border-gold/25 bg-warm-white text-navy shadow-[0_24px_70px_rgba(11,31,58,0.24)] sm:inset-auto sm:w-[24rem] sm:max-w-[calc(100vw-1.5rem)]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="flex items-center justify-between gap-4 border-b border-navy/10 px-5 py-4">
-              <h2
-                id="preferences-title"
-                className="font-display text-2xl font-semibold"
-              >
-                {t.selectPreferences}
-              </h2>
-              <button
-                type="button"
-                aria-label={messages.common.cancel}
-                onClick={() => setIsOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-navy/55 transition hover:bg-navy/5 hover:text-navy"
-              >
-                <span aria-hidden="true" className="text-2xl leading-none">
-                  ×
-                </span>
-              </button>
-            </header>
-
-            <div className="border-b border-navy/10 px-5 pt-4">
-              <div className="grid grid-cols-2 rounded-full bg-white/70 p-1 text-sm font-semibold">
-                {(
-                  [
-                    ["language", t.language],
-                    ["currency", t.currency],
-                  ] as const
-                ).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={
-                      activeTab === tab
-                        ? "rounded-full bg-navy px-4 py-2.5 text-warm-white"
-                        : "rounded-full px-4 py-2.5 text-navy/65 transition hover:text-navy"
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="min-h-0 overflow-y-auto px-5 py-5">
-              {activeTab === "language" ? (
-                <div className="space-y-3">
-                  {(
-                    [
-                      ["en", t.english],
-                      ["he", t.hebrew],
-                    ] as const
-                  ).map(([locale, label]) => (
-                    <button
-                      key={locale}
-                      type="button"
-                      onClick={() => selectLanguage(locale)}
-                      className="flex min-h-12 w-full items-center justify-between rounded-xl border border-navy/10 bg-white/70 px-4 py-3 text-start font-semibold text-navy transition hover:border-gold/50 hover:bg-white"
-                    >
-                      <span>{label}</span>
-                      {currentLocale === locale && (
-                        <span className="text-gold">
-                          <Checkmark />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {/* TODO: Store an independent currency preference when pricing is decoupled from locale. */}
-                  {(
-                    [
-                      ["gbp", t.gbp],
-                      ["ils", t.ils],
-                    ] as const
-                  ).map(([currency, label]) => (
-                    <button
-                      key={currency}
-                      type="button"
-                      disabled
-                      className="flex min-h-12 w-full items-center justify-between rounded-xl border border-navy/10 bg-white/60 px-4 py-3 text-start font-semibold text-navy disabled:cursor-default"
-                    >
-                      <span>{label}</span>
-                      {currentCurrency === currency && (
-                        <span className="text-gold">
-                          <Checkmark />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                  <p className="text-sm leading-6 text-muted-navy">
-                    {t.currencyDescription}
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
+      {preferencesDialog}
     </>
   );
 }
