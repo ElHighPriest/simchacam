@@ -160,11 +160,12 @@ export async function POST(
       user_id: user.id,
       payment_id: payment.id,
     };
+    const myEventsPath = locale === "he" ? "/he/my-events" : "/en/my-events";
     const successUrl =
-      `${new URL("/my-events", siteUrl).toString()}` +
+      `${new URL(myEventsPath, siteUrl).toString()}` +
       "?checkout=success&session_id={CHECKOUT_SESSION_ID}";
     const cancelUrl =
-      `${new URL("/my-events", siteUrl).toString()}` +
+      `${new URL(myEventsPath, siteUrl).toString()}` +
       "?checkout=cancelled";
 
     try {

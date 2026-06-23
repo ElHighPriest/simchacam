@@ -20,6 +20,18 @@ import {
 } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
+function makeSlug(name: string) {
+  const baseSlug = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, "-");
+
+  const randomCode = Math.random().toString(36).substring(2, 7);
+
+  return `${baseSlug}-${randomCode}`;
+}
+
 export default function Home() {
   const pathname = usePathname();
   const locale = getLocaleFromPathname(pathname);
@@ -88,23 +100,16 @@ export default function Home() {
     };
   }, [authLoading, user]);
 
-  const eventLink = eventSlug ? `https://simcha.cam/e/${eventSlug}` : "";
+  const localizedEventPath = eventSlug
+    ? getLocalizedPath(locale, `/e/${eventSlug}`)
+    : "";
+  const eventLink = eventSlug
+    ? `https://simcha.cam${localizedEventPath}`
+    : "";
 
   const whatsAppMessage = encodeURIComponent(
-    `Please join the livestream for ${eventName}: ${eventLink}`
+    `${messages.eventCreated.shareText.replace("{eventName}", eventName)}: ${eventLink}`
   );
-
-  function makeSlug(name: string) {
-    const baseSlug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9 ]/g, "")
-      .replace(/\s+/g, "-");
-
-    const randomCode = Math.random().toString(36).substring(2, 7);
-
-    return `${baseSlug}-${randomCode}`;
-  }
 
   async function logout() {
     await supabase.auth.signOut();
@@ -115,12 +120,12 @@ export default function Home() {
 
   async function createEvent() {
     if (!isEmailVerified(user)) {
-      alert("Please confirm your email before creating an event");
+      alert(messages.createEvent.alerts.confirmEmail);
       return;
     }
 
     if (!eventName.trim()) {
-      alert("Please enter an event name");
+      alert(messages.createEvent.alerts.eventNameRequired);
       return;
     }
 
@@ -134,7 +139,7 @@ export default function Home() {
 
     if (!session) {
       setIsCreating(false);
-      alert("Please log in before creating an event");
+      alert(messages.createEvent.alerts.loginRequired);
       return;
     }
 
@@ -156,7 +161,7 @@ export default function Home() {
 
     if (!response.ok) {
       console.error(data.error);
-      alert(data.error || "Could not create event");
+      alert(data.error || messages.createEvent.alerts.createFailed);
       return;
     }
 
@@ -168,9 +173,9 @@ export default function Home() {
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(eventLink);
-      setCopyMessage("Link copied");
+      setCopyMessage(messages.eventCreated.linkCopied);
     } catch {
-      setCopyMessage("Could not copy link");
+      setCopyMessage(messages.common.copyFailed);
     }
   }
 
@@ -178,8 +183,11 @@ export default function Home() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "SimchaCam Livestream",
-          text: `Please join the livestream for ${eventName}`,
+          title: messages.eventCreated.shareTitle,
+          text: messages.eventCreated.shareText.replace(
+            "{eventName}",
+            eventName
+          ),
           url: eventLink,
         });
       } catch {
@@ -203,7 +211,7 @@ export default function Home() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert("Please log in before upgrading to Premium");
+        alert(messages.eventCreated.alerts.checkoutLogin);
         return;
       }
 
@@ -221,14 +229,14 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        alert(data.error || "Could not start Premium checkout");
+        alert(data.error || messages.eventCreated.alerts.checkoutFailed);
         return;
       }
 
       window.location.assign(data.url);
     } catch (error) {
       console.error(error);
-      alert("Could not start Premium checkout");
+      alert(messages.eventCreated.alerts.checkoutFailed);
     } finally {
       setIsStartingCheckout(false);
     }
@@ -241,7 +249,7 @@ export default function Home() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert("Please log in before starting a livestream");
+        alert(messages.eventCreated.alerts.goLiveLogin);
         return;
       }
 
@@ -257,7 +265,7 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Could not start livestream");
+        alert(data.error || messages.eventCreated.alerts.goLiveFailed);
         return;
       }
 
@@ -270,14 +278,14 @@ export default function Home() {
       setIsGoingLive(true);
     } catch (error) {
       console.error(error);
-      alert("Could not start livestream");
+      alert(messages.eventCreated.alerts.goLiveFailed);
     }
   }
 
   if (authLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        Loading SimchaCam...
+        {messages.common.loadingSimchaCam}
       </main>
     );
   }
@@ -292,6 +300,7 @@ export default function Home() {
         hardEndsAt={liveHardEndsAt}
         recordingEnabled={recordingEnabled}
         lifecycleMode="server-owned"
+        locale={locale}
       />
     );
   }
@@ -299,7 +308,7 @@ export default function Home() {
   if (eventCreated) {
     const formattedEventDate =
       eventDate && eventTime
-        ? new Intl.DateTimeFormat("en-GB", {
+        ? new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "en-GB", {
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -327,10 +336,10 @@ export default function Home() {
               />
             </Link>
             <Link
-              href="/my-events"
+              href={getLocalizedPath(locale, "/my-events")}
               className="text-sm font-semibold text-navy/70 transition hover:text-navy"
             >
-              My Events
+              {messages.nav.myEvents}
             </Link>
           </nav>
         </header>
@@ -350,10 +359,10 @@ export default function Home() {
               </svg>
             </div>
             <p className="mt-6 text-xs font-semibold uppercase tracking-[0.28em] text-gold">
-              Event created
+              {messages.eventCreated.eyebrow}
             </p>
             <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] text-navy sm:text-6xl">
-              Your event is ready
+              {messages.eventCreated.title}
             </h1>
             <h2 className="wrap-anywhere mt-6 max-w-full font-display text-3xl font-semibold leading-tight text-navy sm:text-4xl">
               {eventName}
@@ -367,10 +376,10 @@ export default function Home() {
 
           <section className="mt-10 rounded-[1.5rem] border border-gold/30 bg-white/75 p-5 shadow-[0_18px_50px_rgba(11,31,58,0.07)] sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Your private event link
+              {messages.eventCreated.privateLink}
             </p>
             <Link
-              href={`/e/${eventSlug}`}
+              href={localizedEventPath}
               className="mt-3 block break-all rounded-xl bg-pale-gold/70 px-4 py-4 text-sm font-semibold text-navy transition hover:bg-pale-gold sm:text-base"
             >
               {eventLink}
@@ -390,7 +399,7 @@ export default function Home() {
                 onClick={copyLink}
                 className="min-h-12 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
               >
-                Copy Link
+                {messages.eventCreated.copyLink}
               </button>
               <a
                 href={`https://wa.me/?text=${whatsAppMessage}`}
@@ -398,19 +407,19 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="flex min-h-12 items-center justify-center rounded-xl bg-[#218c55] px-5 py-3 text-center font-semibold text-white transition hover:bg-[#1b7648]"
               >
-                Share on WhatsApp
+                {messages.eventCreated.shareWhatsApp}
               </a>
               <Link
-                href={`/e/${eventSlug}`}
+                href={localizedEventPath}
                 className="flex min-h-12 items-center justify-center rounded-xl border border-navy/20 px-5 py-3 text-center font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/50"
               >
-                Open Event Page
+                {messages.eventCreated.openEventPage}
               </Link>
               <button
                 onClick={shareLink}
                 className="min-h-12 rounded-xl border border-navy/20 px-5 py-3 font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/50"
               >
-                More Sharing Options
+                {messages.eventCreated.moreSharing}
               </button>
             </div>
           </section>
@@ -419,14 +428,13 @@ export default function Home() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-                  Premium recording
+                  {messages.eventCreated.premiumEyebrow}
                 </div>
                 <h2 className="mt-4 font-display text-3xl font-semibold">
-                  Recording, Replay & Download
+                  {messages.eventCreated.premiumTitle}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-navy">
-                  Add automatic recording, replay for 30 days, download access,
-                  and a longer Premium livestream for this event.
+                  {messages.eventCreated.premiumDescription}
                 </p>
               </div>
 
@@ -437,7 +445,7 @@ export default function Home() {
                 className="min-h-12 shrink-0 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
               >
                 {isStartingCheckout
-                  ? "Creating checkout..."
+                  ? messages.eventCreated.checkoutLoading
                   : premiumPrice.upgradeButton}
               </button>
             </div>
@@ -445,18 +453,17 @@ export default function Home() {
 
           <section className="mt-8 border-t border-gold/30 pt-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
-              When you&apos;re ready
+              {messages.eventCreated.readyEyebrow}
             </p>
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-navy">
-              Start the livestream when the celebration begins. You can also
-              return and start it later from My Events.
+              {messages.eventCreated.readyDescription}
             </p>
             <button
               onClick={goLive}
               className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-recording-red px-6 py-4 text-lg font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.2)] transition hover:bg-[#cc302d]"
             >
               <span className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_0_5px_rgba(255,255,255,0.18)]" />
-              Go Live
+              {messages.eventCreated.goLive}
             </button>
           </section>
         </div>
@@ -470,6 +477,7 @@ export default function Home() {
         eventName={eventName}
         homeHref={homePath}
         isCreating={isCreating}
+        locale={locale}
         onBack={() => setShowForm(false)}
         onCreate={createEvent}
         onEventNameChange={setEventName}

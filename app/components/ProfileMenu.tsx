@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { getLocaleFromPathname, getLocalizedPath, getMessages } from "@/lib/i18n";
 
 type ProfileMenuProps = {
   onSignOut: () => void | Promise<void>;
@@ -17,6 +19,9 @@ function getInitial(user: User) {
 }
 
 export default function ProfileMenu({ onSignOut, user }: ProfileMenuProps) {
+  const pathname = usePathname();
+  const locale = getLocaleFromPathname(pathname);
+  const messages = getMessages(locale);
   const [isOpen, setIsOpen] = useState(false);
 
   async function signOut() {
@@ -30,7 +35,7 @@ export default function ProfileMenu({ onSignOut, user }: ProfileMenuProps) {
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         aria-expanded={isOpen}
-        aria-label="Open account menu"
+        aria-label={messages.profile.ariaLabel}
         className="flex min-h-11 items-center gap-2 rounded-full border border-navy/10 bg-white/70 py-1.5 pl-1.5 pr-3 text-navy shadow-sm transition hover:border-gold/50 hover:bg-white"
       >
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm font-semibold text-warm-white">
@@ -55,25 +60,25 @@ export default function ProfileMenu({ onSignOut, user }: ProfileMenuProps) {
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-3 w-56 overflow-hidden rounded-2xl border border-gold/25 bg-warm-white shadow-[0_18px_45px_rgba(11,31,58,0.16)]">
           <Link
-            href="/my-events"
+            href={getLocalizedPath(locale, "/my-events")}
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-sm font-semibold text-navy transition hover:bg-pale-gold/70"
           >
-            My Events
+            {messages.profile.myEvents}
           </Link>
           <Link
             href="/account-settings"
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-sm font-semibold text-navy transition hover:bg-pale-gold/70"
           >
-            Account Settings
+            {messages.profile.accountSettings}
           </Link>
           <button
             type="button"
             onClick={signOut}
             className="block w-full border-t border-navy/10 px-4 py-3 text-left text-sm font-semibold text-navy/70 transition hover:bg-pale-gold/70 hover:text-navy"
           >
-            Sign Out
+            {messages.profile.signOut}
           </button>
         </div>
       )}

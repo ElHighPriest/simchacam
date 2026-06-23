@@ -16,12 +16,13 @@ export async function generateMetadata({
   const { locale: localeParam } = await params;
   const locale: Locale = isLocale(localeParam) ? localeParam : "en";
   const messages = getMessages(locale);
+  const title =
+    locale === "he"
+      ? "SimchaCam | שידור חי פרטי לשמחות"
+      : "SimchaCam | Simple livestreaming for simchas";
 
   return {
-    title:
-      locale === "he"
-        ? "SimchaCam | שידור חי פרטי לשמחות"
-        : "SimchaCam | Simple livestreaming for simchas",
+    title,
     description: messages.hero.description,
     alternates: {
       canonical: `/${locale}`,
@@ -31,10 +32,7 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title:
-        locale === "he"
-          ? "SimchaCam | שידור חי פרטי לשמחות"
-          : "SimchaCam | Simple livestreaming for simchas",
+      title,
       description: messages.hero.description,
       url: `https://simcha.cam/${locale}`,
       siteName: "SimchaCam",
@@ -51,10 +49,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title:
-        locale === "he"
-          ? "SimchaCam | שידור חי פרטי לשמחות"
-          : "SimchaCam | Simple livestreaming for simchas",
+      title,
       description: messages.hero.description,
       images: ["/simchacam-social.png"],
     },

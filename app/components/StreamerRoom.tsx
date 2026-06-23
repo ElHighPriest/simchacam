@@ -13,6 +13,7 @@ import {
 } from "@livekit/components-react";
 import { Track, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
+import { getLocalizedPath, getMessages, type Locale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 type StreamerRoomProps = {
@@ -22,6 +23,7 @@ type StreamerRoomProps = {
   sessionId?: string;
   hardEndsAt?: string;
   lifecycleMode?: "legacy" | "server-owned";
+  locale?: Locale;
   recordingEnabled?: boolean;
 };
 
@@ -30,6 +32,7 @@ function StreamerContent({
   hardEndsAt,
   isLandscape,
   lifecycleMode,
+  locale,
   onEndStream,
   recordingEnabled,
   sessionId,
@@ -38,10 +41,13 @@ function StreamerContent({
   hardEndsAt?: string;
   isLandscape: boolean;
   lifecycleMode: "legacy" | "server-owned";
+  locale: Locale;
   onEndStream: () => Promise<void>;
   recordingEnabled: boolean;
   sessionId?: string;
 }) {
+  const messages = getMessages(locale);
+  const t = messages.streamer;
   const { isCameraEnabled, isMicrophoneEnabled, localParticipant } =
     useLocalParticipant();
   const room = useRoomContext();
@@ -94,7 +100,7 @@ function StreamerContent({
       } = await supabase.auth.getSession();
 
       if (!session) {
-        setRecordingWarning("Recording could not start because you are not signed in.");
+        setRecordingWarning(t.recordingSignInWarning);
         return;
       }
 
@@ -114,21 +120,30 @@ function StreamerContent({
 
         if (!response.ok) {
           console.error("Could not initialize recording", data);
-          setRecordingWarning("Recording could not resume. Please end and restart if this continues.");
+          setRecordingWarning(t.recordingResumeWarning);
           return;
         }
 
         if (data?.recovered) {
-          setRecordingNotice("Recording resumed after reconnect.");
+          setRecordingNotice(t.recordingResumed);
         }
       } catch (error) {
         console.error("Could not initialize recording", error);
-        setRecordingWarning("Recording could not resume. Please check your connection.");
+        setRecordingWarning(t.recordingConnectionWarning);
       }
     }
 
     startRecording();
-  }, [eventId, localCameraTrack, localParticipant, recordingEnabled]);
+  }, [
+    eventId,
+    localCameraTrack,
+    localParticipant,
+    recordingEnabled,
+    t.recordingConnectionWarning,
+    t.recordingResumeWarning,
+    t.recordingResumed,
+    t.recordingSignInWarning,
+  ]);
 
   useEffect(() => {
     if (!recordingEnabled || isEndingStream) {
@@ -137,8 +152,7 @@ function StreamerContent({
 
     function warnBeforeLeaving(event: BeforeUnloadEvent) {
       event.preventDefault();
-      event.returnValue =
-        "Your Premium livestream is still active. Leaving may interrupt recording.";
+      event.returnValue = t.leaveWarning;
     }
 
     window.addEventListener("beforeunload", warnBeforeLeaving);
@@ -146,7 +160,7 @@ function StreamerContent({
     return () => {
       window.removeEventListener("beforeunload", warnBeforeLeaving);
     };
-  }, [isEndingStream, recordingEnabled]);
+  }, [isEndingStream, recordingEnabled, t.leaveWarning]);
 
   async function endStream() {
     if (isEndingStream) {
@@ -158,10 +172,10 @@ function StreamerContent({
     try {
       await onEndStream();
       await room.disconnect();
-      window.location.href = "/my-events";
+      window.location.assign(getLocalizedPath(locale, "/my-events"));
     } catch (error) {
       console.error(error);
-      alert("Could not end livestream");
+      alert(t.endFailed);
       setIsEndingStream(false);
     }
   }
@@ -196,7 +210,7 @@ function StreamerContent({
               className="h-full max-h-full w-full overflow-hidden rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
             />
           ) : (
-            <div className="text-center text-gray-400">Starting camera...</div>
+            <div className="text-center text-gray-400">{t.startingCamera}</div>
           )}
         </section>
 
@@ -204,7 +218,7 @@ function StreamerContent({
           <div className="flex flex-wrap gap-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
               <span className="h-2 w-2 rounded-full bg-[#68d391]" />
-              Camera active
+              {t.cameraActive}
             </div>
 
             <div className="inline-flex items-center rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
@@ -224,13 +238,14 @@ function StreamerContent({
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
               <span>
-                {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
+                {viewerCount}{" "}
+                {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
               </span>
             </div>
 
             {recordingEnabled && (
               <div className="inline-flex rounded-full bg-recording-red/20 px-3 py-1.5 text-xs font-semibold text-[#ff7774]">
-                Recording enabled
+                {t.recordingEnabled}
               </div>
             )}
 
@@ -253,7 +268,7 @@ function StreamerContent({
                 type="button"
                 onClick={toggleMicrophone}
                 aria-label={
-                  isMicrophoneEnabled ? "Mute microphone" : "Unmute microphone"
+                  isMicrophoneEnabled ? t.muteMicrophone : t.unmuteMicrophone
                 }
                 aria-pressed={isMicrophoneEnabled}
                 className="flex min-h-12 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/18"
@@ -297,7 +312,7 @@ function StreamerContent({
               <button
                 type="button"
                 onClick={toggleCamera}
-                aria-label={isCameraEnabled ? "Turn camera off" : "Turn camera on"}
+                aria-label={isCameraEnabled ? t.turnCameraOff : t.turnCameraOn}
                 aria-pressed={isCameraEnabled}
                 className="flex min-h-12 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/18"
               >
@@ -342,7 +357,7 @@ function StreamerContent({
                 disabled={isEndingStream}
                 className="min-h-12 w-full rounded-xl bg-recording-red px-4 py-3 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
               >
-                {isEndingStream ? "Ending Stream..." : "End Stream"}
+                {isEndingStream ? t.endingStream : t.endStream}
               </button>
             )}
 
@@ -352,7 +367,7 @@ function StreamerContent({
                 onClick={() => room.disconnect()}
                 className="min-h-12 w-full rounded-xl bg-recording-red px-4 py-3 font-semibold text-white transition hover:bg-[#cc302d]"
               >
-                Leave Stream
+                {t.leaveStream}
               </button>
             )}
           </div>
@@ -372,15 +387,16 @@ function StreamerContent({
       <header className="flex shrink-0 items-start justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
         <div className="min-w-0">
           <h1 className="text-xl font-bold sm:text-2xl">SimchaCam</h1>
-          <p className="text-xs text-gray-400 sm:text-sm">Camera active</p>
+          <p className="text-xs text-gray-400 sm:text-sm">{t.cameraActive}</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1 text-right">
           <p className="text-sm text-gray-300">
-            {viewerCount} {viewerCount === 1 ? "viewer" : "viewers"}
+            {viewerCount}{" "}
+            {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
           </p>
           {recordingEnabled && (
             <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774]">
-              Recording enabled
+              {t.recordingEnabled}
             </p>
           )}
           {recordingNotice && (
@@ -403,7 +419,7 @@ function StreamerContent({
             className="h-full max-h-full w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
           />
         ) : (
-          <div className="text-center text-gray-400">Starting camera...</div>
+          <div className="text-center text-gray-400">{t.startingCamera}</div>
         )}
       </section>
 
@@ -426,7 +442,7 @@ function StreamerContent({
             disabled={isEndingStream}
             className="mt-2 min-h-11 w-full rounded-xl bg-recording-red px-6 py-2.5 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55 sm:mt-3 sm:min-h-12 sm:py-3"
           >
-            {isEndingStream ? "Ending Stream..." : "End Stream"}
+            {isEndingStream ? t.endingStream : t.endStream}
           </button>
         )}
       </footer>
@@ -443,6 +459,7 @@ export default function StreamerRoom({
   sessionId,
   hardEndsAt,
   lifecycleMode = "legacy",
+  locale = "en",
   recordingEnabled = false,
 }: StreamerRoomProps) {
   const explicitEndRequested = useRef(false);
@@ -462,7 +479,7 @@ export default function StreamerRoom({
 
   async function endServerOwnedStream() {
     if (!eventId) {
-      throw new Error("Missing event ID");
+      throw new Error(getMessages(locale).streamer.missingEventId);
     }
 
     explicitEndRequested.current = true;
@@ -472,7 +489,7 @@ export default function StreamerRoom({
 
     if (!session) {
       explicitEndRequested.current = false;
-      throw new Error("Please log in before ending the livestream");
+      throw new Error(getMessages(locale).streamer.endLoginRequired);
     }
 
     if (recordingEnabled) {
@@ -500,7 +517,7 @@ export default function StreamerRoom({
     if (!response.ok) {
       explicitEndRequested.current = false;
       const data = await response.json().catch(() => null);
-      throw new Error(data?.error || "Could not end livestream");
+      throw new Error(data?.error || getMessages(locale).streamer.endFailed);
     }
   }
 
@@ -510,7 +527,7 @@ export default function StreamerRoom({
         return;
       }
 
-      window.location.href = "/my-events";
+      window.location.assign(getLocalizedPath(locale, "/my-events"));
       return;
     }
 
@@ -541,7 +558,7 @@ export default function StreamerRoom({
         .eq("id", eventId);
     }
 
-    window.location.href = "/my-events";
+    window.location.assign(getLocalizedPath(locale, "/my-events"));
   }
 
   return (
@@ -598,6 +615,7 @@ export default function StreamerRoom({
         hardEndsAt={hardEndsAt}
         isLandscape={isLandscape}
         lifecycleMode={lifecycleMode}
+        locale={locale}
         onEndStream={endServerOwnedStream}
         recordingEnabled={recordingEnabled}
       />

@@ -30,13 +30,13 @@ export default function PublicFooter() {
             {messages.nav.pricing}
           </Link>
           <Link href="/privacy" className="transition hover:text-navy">
-            Privacy
+            {messages.common.privacy}
           </Link>
           <Link href="/terms" className="transition hover:text-navy">
-            Terms
+            {messages.common.terms}
           </Link>
           <Link href="/support" className="transition hover:text-navy">
-            Support
+            {messages.common.support}
           </Link>
         </nav>
       </div>

@@ -3,12 +3,40 @@
     "english": "English",
     "hebrew": "עברית"
   },
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "copied": "Copied",
+    "copyFailed": "Could not copy",
+    "delete": "Delete",
+    "loadingSimchaCam": "Loading SimchaCam...",
+    "privacy": "Privacy",
+    "support": "Support",
+    "terms": "Terms"
+  },
   "nav": {
     "howItWorks": "How It Works",
     "pricing": "Pricing",
     "signIn": "Sign In",
     "createEvent": "Create Event",
     "myEvents": "My Events"
+  },
+  "profile": {
+    "accountSettings": "Account Settings",
+    "ariaLabel": "Open account menu",
+    "myEvents": "My Events",
+    "signOut": "Sign Out"
+  },
+  "preferences": {
+    "buttonLabel": "Select language and currency preferences",
+    "currency": "Currency",
+    "currencyDescription": "Currency currently follows the selected language. Independent currency selection can be added later.",
+    "english": "English",
+    "gbp": "GBP — £",
+    "hebrew": "עברית",
+    "ils": "ILS — ₪",
+    "language": "Language",
+    "selectPreferences": "Select your preferences"
   },
   "hero": {
     "eyebrow": "Every simcha, shared",
@@ -18,6 +46,192 @@
     "secondarySignedIn": "My Events",
     "secondarySignedOut": "Sign In",
     "bullets": ["No app required", "Private event links", "Live from your phone"]
+  },
+  "createEvent": {
+    "ariaHome": "SimchaCam home",
+    "eyebrow": "Create a celebration",
+    "title": "Create Event",
+    "description": "Set up a private livestream page for your simcha. You can share the event link as soon as it is created.",
+    "detailsEyebrow": "Event details",
+    "detailsTitle": "Name your simcha",
+    "eventNameLabel": "Event name",
+    "eventNamePlaceholder": "Aryeh & Devorah Wedding",
+    "privacyEyebrow": "Privacy",
+    "privacyTitle": "Private viewing",
+    "privacyDescription": "Add an optional password so only invited family and friends can enter the livestream and access its recording.",
+    "passwordLabel": "Event password",
+    "optional": "optional",
+    "passwordPlaceholder": "Choose a password",
+    "premiumEyebrow": "Premium upgrade",
+    "premiumTitle": "More time, more guests, and a lasting replay",
+    "premiumDescription": "Create your event first, then upgrade that event to Premium when you are ready. Premium gives families a fuller livestream experience for bigger simchas.",
+    "premiumFeatures": [
+      "Event Scheduling (date and time)",
+      "Automatic recording",
+      "Replay for 30 days",
+      "Download recording",
+      "Up to 500 viewers",
+      "Up to 6 hour livestreams"
+    ],
+    "premiumFootnote": "Premium is purchased after event creation and applies only to this specific event.",
+    "submit": "Create Event",
+    "submitting": "Creating Event...",
+    "alerts": {
+      "confirmEmail": "Please confirm your email before creating an event",
+      "eventNameRequired": "Please enter an event name",
+      "loginRequired": "Please log in before creating an event",
+      "createFailed": "Could not create event"
+    }
+  },
+  "eventPassword": {
+    "copy": "Copy password",
+    "hide": "Hide event password",
+    "show": "Show event password"
+  },
+  "eventCreated": {
+    "eyebrow": "Event created",
+    "title": "Your event is ready",
+    "privateLink": "Your private event link",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link copied",
+    "shareWhatsApp": "Share on WhatsApp",
+    "openEventPage": "Open Event Page",
+    "moreSharing": "More Sharing Options",
+    "shareTitle": "SimchaCam Livestream",
+    "shareText": "Please join the livestream for {eventName}",
+    "premiumEyebrow": "Premium recording",
+    "premiumTitle": "Recording, Replay & Download",
+    "premiumDescription": "Add automatic recording, replay for 30 days, download access, and a longer Premium livestream for this event.",
+    "checkoutLoading": "Creating checkout...",
+    "readyEyebrow": "When you're ready",
+    "readyDescription": "Start the livestream when the celebration begins. You can also return and start it later from My Events.",
+    "goLive": "Go Live",
+    "alerts": {
+      "checkoutLogin": "Please log in before upgrading to Premium",
+      "checkoutFailed": "Could not start Premium checkout",
+      "goLiveLogin": "Please log in before starting a livestream",
+      "goLiveFailed": "Could not start livestream"
+    }
+  },
+  "myEvents": {
+    "backHome": "Back to home",
+    "eyebrow": "Your celebrations",
+    "title": "My Events",
+    "description": "Manage your upcoming livestreams, share private event links, and return to past recordings.",
+    "createLivestream": "Create Your Livestream",
+    "createEvent": "Create Event",
+    "emptyTitle": "Your first simcha starts here.",
+    "emptyDescription": "Create an event, share its private link, and go live when the celebration begins.",
+    "loading": "Loading your events...",
+    "dateMissingPremium": "Click Edit Event to add time and date",
+    "groups": {
+      "live": {
+        "title": "Live",
+        "description": "Events currently broadcasting"
+      },
+      "upcoming": {
+        "title": "Upcoming",
+        "description": "Scheduled events ready to share and stream"
+      },
+      "past": {
+        "title": "Past",
+        "description": "Ended livestreams and available recordings"
+      }
+    },
+    "badges": {
+      "free": "Free",
+      "premium": "Premium",
+      "live": "Live",
+      "ended": "Ended",
+      "scheduled": "Scheduled",
+      "recordingReady": "Recording ready",
+      "recordingProcessing": "Recording processing",
+      "passwordProtected": "Password protected"
+    },
+    "actions": {
+      "copyLink": "Copy Link",
+      "share": "Share",
+      "editEvent": "Edit Event",
+      "viewPage": "View Page",
+      "goLive": "Go Live",
+      "returnToStream": "Return to Stream",
+      "watchRecording": "Watch Recording",
+      "viewRecordingStatus": "View Recording Status",
+      "viewEvent": "View Event",
+      "premiumEnabled": "Premium enabled",
+      "creatingCheckout": "Creating checkout..."
+    },
+    "messages": {
+      "endedFree": "This free livestream has ended. No recording is available.",
+      "deleteConfirm": "Are you sure you want to delete \"{eventName}\"?",
+      "deleteFailed": "Could not delete event",
+      "checkoutFailed": "Could not start Premium checkout",
+      "goLiveLogin": "Please log in before starting a livestream",
+      "goLiveFailed": "Could not start livestream",
+      "shareText": "Please join the livestream for {eventName}"
+    }
+  },
+  "viewer": {
+    "loading": "Loading event...",
+    "eventUnavailable": "Event unavailable",
+    "couldNotOpen": "We couldn't open this event",
+    "eventNotFound": "Event not found.",
+    "privateEvent": "Private event",
+    "passwordTitle": "Enter the event password",
+    "passwordDescription": "This livestream is private. Enter the password shared by the host to continue.",
+    "passwordPlaceholder": "Event password",
+    "incorrectPassword": "Incorrect password",
+    "enterEvent": "Enter Event",
+    "eventRecording": "Event recording",
+    "streamEnded": "This livestream has ended.",
+    "recordingProcessing": "Recording is processing",
+    "recordingProcessingDescription": "The replay is being prepared. This page will update automatically when it is ready.",
+    "recordingFailed": "Recording failed",
+    "recordingFailedDescription": "Unfortunately, a replay is not available for this event.",
+    "availableUntil": "Available until {date}",
+    "part": "Part {number}",
+    "opening": "Opening...",
+    "watch": "Watch",
+    "preparing": "Preparing...",
+    "download": "Download",
+    "watchRecording": "Watch Recording",
+    "downloadRecording": "Download Recording",
+    "recordingPrivacy": "Please share this private recording only with invited family and friends.",
+    "thankYou": "Thank you for joining",
+    "noRecording": "No recording is currently available for this event.",
+    "invited": "You're invited",
+    "waitingTitle": "Waiting for the host",
+    "waitingDescription": "The livestream has not started yet. It will begin automatically on this page when the host goes live.",
+    "liveNow": "Live now",
+    "readyToWatch": "The livestream is ready to watch.",
+    "connecting": "Connecting...",
+    "joinLivestream": "Join Livestream",
+    "connectingToLivestream": "Connecting to the livestream...",
+    "eventFull": "This livestream is currently full. Please try again shortly.",
+    "connectFailed": "Could not connect to livestream.",
+    "recordingAccessFailed": "Could not access recording."
+  },
+  "streamer": {
+    "cameraActive": "Camera active",
+    "viewerSingular": "viewer",
+    "viewerPlural": "viewers",
+    "recordingEnabled": "Recording enabled",
+    "startingCamera": "Starting camera...",
+    "endingStream": "Ending Stream...",
+    "endStream": "End Stream",
+    "leaveStream": "Leave Stream",
+    "muteMicrophone": "Mute microphone",
+    "unmuteMicrophone": "Unmute microphone",
+    "turnCameraOff": "Turn camera off",
+    "turnCameraOn": "Turn camera on",
+    "recordingSignInWarning": "Recording could not start because you are not signed in.",
+    "recordingResumeWarning": "Recording could not resume. Please end and restart if this continues.",
+    "recordingConnectionWarning": "Recording could not resume. Please check your connection.",
+    "recordingResumed": "Recording resumed after reconnect.",
+    "leaveWarning": "Your Premium livestream is still active. Leaving may interrupt recording.",
+    "endFailed": "Could not end livestream",
+    "missingEventId": "Missing event ID",
+    "endLoginRequired": "Please log in before ending the livestream"
   },
   "howItWorks": {
     "eyebrow": "How it works",

@@ -3,10 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
 import { isEmailVerified } from "@/lib/auth";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+  getPremiumPriceDisplay,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
@@ -32,6 +39,12 @@ type EventGroup = {
 
 export default function MyEventsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = getLocaleFromPathname(pathname);
+  const messages = getMessages(locale);
+  const premiumPrice = getPremiumPriceDisplay(locale);
+  const homePath = getLocalizedPath(locale);
+  const createEventHref = `${homePath}#create-event`;
   const [user, setUser] = useState<User | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,10 +145,10 @@ export default function MyEventsPage() {
 
   function formatEventDate(eventAt: string | null) {
     if (!eventAt) {
-      return "Click Edit Event to add time and date";
+      return messages.myEvents.dateMissingPremium;
     }
 
-    return new Intl.DateTimeFormat("en-GB", {
+    return new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "en-GB", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -146,7 +159,7 @@ export default function MyEventsPage() {
   }
 
   async function copyLink(slug: string) {
-    const link = `https://simcha.cam/e/${slug}`;
+    const link = `https://simcha.cam${getLocalizedPath(locale, `/e/${slug}`)}`;
 
     try {
       await navigator.clipboard.writeText(link);
@@ -167,13 +180,16 @@ export default function MyEventsPage() {
   }
 
   async function shareEvent(event: Event) {
-    const link = `https://simcha.cam/e/${event.slug}`;
+    const link = `https://simcha.cam${getLocalizedPath(locale, `/e/${event.slug}`)}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: event.name,
-          text: `Please join the livestream for ${event.name}`,
+          text: messages.myEvents.messages.shareText.replace(
+            "{eventName}",
+            event.name
+          ),
           url: link,
         });
       } catch {
@@ -187,7 +203,7 @@ export default function MyEventsPage() {
 
   async function deleteEvent(id: string, name: string) {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${name}"?`
+      messages.myEvents.messages.deleteConfirm.replace("{eventName}", name)
     );
 
     if (!confirmed) return;
@@ -196,7 +212,7 @@ export default function MyEventsPage() {
 
     if (error) {
       console.error(error);
-      alert("Could not delete event");
+      alert(messages.myEvents.messages.deleteFailed);
       return;
     }
 
@@ -228,21 +244,23 @@ export default function MyEventsPage() {
         {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
+          body: JSON.stringify({ locale }),
         }
       );
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        alert(data.error || "Could not start Premium checkout");
+        alert(data.error || messages.myEvents.messages.checkoutFailed);
         return;
       }
 
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (error) {
       console.error(error);
-      alert("Could not start Premium checkout");
+      alert(messages.myEvents.messages.checkoutFailed);
     } finally {
       setUpgradingEventId("");
     }
@@ -255,7 +273,7 @@ export default function MyEventsPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert("Please log in before starting a livestream");
+        alert(messages.myEvents.messages.goLiveLogin);
         return;
       }
 
@@ -271,7 +289,7 @@ export default function MyEventsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Could not start livestream");
+        alert(data.error || messages.myEvents.messages.goLiveFailed);
         return;
       }
 
@@ -289,7 +307,7 @@ export default function MyEventsPage() {
       setIsGoingLive(true);
     } catch (error) {
       console.error(error);
-      alert("Could not start livestream");
+      alert(messages.myEvents.messages.goLiveFailed);
     }
   }
 
@@ -303,6 +321,7 @@ export default function MyEventsPage() {
         hardEndsAt={liveHardEndsAt}
         recordingEnabled={recordingEnabled}
         lifecycleMode="server-owned"
+        locale={locale}
       />
     );
   }
@@ -313,7 +332,7 @@ export default function MyEventsPage() {
         <div className="text-center">
           <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gold/35 border-t-gold" />
           <p className="text-sm font-medium text-muted-navy">
-            Loading your events...
+            {messages.myEvents.loading}
           </p>
         </div>
       </main>
@@ -322,13 +341,13 @@ export default function MyEventsPage() {
 
   const eventGroups: EventGroup[] = [
     {
-      title: "Live",
-      description: "Events currently broadcasting",
+      title: messages.myEvents.groups.live.title,
+      description: messages.myEvents.groups.live.description,
       events: events.filter((event) => event.status === "live"),
     },
     {
-      title: "Upcoming",
-      description: "Scheduled events ready to share and stream",
+      title: messages.myEvents.groups.upcoming.title,
+      description: messages.myEvents.groups.upcoming.description,
       events: events
         .filter(
           (event) => event.status !== "live" && event.status !== "ended"
@@ -340,8 +359,8 @@ export default function MyEventsPage() {
         ),
     },
     {
-      title: "Past",
-      description: "Ended livestreams and available recordings",
+      title: messages.myEvents.groups.past.title,
+      description: messages.myEvents.groups.past.description,
       events: events
         .filter((event) => event.status === "ended")
         .sort(
@@ -353,11 +372,15 @@ export default function MyEventsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/"
+            href={homePath}
             aria-label="SimchaCam home"
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
@@ -372,10 +395,10 @@ export default function MyEventsPage() {
 
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
-              href="/#create-event"
+              href={createEventHref}
               className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
             >
-              Create Event
+              {messages.nav.createEvent}
             </Link>
             {user && <ProfileMenu user={user} onSignOut={logout} />}
           </div>
@@ -385,44 +408,42 @@ export default function MyEventsPage() {
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
         <div className="mb-12">
           <Link
-            href="/"
+            href={homePath}
             className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-muted-navy transition hover:text-navy"
           >
             <span aria-hidden="true">←</span>
-            Back to home
+            {messages.myEvents.backHome}
           </Link>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-            Your celebrations
+            {messages.myEvents.eyebrow}
           </p>
           <h1 className="font-display text-5xl font-semibold leading-none tracking-[-0.025em] text-navy sm:text-6xl">
-            My Events
+            {messages.myEvents.title}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-navy">
-            Manage your upcoming livestreams, share private event links, and
-            return to past recordings.
+            {messages.myEvents.description}
           </p>
           <Link
-            href="/#create-event"
+            href={createEventHref}
             className="mt-7 inline-flex min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
           >
-            Create Your Livestream
+            {messages.myEvents.createLivestream}
           </Link>
         </div>
 
         {events.length === 0 ? (
           <section className="rounded-[1.5rem] border border-gold/30 bg-white/70 px-6 py-14 text-center shadow-[0_18px_50px_rgba(11,31,58,0.06)]">
             <p className="font-display text-3xl font-semibold text-navy">
-              Your first simcha starts here.
+              {messages.myEvents.emptyTitle}
             </p>
             <p className="mx-auto mt-3 max-w-md text-muted-navy">
-              Create an event, share its private link, and go live when the
-              celebration begins.
+              {messages.myEvents.emptyDescription}
             </p>
             <Link
-              href="/#create-event"
+              href={createEventHref}
               className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white"
             >
-              Create Event
+              {messages.myEvents.createEvent}
             </Link>
           </section>
         ) : (
@@ -434,7 +455,7 @@ export default function MyEventsPage() {
                   <div className="mb-5 flex items-end justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-3">
-                        {group.title === "Live" && (
+                        {group.title === messages.myEvents.groups.live.title && (
                           <span className="h-2.5 w-2.5 rounded-full bg-recording-red shadow-[0_0_0_5px_rgba(229,57,53,0.12)]" />
                         )}
                         <h2 className="font-display text-3xl font-semibold text-navy">
@@ -468,10 +489,10 @@ export default function MyEventsPage() {
                         Boolean(event.event_at) || event.plan === "premium";
                       const copyButtonText =
                         copiedSlug === event.slug
-                          ? "Copied"
+                          ? messages.common.copied
                           : copyFailedSlug === event.slug
-                            ? "Could not copy"
-                            : "Copy Link";
+                            ? messages.common.copyFailed
+                            : messages.myEvents.actions.copyLink;
 
                       return (
                         <article
@@ -491,8 +512,8 @@ export default function MyEventsPage() {
                                       }
                                     >
                                       {event.plan === "premium"
-                                        ? "Premium"
-                                        : "Free"}
+                                        ? messages.myEvents.badges.premium
+                                        : messages.myEvents.badges.free}
                                     </span>
                                   )}
                                   <span
@@ -508,25 +529,25 @@ export default function MyEventsPage() {
                                       <span className="h-1.5 w-1.5 rounded-full bg-recording-red" />
                                     )}
                                     {isLive
-                                      ? "Live"
+                                      ? messages.myEvents.badges.live
                                       : isEnded
-                                        ? "Ended"
-                                        : "Scheduled"}
+                                        ? messages.myEvents.badges.ended
+                                        : messages.myEvents.badges.scheduled}
                                   </span>
 
                                   {recordingReady && (
                                     <span className="rounded-full border border-gold/35 bg-pale-gold/70 px-3 py-1 text-xs font-semibold text-navy">
-                                      Recording ready
+                                      {messages.myEvents.badges.recordingReady}
                                     </span>
                                   )}
                                   {recordingProcessing && (
                                     <span className="rounded-full border border-gold/30 bg-white px-3 py-1 text-xs font-semibold text-[#80652f]">
-                                      Recording processing
+                                      {messages.myEvents.badges.recordingProcessing}
                                     </span>
                                   )}
                                   {event.hasPassword && (
                                     <span className="rounded-full border border-navy/10 bg-white px-3 py-1 text-xs font-semibold text-navy/65">
-                                      Password protected
+                                      {messages.myEvents.badges.passwordProtected}
                                     </span>
                                   )}
                                 </div>
@@ -540,31 +561,33 @@ export default function MyEventsPage() {
                                   </p>
                                 )}
                                 <p className="mt-3 max-w-full truncate text-sm text-muted-navy">
-                                  simcha.cam/e/{event.slug}
+                                  {`simcha.cam${getLocalizedPath(
+                                    locale,
+                                    `/e/${event.slug}`
+                                  )}`}
                                 </p>
                               </div>
 
                               <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto">
                                 {isEndedFreeWithoutRecording ? (
                                   <div className="max-w-xs rounded-xl border border-navy/10 bg-navy/[0.025] px-4 py-3 text-sm leading-6 text-muted-navy">
-                                    This free livestream has ended. No
-                                    recording is available.
+                                    {messages.myEvents.messages.endedFree}
                                   </div>
                                 ) : isEnded && recordingReady ? (
                                   <Link
-                                    href={`/e/${event.slug}`}
+                                    href={getLocalizedPath(locale, `/e/${event.slug}`)}
                                     className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] sm:w-auto"
                                   >
-                                    Watch Recording
+                                    {messages.myEvents.actions.watchRecording}
                                   </Link>
                                 ) : isEnded ? (
                                   <Link
-                                    href={`/e/${event.slug}`}
+                                    href={getLocalizedPath(locale, `/e/${event.slug}`)}
                                     className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] sm:w-auto"
                                   >
                                     {recordingProcessing
-                                      ? "View Recording Status"
-                                      : "View Event"}
+                                      ? messages.myEvents.actions.viewRecordingStatus
+                                      : messages.myEvents.actions.viewEvent}
                                   </Link>
                                 ) : (
                                   <button
@@ -572,7 +595,9 @@ export default function MyEventsPage() {
                                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-recording-red px-6 py-3 font-semibold text-white shadow-[0_10px_24px_rgba(229,57,53,0.18)] transition hover:bg-[#cc302d] sm:w-auto"
                                   >
                                     <span className="h-2 w-2 rounded-full bg-white" />
-                                    {isLive ? "Return to Stream" : "Go Live"}
+                                    {isLive
+                                      ? messages.myEvents.actions.returnToStream
+                                      : messages.myEvents.actions.goLive}
                                   </button>
                                 )}
 
@@ -584,14 +609,14 @@ export default function MyEventsPage() {
                                     className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/45 bg-pale-gold/70 px-6 py-3 font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/45 sm:w-auto"
                                   >
                                     {isUpgrading
-                                      ? "Creating checkout..."
-                                      : "Upgrade to Premium — £9.99"}
+                                      ? messages.myEvents.actions.creatingCheckout
+                                      : premiumPrice.upgradeButton}
                                   </button>
                                 )}
 
                                 {event.plan === "premium" && (
                                   <div className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/35 bg-pale-gold/60 px-6 py-3 text-sm font-semibold text-[#80652f] sm:w-auto">
-                                    Premium enabled
+                                    {messages.myEvents.actions.premiumEnabled}
                                   </div>
                                 )}
                               </div>
@@ -606,7 +631,7 @@ export default function MyEventsPage() {
                                 }
                                 className="rounded-lg px-3 py-2 text-sm font-medium text-navy/45 transition hover:bg-white hover:text-recording-red"
                               >
-                                Delete
+                                {messages.common.delete}
                               </button>
                             </div>
                           ) : (
@@ -615,7 +640,7 @@ export default function MyEventsPage() {
                                 onClick={() => shareEvent(event)}
                                 className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
                               >
-                                Share
+                                {messages.myEvents.actions.share}
                               </button>
                               <button
                                 onClick={() => copyLink(event.slug)}
@@ -635,13 +660,13 @@ export default function MyEventsPage() {
                                     href={`/edit-event/${event.id}`}
                                     className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
                                   >
-                                    Edit Event
+                                    {messages.myEvents.actions.editEvent}
                                   </Link>
                                   <Link
-                                    href={`/e/${event.slug}`}
+                                    href={getLocalizedPath(locale, `/e/${event.slug}`)}
                                     className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
                                   >
-                                    View Page
+                                    {messages.myEvents.actions.viewPage}
                                   </Link>
                                 </>
                               )}
@@ -651,7 +676,7 @@ export default function MyEventsPage() {
                                 }
                                 className="rounded-lg px-3 py-2 text-sm font-medium text-recording-red/80 transition hover:bg-red-50 hover:text-recording-red sm:ml-auto"
                               >
-                                Delete
+                                {messages.common.delete}
                               </button>
                             </div>
                           )}

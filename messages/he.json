@@ -3,12 +3,40 @@
     "english": "English",
     "hebrew": "עברית"
   },
+  "common": {
+    "back": "חזרה",
+    "cancel": "ביטול",
+    "copied": "הועתק",
+    "copyFailed": "לא ניתן להעתיק",
+    "delete": "מחיקה",
+    "loadingSimchaCam": "SimchaCam נטען...",
+    "privacy": "פרטיות",
+    "support": "תמיכה",
+    "terms": "תנאי שימוש"
+  },
   "nav": {
     "howItWorks": "איך זה עובד",
     "pricing": "מחירים",
     "signIn": "כניסה",
     "createEvent": "יצירת אירוע",
     "myEvents": "האירועים שלי"
+  },
+  "profile": {
+    "accountSettings": "הגדרות חשבון",
+    "ariaLabel": "פתיחת תפריט חשבון",
+    "myEvents": "האירועים שלי",
+    "signOut": "התנתקות"
+  },
+  "preferences": {
+    "buttonLabel": "בחירת העדפות שפה ומטבע",
+    "currency": "מטבע",
+    "currencyDescription": "המטבע נקבע כרגע לפי השפה שנבחרה. בחירת מטבע נפרדת תתווסף בהמשך.",
+    "english": "English",
+    "gbp": "GBP — £",
+    "hebrew": "עברית",
+    "ils": "ILS — ₪",
+    "language": "שפה",
+    "selectPreferences": "בחר העדפות"
   },
   "hero": {
     "eyebrow": "כל שמחה, גם מרחוק",
@@ -18,6 +46,192 @@
     "secondarySignedIn": "האירועים שלי",
     "secondarySignedOut": "כניסה",
     "bullets": ["אין צורך באפליקציה", "קישור פרטי לאירוע", "שידור חי מהטלפון"]
+  },
+  "createEvent": {
+    "ariaHome": "דף הבית של SimchaCam",
+    "eyebrow": "יצירת שמחה",
+    "title": "יצירת אירוע",
+    "description": "הקימו עמוד שידור חי פרטי לשמחה שלכם. אפשר לשתף את הקישור מיד לאחר יצירת האירוע.",
+    "detailsEyebrow": "פרטי האירוע",
+    "detailsTitle": "תנו שם לשמחה",
+    "eventNameLabel": "שם האירוע",
+    "eventNamePlaceholder": "החתונה של אריה ודבורה",
+    "privacyEyebrow": "פרטיות",
+    "privacyTitle": "צפייה פרטית",
+    "privacyDescription": "אפשר להוסיף סיסמה כדי שרק משפחה וחברים שהוזמנו יוכלו להיכנס לשידור ולצפות בהקלטה.",
+    "passwordLabel": "סיסמת אירוע",
+    "optional": "אופציונלי",
+    "passwordPlaceholder": "בחרו סיסמה",
+    "premiumEyebrow": "שדרוג Premium",
+    "premiumTitle": "יותר זמן, יותר אורחים וצפייה חוזרת",
+    "premiumDescription": "צרו קודם את האירוע, ואז שדרגו אותו ל-Premium כשתהיו מוכנים. Premium נותן למשפחה חוויית שידור מלאה יותר לשמחות גדולות.",
+    "premiumFeatures": [
+      "תזמון אירוע עם תאריך ושעה",
+      "הקלטה אוטומטית",
+      "צפייה חוזרת ל-30 יום",
+      "הורדת ההקלטה",
+      "עד 500 צופים",
+      "שידור חי עד 6 שעות"
+    ],
+    "premiumFootnote": "Premium נרכש לאחר יצירת האירוע וחל רק על האירוע הזה.",
+    "submit": "יצירת אירוע",
+    "submitting": "יוצר אירוע...",
+    "alerts": {
+      "confirmEmail": "יש לאשר את כתובת האימייל לפני יצירת אירוע",
+      "eventNameRequired": "יש להזין שם לאירוע",
+      "loginRequired": "יש להתחבר לפני יצירת אירוע",
+      "createFailed": "לא ניתן ליצור את האירוע"
+    }
+  },
+  "eventPassword": {
+    "copy": "העתקת סיסמה",
+    "hide": "הסתרת סיסמת האירוע",
+    "show": "הצגת סיסמת האירוע"
+  },
+  "eventCreated": {
+    "eyebrow": "האירוע נוצר",
+    "title": "האירוע שלכם מוכן",
+    "privateLink": "הקישור הפרטי לאירוע",
+    "copyLink": "העתקת קישור",
+    "linkCopied": "הקישור הועתק",
+    "shareWhatsApp": "שיתוף ב-WhatsApp",
+    "openEventPage": "פתיחת עמוד האירוע",
+    "moreSharing": "אפשרויות שיתוף נוספות",
+    "shareTitle": "שידור חי ב-SimchaCam",
+    "shareText": "הצטרפו לשידור החי של {eventName}",
+    "premiumEyebrow": "הקלטת Premium",
+    "premiumTitle": "הקלטה, צפייה חוזרת והורדה",
+    "premiumDescription": "הוסיפו הקלטה אוטומטית, צפייה חוזרת ל-30 יום, אפשרות הורדה ושידור Premium ארוך יותר לאירוע הזה.",
+    "checkoutLoading": "מכין תשלום...",
+    "readyEyebrow": "כשתהיו מוכנים",
+    "readyDescription": "התחילו את השידור כשהשמחה מתחילה. אפשר גם לחזור ולהתחיל מאוחר יותר מתוך האירועים שלי.",
+    "goLive": "התחלת שידור",
+    "alerts": {
+      "checkoutLogin": "יש להתחבר לפני שדרוג ל-Premium",
+      "checkoutFailed": "לא ניתן להתחיל תשלום Premium",
+      "goLiveLogin": "יש להתחבר לפני התחלת שידור חי",
+      "goLiveFailed": "לא ניתן להתחיל את השידור"
+    }
+  },
+  "myEvents": {
+    "backHome": "חזרה לדף הבית",
+    "eyebrow": "השמחות שלכם",
+    "title": "האירועים שלי",
+    "description": "נהלו שידורים קרובים, שתפו קישורים פרטיים וחזרו להקלטות מאירועים קודמים.",
+    "createLivestream": "יצירת שידור חי",
+    "createEvent": "יצירת אירוע",
+    "emptyTitle": "השמחה הראשונה שלכם מתחילה כאן.",
+    "emptyDescription": "צרו אירוע, שתפו את הקישור הפרטי והתחילו לשדר כשהשמחה מתחילה.",
+    "loading": "טוען את האירועים...",
+    "dateMissingPremium": "לחצו על עריכת אירוע כדי להוסיף תאריך ושעה",
+    "groups": {
+      "live": {
+        "title": "בשידור חי",
+        "description": "אירועים שמשודרים עכשיו"
+      },
+      "upcoming": {
+        "title": "קרובים",
+        "description": "אירועים מוכנים לשיתוף ולשידור"
+      },
+      "past": {
+        "title": "עברו",
+        "description": "שידורים שהסתיימו והקלטות זמינות"
+      }
+    },
+    "badges": {
+      "free": "חינם",
+      "premium": "Premium",
+      "live": "חי",
+      "ended": "הסתיים",
+      "scheduled": "מתוזמן",
+      "recordingReady": "ההקלטה מוכנה",
+      "recordingProcessing": "ההקלטה בעיבוד",
+      "passwordProtected": "מוגן בסיסמה"
+    },
+    "actions": {
+      "copyLink": "העתקת קישור",
+      "share": "שיתוף",
+      "editEvent": "עריכת אירוע",
+      "viewPage": "צפייה בעמוד",
+      "goLive": "התחלת שידור",
+      "returnToStream": "חזרה לשידור",
+      "watchRecording": "צפייה בהקלטה",
+      "viewRecordingStatus": "צפייה בסטטוס ההקלטה",
+      "viewEvent": "צפייה באירוע",
+      "premiumEnabled": "Premium פעיל",
+      "creatingCheckout": "מכין תשלום..."
+    },
+    "messages": {
+      "endedFree": "השידור החינמי הסתיים. אין הקלטה זמינה.",
+      "deleteConfirm": "האם למחוק את \"{eventName}\"?",
+      "deleteFailed": "לא ניתן למחוק את האירוע",
+      "checkoutFailed": "לא ניתן להתחיל תשלום Premium",
+      "goLiveLogin": "יש להתחבר לפני התחלת שידור חי",
+      "goLiveFailed": "לא ניתן להתחיל את השידור",
+      "shareText": "הצטרפו לשידור החי של {eventName}"
+    }
+  },
+  "viewer": {
+    "loading": "טוען אירוע...",
+    "eventUnavailable": "האירוע אינו זמין",
+    "couldNotOpen": "לא הצלחנו לפתוח את האירוע",
+    "eventNotFound": "האירוע לא נמצא.",
+    "privateEvent": "אירוע פרטי",
+    "passwordTitle": "הזינו את סיסמת האירוע",
+    "passwordDescription": "השידור הזה פרטי. הזינו את הסיסמה שהמארח שיתף כדי להמשיך.",
+    "passwordPlaceholder": "סיסמת האירוע",
+    "incorrectPassword": "סיסמה שגויה",
+    "enterEvent": "כניסה לאירוע",
+    "eventRecording": "הקלטת האירוע",
+    "streamEnded": "השידור החי הסתיים.",
+    "recordingProcessing": "ההקלטה בעיבוד",
+    "recordingProcessingDescription": "הצפייה החוזרת בהכנה. העמוד יתעדכן אוטומטית כשהיא תהיה מוכנה.",
+    "recordingFailed": "ההקלטה נכשלה",
+    "recordingFailedDescription": "לצערנו אין צפייה חוזרת זמינה לאירוע הזה.",
+    "availableUntil": "זמין עד {date}",
+    "part": "חלק {number}",
+    "opening": "פותח...",
+    "watch": "צפייה",
+    "preparing": "מכין...",
+    "download": "הורדה",
+    "watchRecording": "צפייה בהקלטה",
+    "downloadRecording": "הורדת ההקלטה",
+    "recordingPrivacy": "אנא שתפו את ההקלטה הפרטית רק עם משפחה וחברים שהוזמנו.",
+    "thankYou": "תודה שהצטרפתם",
+    "noRecording": "אין כרגע הקלטה זמינה לאירוע הזה.",
+    "invited": "הוזמנתם",
+    "waitingTitle": "ממתינים למארח",
+    "waitingDescription": "השידור החי עדיין לא התחיל. הוא יתחיל אוטומטית בעמוד הזה כשהמארח יעלה לשידור.",
+    "liveNow": "בשידור חי עכשיו",
+    "readyToWatch": "השידור מוכן לצפייה.",
+    "connecting": "מתחבר...",
+    "joinLivestream": "הצטרפות לשידור",
+    "connectingToLivestream": "מתחבר לשידור החי...",
+    "eventFull": "השידור מלא כרגע. נסו שוב בעוד זמן קצר.",
+    "connectFailed": "לא ניתן להתחבר לשידור.",
+    "recordingAccessFailed": "לא ניתן לגשת להקלטה."
+  },
+  "streamer": {
+    "cameraActive": "המצלמה פעילה",
+    "viewerSingular": "צופה",
+    "viewerPlural": "צופים",
+    "recordingEnabled": "ההקלטה פעילה",
+    "startingCamera": "מפעיל מצלמה...",
+    "endingStream": "מסיים שידור...",
+    "endStream": "סיום שידור",
+    "leaveStream": "יציאה מהשידור",
+    "muteMicrophone": "השתקת מיקרופון",
+    "unmuteMicrophone": "הפעלת מיקרופון",
+    "turnCameraOff": "כיבוי מצלמה",
+    "turnCameraOn": "הפעלת מצלמה",
+    "recordingSignInWarning": "לא ניתן להתחיל הקלטה כי אינכם מחוברים.",
+    "recordingResumeWarning": "לא ניתן לחדש את ההקלטה. אם זה נמשך, סיימו והתחילו מחדש.",
+    "recordingConnectionWarning": "לא ניתן לחדש את ההקלטה. בדקו את החיבור.",
+    "recordingResumed": "ההקלטה חודשה לאחר התחברות מחדש.",
+    "leaveWarning": "שידור ה-Premium עדיין פעיל. יציאה עלולה להפריע להקלטה.",
+    "endFailed": "לא ניתן לסיים את השידור",
+    "missingEventId": "חסר מזהה אירוע",
+    "endLoginRequired": "יש להתחבר לפני סיום השידור"
   },
   "howItWorks": {
     "eyebrow": "איך זה עובד",
@@ -78,7 +292,7 @@
   },
   "why": {
     "eyebrow": "למה משפחות משתמשות בזה",
-    "title": "נבנה עבור קרובים רחוקים וקרובים.",
+    "title": "נבנה עבור קרובים, גם כשהם רחוקים.",
     "description": "SimchaCam שומרת על תהליך פשוט למארחים ועל צפייה פשוטה לאורחים. משתפים קישור פרטי, מוסיפים סיסמה אם צריך, ומאפשרים למשפחה להצטרף בלי להתקין אפליקציה.",
     "items": ["קישורים פרטיים", "הגנה בסיסמה", "אין צורך באפליקציה"]
   },

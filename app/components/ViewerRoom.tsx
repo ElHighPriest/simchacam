@@ -9,6 +9,7 @@ import {
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
+import { getMessages, type Locale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 type ViewerRoomProps = {
@@ -17,17 +18,22 @@ type ViewerRoomProps = {
   eventId: string;
   eventName: string | null;
   eventAt: string | null;
+  locale?: Locale;
 };
 
 function ViewerContent({
   eventId,
   eventName,
   eventAt,
+  locale = "en",
 }: {
   eventId: string;
   eventName: string | null;
   eventAt: string | null;
+  locale?: Locale;
 }) {
+  const messages = getMessages(locale);
+  const t = messages.viewer;
   const [status, setStatus] = useState<string | null>(null);
 
   const tracks = useTracks(
@@ -67,7 +73,7 @@ function ViewerContent({
           <h1 className="wrap-anywhere mt-4 max-w-full font-display text-4xl font-semibold">
             {eventName}
           </h1>
-          <p className="mt-4 text-white/70">This livestream has ended.</p>
+          <p className="mt-4 text-white/70">{t.streamEnded}</p>
         </div>
       </main>
     );
@@ -82,7 +88,7 @@ function ViewerContent({
             {eventName}
           </h1>
           <p className="mt-3 text-white/70">
-            Connecting to the livestream...
+            {t.connectingToLivestream}
           </p>
         </div>
       </main>
@@ -98,7 +104,9 @@ function ViewerContent({
           </h1>
           {eventAt && (
             <p className="hidden text-xs text-white/45 sm:block">
-              {new Date(eventAt).toLocaleString("en-GB")}
+              {new Date(eventAt).toLocaleString(
+                locale === "he" ? "he-IL" : "en-GB"
+              )}
             </p>
           )}
         </div>
@@ -128,6 +136,7 @@ export default function ViewerRoom({
   eventId,
   eventName,
   eventAt,
+  locale = "en",
 }: ViewerRoomProps) {
   return (
     <LiveKitRoom
@@ -155,6 +164,7 @@ export default function ViewerRoom({
         eventId={eventId}
         eventName={eventName}
         eventAt={eventAt}
+        locale={locale}
       />
     </LiveKitRoom>
   );

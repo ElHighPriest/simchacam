@@ -3,9 +3,14 @@
 import { useState } from "react";
 
 type EventPasswordInputProps = {
+  copyLabel?: string;
+  copiedLabel?: string;
+  copyFailedLabel?: string;
+  hideLabel?: string;
   id: string;
   name: string;
   placeholder: string;
+  showLabel?: string;
   value: string;
   onChange: (value: string) => void;
 };
@@ -45,10 +50,15 @@ function EyeIcon({ hidden }: { hidden: boolean }) {
 }
 
 export default function EventPasswordInput({
+  copyFailedLabel = "Could not copy",
+  copiedLabel = "Copied",
+  copyLabel = "Copy password",
+  hideLabel = "Hide event password",
   id,
   name,
   onChange,
   placeholder,
+  showLabel = "Show event password",
   value,
 }: EventPasswordInputProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -57,10 +67,10 @@ export default function EventPasswordInput({
   async function copyPassword() {
     try {
       await navigator.clipboard.writeText(value);
-      setCopyMessage("Copied");
+      setCopyMessage(copiedLabel);
       window.setTimeout(() => setCopyMessage(""), 1800);
     } catch {
-      setCopyMessage("Could not copy");
+      setCopyMessage(copyFailedLabel);
       window.setTimeout(() => setCopyMessage(""), 1800);
     }
   }
@@ -75,6 +85,7 @@ export default function EventPasswordInput({
           autoComplete="new-password"
           data-1p-ignore="true"
           data-lpignore="true"
+          dir="ltr"
           className="w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 pr-12 placeholder:text-muted-navy/60"
           placeholder={placeholder}
           value={value}
@@ -82,7 +93,7 @@ export default function EventPasswordInput({
         />
         <button
           type="button"
-          aria-label={isVisible ? "Hide event password" : "Show event password"}
+          aria-label={isVisible ? hideLabel : showLabel}
           onClick={() => setIsVisible((current) => !current)}
           className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-navy transition hover:bg-navy/5 hover:text-navy"
         >
@@ -97,7 +108,7 @@ export default function EventPasswordInput({
             onClick={copyPassword}
             className="rounded-lg border border-gold/35 bg-pale-gold/60 px-3 py-2 text-sm font-semibold text-navy transition hover:bg-pale-gold"
           >
-            Copy password
+            {copyLabel}
           </button>
           {copyMessage && (
             <span className="text-sm font-medium text-muted-navy">
