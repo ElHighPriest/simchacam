@@ -5,7 +5,8 @@ import PublicFooter from "@/app/components/PublicFooter";
 
 export const metadata: Metadata = {
   title: "Pricing | SimchaCam",
-  description: "Simple event pricing for SimchaCam livestreams.",
+  description:
+    "Compare SimchaCam Free and Premium plans for private simcha livestreams, recording, replay, and download access.",
 };
 
 const freeFeatures = [

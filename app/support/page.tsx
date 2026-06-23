@@ -5,7 +5,8 @@ import PublicFooter from "@/app/components/PublicFooter";
 
 export const metadata: Metadata = {
   title: "Support | SimchaCam",
-  description: "Contact SimchaCam support",
+  description:
+    "Contact SimchaCam support for help, questions, feedback, or livestream issues.",
 };
 
 export default function SupportPage() {

@@ -3,7 +3,8 @@ import LegalPage from "@/app/components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | SimchaCam",
-  description: "SimchaCam privacy policy",
+  description:
+    "Read how SimchaCam handles account information, private event livestreams, recordings, and family-event privacy.",
 };
 
 export default function PrivacyPage() {

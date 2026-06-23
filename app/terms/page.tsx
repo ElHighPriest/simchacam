@@ -3,7 +3,8 @@ import LegalPage from "@/app/components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Terms of Service | SimchaCam",
-  description: "SimchaCam terms of service",
+  description:
+    "Read the SimchaCam terms for private family-event livestreaming, Premium recording, replay, and download features.",
 };
 
 export default function TermsPage() {

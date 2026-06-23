@@ -6,7 +6,7 @@ import PublicFooter from "@/app/components/PublicFooter";
 export const metadata: Metadata = {
   title: "How It Works | SimchaCam",
   description:
-    "Create, share and livestream your family celebration with SimchaCam.",
+    "Learn how SimchaCam helps families create a private event page, share a link, and livestream a simcha from a phone.",
 };
 
 const steps = [
