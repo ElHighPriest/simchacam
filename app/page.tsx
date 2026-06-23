@@ -3,15 +3,30 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import CreateEventForm from "./components/CreateEventForm";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 import ProfileMenu from "./components/ProfileMenu";
 import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
 import { supabase } from "@/lib/supabase";
 import { isEmailVerified } from "@/lib/auth";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+  getPremiumPriceDisplay,
+} from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
 export default function Home() {
+  const pathname = usePathname();
+  const locale = getLocaleFromPathname(pathname);
+  const messages = getMessages(locale);
+  const premiumPrice = getPremiumPriceDisplay(locale);
+  const homePath = getLocalizedPath(locale);
+  const direction = getLocaleDirection(locale);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -197,8 +212,10 @@ export default function Home() {
         {
           method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
+          body: JSON.stringify({ locale }),
         }
       );
       const data = await response.json();
@@ -208,7 +225,7 @@ export default function Home() {
         return;
       }
 
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (error) {
       console.error(error);
       alert("Could not start Premium checkout");
@@ -297,7 +314,7 @@ export default function Home() {
         <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
           <nav className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
             <Link
-              href="/"
+              href={homePath}
               aria-label="SimchaCam home"
               className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
             >
@@ -421,7 +438,7 @@ export default function Home() {
               >
                 {isStartingCheckout
                   ? "Creating checkout..."
-                  : "Upgrade to Premium — £9.99"}
+                  : premiumPrice.upgradeButton}
               </button>
             </div>
           </section>
@@ -451,12 +468,14 @@ export default function Home() {
     return (
       <CreateEventForm
         eventName={eventName}
+        homeHref={homePath}
         isCreating={isCreating}
         onBack={() => setShowForm(false)}
         onCreate={createEvent}
         onEventNameChange={setEventName}
         onPasswordChange={setPassword}
         password={password}
+        premiumPriceLabel={premiumPrice.featurePrice}
       />
     );
   }
@@ -565,14 +584,18 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-warm-white">
+    <main
+      lang={locale}
+      dir={direction}
+      className="min-h-screen overflow-hidden bg-warm-white"
+    >
       <header className="relative z-20 border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav
           aria-label="Primary navigation"
           className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-12"
         >
           <Link
-            href="/"
+              href={homePath}
             aria-label="SimchaCam home"
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
@@ -588,25 +611,26 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="hidden items-center lg:flex">
               <Link
-                href="/#how-it-works"
+                href={`${homePath}#how-it-works`}
                 className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
               >
-                How It Works
+                {messages.nav.howItWorks}
               </Link>
               <Link
-                href="/#pricing"
+                href={`${homePath}#pricing`}
                 className="px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy"
               >
-                Pricing
+                {messages.nav.pricing}
               </Link>
             </div>
+            <LanguageSwitcher />
             {isEmailVerified(user) ? (
               <>
                 <button
                   onClick={() => setShowForm(true)}
                   className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
                 >
-                  Create Event
+                  {messages.nav.createEvent}
                 </button>
                 <ProfileMenu user={user} onSignOut={logout} />
               </>
@@ -616,13 +640,13 @@ export default function Home() {
                   href="/auth"
                   className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy sm:block"
                 >
-                  Sign In
+                  {messages.nav.signIn}
                 </Link>
                 <Link
                   href="/auth"
                   className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
                 >
-                  Create Event
+                  {messages.nav.createEvent}
                 </Link>
               </>
             )}
@@ -638,15 +662,13 @@ export default function Home() {
         <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-12 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16 lg:px-12 lg:py-20">
           <div className="relative z-10 max-w-2xl">
             <p className="mb-5 text-xs font-semibold uppercase tracking-[0.28em] text-gold sm:text-sm">
-              Every simcha, shared
+              {messages.hero.eyebrow}
             </p>
             <h1 className="font-display text-[3.25rem] font-semibold leading-[0.96] tracking-[-0.035em] text-navy sm:text-6xl lg:text-7xl">
-              Bring everyone closer to the celebration.
+              {messages.hero.title}
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-8 text-muted-navy sm:text-xl">
-              Simple, private livestreaming for weddings and family simchas.
-              Share the moment beautifully with loved ones anywhere in the
-              world.
+              {messages.hero.description}
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -656,13 +678,13 @@ export default function Home() {
                     onClick={() => setShowForm(true)}
                     className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
                   >
-                    Create Your Livestream
+                    {messages.hero.primaryCta}
                   </button>
                   <Link
                     href="/my-events"
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
-                    My Events
+                    {messages.hero.secondarySignedIn}
                   </Link>
                 </>
               ) : (
@@ -671,31 +693,25 @@ export default function Home() {
                     href="/auth"
                     className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
                   >
-                    Create Your Livestream
+                    {messages.hero.primaryCta}
                   </Link>
                   <Link
                     href="/auth"
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
-                    Sign In
+                    {messages.hero.secondarySignedOut}
                   </Link>
                 </>
               )}
             </div>
 
             <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-navy/65">
-              <span className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                No app required
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                Private event links
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-                Live from your phone
-              </span>
+              {messages.hero.bullets.map((bullet) => (
+                <span key={bullet} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                  {bullet}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -730,36 +746,18 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              How it works
+              {messages.howItWorks.eyebrow}
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
-              A private livestream in four simple steps.
+              {messages.howItWorks.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
-              SimchaCam is designed for families: create the event, share one
-              private link, and go live from your phone.
+              {messages.howItWorks.description}
             </p>
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                title: "Create a private event",
-                body: "Set up a livestream page in moments, with an optional password.",
-              },
-              {
-                title: "Share the link",
-                body: "Send the private event link by WhatsApp, email, or message.",
-              },
-              {
-                title: "Go live from your phone",
-                body: "Start the livestream when the celebration begins. No app required.",
-              },
-              {
-                title: "Family watches anywhere",
-                body: "Loved ones can join securely from wherever they are.",
-              },
-            ].map((step, index) => (
+            {messages.howItWorks.steps.map((step, index) => (
               <article
                 key={step.title}
                 className="rounded-[1.35rem] border border-navy/10 bg-warm-white p-5 shadow-[0_14px_36px_rgba(11,31,58,0.05)]"
@@ -786,64 +784,56 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              Simple pricing
+              {messages.pricing.eyebrow}
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
-              Start free. Upgrade only if you need more.
+              {messages.pricing.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
-              Every event starts with a private livestream link. Premium is a
-              one-off upgrade for a specific event.
+              {messages.pricing.description}
             </p>
           </div>
 
           <div className="mt-10 grid gap-5 lg:grid-cols-2">
             <article className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.06)] sm:p-8">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-navy">
-                Free
+                {messages.pricing.free.label}
               </p>
               <h3 className="mt-3 font-display text-4xl font-semibold text-navy">
-                Private livestream
+                {messages.pricing.free.title}
               </h3>
               <p className="mt-3 text-muted-navy">
-                Perfect for a simple, private family livestream.
+                {messages.pricing.free.description}
               </p>
               <div className="mt-6 rounded-2xl bg-navy/[0.03] p-4">
-                <p className="font-semibold text-navy">Included</p>
+                <p className="font-semibold text-navy">
+                  {messages.pricing.free.included}
+                </p>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-navy">
-                  <li>45 minute livestream</li>
-                  <li>Up to 30 viewers</li>
-                  <li>Private event link</li>
-                  <li>Password protection</li>
-                  <li>No recording, replay, or download</li>
+                  {messages.pricing.free.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
                 </ul>
               </div>
             </article>
 
             <article className="rounded-[1.5rem] border border-gold/45 bg-pale-gold/70 p-6 shadow-[0_20px_56px_rgba(200,169,107,0.18)] sm:p-8">
               <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-                Premium
+                {messages.pricing.premium.label}
               </div>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <h3 className="font-display text-4xl font-semibold text-navy">
-                  £9.99 per event
+                  {premiumPrice.price}
                 </h3>
                 <p className="text-sm font-semibold text-[#80652f]">
-                  One-off upgrade
+                  {messages.pricing.premium.oneOff}
                 </p>
               </div>
               <p className="mt-3 text-muted-navy">
-                For longer events, more guests, and a family replay.
+                {messages.pricing.premium.description}
               </p>
               <div className="mt-6 grid gap-2 text-sm font-medium text-navy sm:grid-cols-2">
-                {[
-                  "Event scheduling with date/time",
-                  "Up to 6 hour livestream",
-                  "Up to 500 viewers",
-                  "Automatic recording",
-                  "Replay for 30 days",
-                  "Download recording",
-                ].map((feature) => (
+                {messages.pricing.premium.features.map((feature) => (
                   <div
                     key={feature}
                     className="flex items-start gap-2 rounded-xl bg-white/55 px-3 py-2"
@@ -862,24 +852,18 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              Why families use it
+              {messages.why.eyebrow}
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] sm:text-5xl">
-              Built for relatives near and far.
+              {messages.why.title}
             </h2>
             <p className="mt-4 leading-7 text-warm-white/72">
-              SimchaCam keeps the setup simple for hosts and the viewing simple
-              for guests. Share a private link, protect it with a password if
-              needed, and let family join without installing an app.
+              {messages.why.description}
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              "Private links",
-              "Password protection",
-              "No app required",
-            ].map((item) => (
+            {messages.why.items.map((item) => (
               <div
                 key={item}
                 className="rounded-[1.25rem] border border-white/10 bg-white/7 p-5"
@@ -896,28 +880,26 @@ export default function Home() {
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              Recording & replay
+              {messages.recording.eyebrow}
             </p>
             <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
-              Keep the moment available after the livestream.
+              {messages.recording.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-muted-navy sm:text-lg">
-              Premium events are automatically recorded, then made available
-              for replay and download for 30 days.
+              {messages.recording.description}
             </p>
           </div>
 
           <div className="rounded-[1.5rem] border border-gold/35 bg-white/75 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.06)] sm:p-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-recording-red">
               <span className="h-2 w-2 rounded-full bg-recording-red" />
-              Premium recording
+              {messages.recording.badge}
             </div>
             <h3 className="mt-5 font-display text-3xl font-semibold text-navy">
-              Replay for family, download for keeps.
+              {messages.recording.cardTitle}
             </h3>
             <p className="mt-3 text-sm leading-6 text-muted-navy">
-              Ideal for relatives in different time zones, family who cannot
-              attend live, or anyone who wants to watch the simcha again.
+              {messages.recording.cardBody}
             </p>
           </div>
         </div>
@@ -926,14 +908,13 @@ export default function Home() {
       <section className="border-t border-gold/20 bg-pale-gold/55 px-5 py-16 text-center sm:px-8 sm:py-20 lg:px-12">
         <div className="mx-auto max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-            Ready when you are
+            {messages.finalCta.eyebrow}
           </p>
           <h2 className="mt-3 font-display text-4xl font-semibold leading-tight tracking-[-0.025em] text-navy sm:text-5xl">
-            Create the event free. Upgrade only if you need Premium.
+            {messages.finalCta.title}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-navy sm:text-lg">
-            Start with a private link today, then add scheduling, recording,
-            replay and download when the event needs it.
+            {messages.finalCta.description}
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             {isEmailVerified(user) ? (
@@ -942,13 +923,13 @@ export default function Home() {
                   onClick={() => setShowForm(true)}
                   className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
                 >
-                  Create Your Livestream
+                  {messages.hero.primaryCta}
                 </button>
                 <Link
                   href="/my-events"
                   className="min-h-13 rounded-xl border border-navy/20 bg-white/40 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-white/65"
                 >
-                  My Events
+                  {messages.hero.secondarySignedIn}
                 </Link>
               </>
             ) : (
@@ -956,7 +937,7 @@ export default function Home() {
                 href="/auth"
                 className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
               >
-                Create Your Livestream
+                {messages.hero.primaryCta}
               </Link>
             )}
           </div>

@@ -4,13 +4,14 @@ import Stripe from "stripe";
 
 export type StripeConfig = {
   client: Stripe;
+  premiumCurrency: "gbp" | "ils";
   premiumPriceId: string;
   siteUrl: URL;
 };
 
 export type StripeWebhookConfig = {
   client: Stripe;
-  premiumPriceId: string;
+  premiumPriceIds: string[];
   webhookSecret: string;
 };
 
@@ -18,9 +19,11 @@ let stripeClient: Stripe | null = null;
 
 function getStripeClientConfig() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+  const premiumPriceGbp =
+    process.env.STRIPE_PRICE_GBP || process.env.STRIPE_PREMIUM_PRICE_ID;
+  const premiumPriceIls = process.env.STRIPE_PRICE_ILS;
 
-  if (!secretKey || !premiumPriceId) {
+  if (!secretKey || !premiumPriceGbp) {
     throw new Error("Missing Stripe server configuration");
   }
 
@@ -28,8 +31,12 @@ function getStripeClientConfig() {
     throw new Error("Invalid Stripe secret key");
   }
 
-  if (!premiumPriceId.startsWith("price_")) {
-    throw new Error("Invalid Stripe Premium price ID");
+  if (!premiumPriceGbp.startsWith("price_")) {
+    throw new Error("Invalid Stripe GBP price ID");
+  }
+
+  if (premiumPriceIls && !premiumPriceIls.startsWith("price_")) {
+    throw new Error("Invalid Stripe ILS price ID");
   }
 
   stripeClient ??= new Stripe(secretKey, {
@@ -40,11 +47,12 @@ function getStripeClientConfig() {
 
   return {
     client: stripeClient,
-    premiumPriceId,
+    premiumPriceGbp,
+    premiumPriceIls,
   };
 }
 
-export function getStripeConfig(): StripeConfig {
+export function getStripeConfig(locale = "en"): StripeConfig {
   const config = getStripeClientConfig();
   const siteUrlValue = process.env.NEXT_PUBLIC_SITE_URL;
 
@@ -59,7 +67,12 @@ export function getStripeConfig(): StripeConfig {
   }
 
   return {
-    ...config,
+    client: config.client,
+    premiumCurrency: locale === "he" && config.premiumPriceIls ? "ils" : "gbp",
+    premiumPriceId:
+      locale === "he" && config.premiumPriceIls
+        ? config.premiumPriceIls
+        : config.premiumPriceGbp,
     siteUrl,
   };
 }
@@ -77,7 +90,11 @@ export function getStripeWebhookConfig(): StripeWebhookConfig {
   }
 
   return {
-    ...config,
+    client: config.client,
+    premiumPriceIds: [
+      config.premiumPriceGbp,
+      ...(config.premiumPriceIls ? [config.premiumPriceIls] : []),
+    ],
     webhookSecret,
   };
 }

@@ -6,29 +6,33 @@ import EventPasswordInput from "@/app/components/EventPasswordInput";
 
 type CreateEventFormProps = {
   eventName: string;
+  homeHref?: string;
   isCreating: boolean;
   onBack: () => void;
   onCreate: () => void;
   onEventNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   password: string;
+  premiumPriceLabel?: string;
 };
 
 export default function CreateEventForm({
   eventName,
+  homeHref = "/",
   isCreating,
   onBack,
   onCreate,
   onEventNameChange,
   onPasswordChange,
   password,
+  premiumPriceLabel = "£9.99 Premium Feature",
 }: CreateEventFormProps) {
   return (
     <main id="create-event" className="min-h-screen bg-warm-white text-navy">
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-4xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/"
+            href={homeHref}
             aria-label="SimchaCam home"
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
@@ -154,7 +158,7 @@ export default function CreateEventForm({
             </div>
             <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
               <p className="text-sm font-semibold text-navy">
-                £9.99 Premium Feature
+                {premiumPriceLabel}
               </p>
               <p className="mt-1 text-xs leading-5 text-muted-navy">
                 Premium is purchased after event creation and applies only to

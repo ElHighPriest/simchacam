@@ -6,6 +6,7 @@ import { getStripeWebhookConfig } from "@/lib/stripe";
 export const runtime = "nodejs";
 
 type PaymentRow = {
+  currency: string;
   event_id: string;
   id: string;
   livemode: boolean;
@@ -33,7 +34,7 @@ async function findPayment(
     const { data, error } = await supabase
       .from("event_payments")
       .select(
-        "id, event_id, user_id, status, livemode, stripe_price_id, stripe_checkout_session_id"
+        "id, event_id, user_id, status, livemode, currency, stripe_price_id, stripe_checkout_session_id"
       )
       .eq("id", paymentId)
       .maybeSingle();
@@ -50,7 +51,7 @@ async function findPayment(
   const { data, error } = await supabase
     .from("event_payments")
     .select(
-      "id, event_id, user_id, status, livemode, stripe_price_id, stripe_checkout_session_id"
+      "id, event_id, user_id, status, livemode, currency, stripe_price_id, stripe_checkout_session_id"
     )
     .eq("stripe_checkout_session_id", session.id)
     .maybeSingle();
@@ -249,7 +250,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      payment.stripe_price_id !== stripeConfig.premiumPriceId ||
+      !stripeConfig.premiumPriceIds.includes(payment.stripe_price_id) ||
       payment.livemode !== session.livemode
     ) {
       throw new Error("Event payment does not match Stripe configuration");
@@ -260,13 +261,13 @@ export async function POST(request: NextRequest) {
     if (
       session.mode !== "payment" ||
       lineItems.length !== 1 ||
-      lineItems[0].price?.id !== stripeConfig.premiumPriceId ||
+      lineItems[0].price?.id !== payment.stripe_price_id ||
       lineItems[0].quantity !== 1
     ) {
       throw new Error("Checkout Session does not contain the Premium price");
     }
 
-    if (session.currency !== "gbp") {
+    if (session.currency !== payment.currency) {
       throw new Error("Checkout Session currency is invalid");
     }
 

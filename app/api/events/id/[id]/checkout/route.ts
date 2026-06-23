@@ -9,6 +9,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let locale = "en";
+
+  try {
+    const body = (await request.json()) as { locale?: unknown };
+    locale = body.locale === "he" ? "he" : "en";
+  } catch {
+    // Existing clients may POST without a JSON body. Keep GBP as the default.
+  }
+
   const accessToken = request.headers
     .get("authorization")
     ?.replace(/^Bearer\s+/i, "");
@@ -101,7 +110,8 @@ export async function POST(
   }
 
   try {
-    const { client, premiumPriceId, siteUrl } = getStripeConfig();
+    const { client, premiumCurrency, premiumPriceId, siteUrl } =
+      getStripeConfig(locale);
     const price = await client.prices.retrieve(premiumPriceId);
     const productId =
       typeof price.product === "string" ? price.product : price.product.id;
@@ -109,7 +119,7 @@ export async function POST(
     if (
       !price.active ||
       price.type !== "one_time" ||
-      price.currency !== "gbp" ||
+      price.currency !== premiumCurrency ||
       price.unit_amount === null
     ) {
       return NextResponse.json(
@@ -146,6 +156,7 @@ export async function POST(
 
     const metadata = {
       event_id: event.id,
+      locale,
       user_id: user.id,
       payment_id: payment.id,
     };
@@ -164,6 +175,7 @@ export async function POST(
           allow_promotion_codes: true,
           client_reference_id: payment.id,
           customer_email: user.email,
+          locale: "auto",
           metadata,
           payment_intent_data: {
             metadata,

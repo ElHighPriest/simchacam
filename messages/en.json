@@ -1,0 +1,98 @@
+{
+  "language": {
+    "english": "English",
+    "hebrew": "עברית"
+  },
+  "nav": {
+    "howItWorks": "How It Works",
+    "pricing": "Pricing",
+    "signIn": "Sign In",
+    "createEvent": "Create Event",
+    "myEvents": "My Events"
+  },
+  "hero": {
+    "eyebrow": "Every simcha, shared",
+    "title": "Bring everyone closer to the celebration.",
+    "description": "Simple, private livestreaming for weddings and family simchas. Share the moment beautifully with loved ones anywhere in the world.",
+    "primaryCta": "Create Your Livestream",
+    "secondarySignedIn": "My Events",
+    "secondarySignedOut": "Sign In",
+    "bullets": ["No app required", "Private event links", "Live from your phone"]
+  },
+  "howItWorks": {
+    "eyebrow": "How it works",
+    "title": "A private livestream in four simple steps.",
+    "description": "SimchaCam is designed for families: create the event, share one private link, and go live from your phone.",
+    "steps": [
+      {
+        "title": "Create a private event",
+        "body": "Set up a livestream page in moments, with an optional password."
+      },
+      {
+        "title": "Share the link",
+        "body": "Send the private event link by WhatsApp, email, or message."
+      },
+      {
+        "title": "Go live from your phone",
+        "body": "Start the livestream when the celebration begins. No app required."
+      },
+      {
+        "title": "Family watches anywhere",
+        "body": "Loved ones can join securely from wherever they are."
+      }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "Simple pricing",
+    "title": "Start free. Upgrade only if you need more.",
+    "description": "Every event starts with a private livestream link. Premium is a one-off upgrade for a specific event.",
+    "free": {
+      "label": "Free",
+      "title": "Private livestream",
+      "description": "Perfect for a simple, private family livestream.",
+      "included": "Included",
+      "features": [
+        "45 minute livestream",
+        "Up to 30 viewers",
+        "Private event link",
+        "Password protection",
+        "No recording, replay, or download"
+      ]
+    },
+    "premium": {
+      "label": "Premium",
+      "price": "£9.99 per event",
+      "featurePrice": "£9.99 Premium Feature",
+      "upgradeButton": "Upgrade to Premium — £9.99",
+      "oneOff": "One-off upgrade",
+      "description": "For longer events, more guests, and a family replay.",
+      "features": [
+        "Event scheduling with date/time",
+        "Up to 6 hour livestream",
+        "Up to 500 viewers",
+        "Automatic recording",
+        "Replay for 30 days",
+        "Download recording"
+      ]
+    }
+  },
+  "why": {
+    "eyebrow": "Why families use it",
+    "title": "Built for relatives near and far.",
+    "description": "SimchaCam keeps the setup simple for hosts and the viewing simple for guests. Share a private link, protect it with a password if needed, and let family join without installing an app.",
+    "items": ["Private links", "Password protection", "No app required"]
+  },
+  "recording": {
+    "eyebrow": "Recording & replay",
+    "title": "Keep the moment available after the livestream.",
+    "description": "Premium events are automatically recorded, then made available for replay and download for 30 days.",
+    "badge": "Premium recording",
+    "cardTitle": "Replay for family, download for keeps.",
+    "cardBody": "Ideal for relatives in different time zones, family who cannot attend live, or anyone who wants to watch the simcha again."
+  },
+  "finalCta": {
+    "eyebrow": "Ready when you are",
+    "title": "Create the event free. Upgrade only if you need Premium.",
+    "description": "Start with a private link today, then add scheduling, recording, replay and download when the event needs it."
+  }
+}
