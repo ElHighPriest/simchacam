@@ -54,13 +54,20 @@ export default function AuthPage() {
     setMessage("");
 
     if (mode === "signup") {
+      const emailRedirectTo = `${window.location.origin}${getLocalizedPath(
+        locale,
+        "/my-events"
+      )}`;
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo,
           data: {
             first_name: firstName,
             last_name: lastName,
+            locale,
           },
         },
       });
