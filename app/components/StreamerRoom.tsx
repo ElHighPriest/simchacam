@@ -14,7 +14,12 @@ import {
 import { Track, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
-import { getLocalizedPath, getMessages, type Locale } from "@/lib/i18n";
+import {
+  getLocaleDirection,
+  getLocalizedPath,
+  getMessages,
+  type Locale,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 type StreamerRoomProps = {
@@ -570,6 +575,8 @@ export default function StreamerRoom({
 
   return (
     <LiveKitRoom
+      lang={locale}
+      dir={getLocaleDirection(locale)}
       video={{
         facingMode: "environment",
         resolution: {

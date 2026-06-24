@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
+import {
+  Assistant,
+  Cormorant_Garamond,
+  Geist,
+  Geist_Mono,
+  Heebo,
+} from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,6 +22,18 @@ const geistMono = Geist_Mono({
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const heebo = Heebo({
+  variable: "--font-heebo",
+  subsets: ["hebrew", "latin"],
+  display: "swap",
+});
+
+const assistant = Assistant({
+  variable: "--font-assistant",
+  subsets: ["hebrew", "latin"],
   display: "swap",
 });
 
@@ -58,7 +76,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${heebo.variable} ${assistant.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

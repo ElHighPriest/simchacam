@@ -9,6 +9,8 @@
   --pale-gold: #f3ebdd;
   --background: var(--warm-white);
   --foreground: var(--navy);
+  --font-ui: var(--font-geist-sans);
+  --font-heading: var(--font-cormorant);
 }
 
 @theme inline {
@@ -20,9 +22,9 @@
   --color-recording-red: var(--recording-red);
   --color-muted-navy: var(--muted-navy);
   --color-pale-gold: var(--pale-gold);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-cormorant);
+  --font-display: var(--font-heading);
 }
 
 * {
@@ -38,7 +40,18 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui), Arial, Helvetica, sans-serif;
+}
+
+[lang="he"] {
+  --font-ui: var(--font-heebo);
+  --font-heading: var(--font-assistant);
+  font-family: var(--font-ui), Arial, Helvetica, sans-serif;
+}
+
+[lang="he"] [data-lk-theme],
+[data-lk-theme][lang="he"] {
+  --lk-font-family: var(--font-heebo), Arial, Helvetica, sans-serif;
 }
 
 button,
@@ -54,7 +67,7 @@ input:focus-visible {
 }
 
 .font-display {
-  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  font-family: var(--font-heading), Georgia, "Times New Roman", serif;
 }
 
 .wrap-anywhere {

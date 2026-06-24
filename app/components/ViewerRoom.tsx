@@ -10,7 +10,11 @@ import {
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
-import { getMessages, type Locale } from "@/lib/i18n";
+import {
+  getLocaleDirection,
+  getMessages,
+  type Locale,
+} from "@/lib/i18n";
 
 type ViewerRoomProps = {
   token: string;
@@ -152,6 +156,8 @@ export default function ViewerRoom({
 }: ViewerRoomProps) {
   return (
     <LiveKitRoom
+      lang={locale}
+      dir={getLocaleDirection(locale)}
       video={false}
       audio={false}
       options={{
