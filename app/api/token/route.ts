@@ -22,10 +22,17 @@ export async function POST(request: NextRequest) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
 
-    if (!supabaseUrl || !supabaseAnonKey || !apiKey || !apiSecret) {
+    if (
+      !supabaseUrl ||
+      !supabaseAnonKey ||
+      !serviceRoleKey ||
+      !apiKey ||
+      !apiSecret
+    ) {
       return NextResponse.json(
         { error: "Missing server credentials" },
         { status: 500 }
@@ -33,6 +40,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
     let canPublish = false;
     const streamState = await cleanupExpiredStreamSessionForRoom(roomName);
 
@@ -83,7 +96,7 @@ export async function POST(request: NextRequest) {
 
       canPublish = true;
     } else {
-      const { data: event, error: eventError } = await supabase
+      const { data: event, error: eventError } = await serviceSupabase
         .from("events")
         .select("password")
         .eq("slug", roomName)

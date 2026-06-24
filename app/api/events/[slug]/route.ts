@@ -2,18 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyPassword } from "@/lib/password";
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
-
-function getRecordingClient() {
+function getServiceRoleClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -33,7 +22,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = getServiceRoleClient();
 
   if (!supabase) {
     return NextResponse.json(
@@ -53,12 +42,11 @@ export async function GET(
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  const recordingClient = getRecordingClient();
   let recording = null;
 
-  if (recordingClient) {
+  if (supabase) {
     const { data: entitlement, error: entitlementError } =
-      await recordingClient
+      await supabase
         .from("event_entitlements")
         .select("status, replay_retention_days, download_enabled")
         .eq("event_id", event.id)
@@ -73,7 +61,7 @@ export async function GET(
       entitlement?.status === "active" &&
       entitlement.replay_retention_days > 0
     ) {
-      const { data, error: recordingError } = await recordingClient
+      const { data, error: recordingError } = await supabase
         .from("event_recordings")
         .select("status, object_key, expires_at")
         .eq("event_id", event.id)
@@ -93,7 +81,7 @@ export async function GET(
       } else if (data?.status === "ready") {
         if (data.expires_at && new Date(data.expires_at) > new Date()) {
           const { data: segments, error: segmentsError } =
-            await recordingClient
+            await supabase
               .from("event_recording_segments")
               .select("id, segment_index, ready_at, duration_ms, size_bytes")
               .eq("event_id", event.id)
@@ -155,7 +143,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = getServiceRoleClient();
 
   if (!supabase) {
     return NextResponse.json(

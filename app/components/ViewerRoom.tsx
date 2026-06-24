@@ -11,27 +11,26 @@ import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import { getMessages, type Locale } from "@/lib/i18n";
-import { supabase } from "@/lib/supabase";
 
 type ViewerRoomProps = {
   token: string;
   serverUrl: string;
-  eventId: string;
   eventName: string | null;
   eventAt: string | null;
   locale?: Locale;
+  slug: string;
 };
 
 function ViewerContent({
-  eventId,
   eventName,
   eventAt,
   locale = "en",
+  slug,
 }: {
-  eventId: string;
   eventName: string | null;
   eventAt: string | null;
   locale?: Locale;
+  slug: string;
 }) {
   const messages = getMessages(locale);
   const t = messages.viewer;
@@ -48,13 +47,16 @@ function ViewerContent({
 
   useEffect(() => {
     async function checkStatus() {
-      const { data } = await supabase
-        .from("events")
-        .select("status")
-        .eq("id", eventId)
-        .single();
+      try {
+        const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
+        const data = await response.json();
 
-      setStatus(data?.status || null);
+        if (response.ok) {
+          setStatus(data.status || null);
+        }
+      } catch {
+        // Keep the current state and retry on the next polling interval.
+      }
     }
 
     checkStatus();
@@ -62,7 +64,7 @@ function ViewerContent({
     const interval = setInterval(checkStatus, 3000);
 
     return () => clearInterval(interval);
-  }, [eventId]);
+  }, [slug]);
 
   if (!streamerTrack && status === "ended") {
     return (
@@ -143,10 +145,10 @@ function ViewerContent({
 export default function ViewerRoom({
   token,
   serverUrl,
-  eventId,
   eventName,
   eventAt,
   locale = "en",
+  slug,
 }: ViewerRoomProps) {
   return (
     <LiveKitRoom
@@ -171,10 +173,10 @@ export default function ViewerRoom({
       }}
     >
       <ViewerContent
-        eventId={eventId}
         eventName={eventName}
         eventAt={eventAt}
         locale={locale}
+        slug={slug}
       />
     </LiveKitRoom>
   );

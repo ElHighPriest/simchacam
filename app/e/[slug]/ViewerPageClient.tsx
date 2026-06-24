@@ -452,10 +452,10 @@ export default function ViewerPageClient({
       <ViewerRoom
         token={token}
         serverUrl={serverUrl}
-        eventId={event.id}
         eventName={event.name}
         eventAt={event.eventAt}
         locale={locale}
+        slug={slug}
       />
     );
   }
