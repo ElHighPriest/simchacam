@@ -661,7 +661,10 @@ export default function MyEventsPage() {
                               {!isEndedPremium && (
                                 <>
                                   <Link
-                                    href={`/edit-event/${event.id}`}
+                                    href={getLocalizedPath(
+                                      locale,
+                                      `/edit-event/${event.id}`
+                                    )}
                                     className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
                                   >
                                     {messages.myEvents.actions.editEvent}

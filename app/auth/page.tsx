@@ -255,7 +255,7 @@ export default function AuthPage() {
               />
               {mode === "login" && (
                 <Link
-                  href="/forgot-password"
+                  href={getLocalizedPath(locale, "/forgot-password")}
                   className="mt-2 inline-flex text-sm font-semibold text-gold transition hover:text-[#a9884f]"
                 >
                   {t.forgotPassword}

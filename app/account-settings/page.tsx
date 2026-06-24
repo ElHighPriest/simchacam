@@ -2,14 +2,24 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import PublicFooter from "@/app/components/PublicFooter";
 import { isEmailVerified } from "@/lib/auth";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
+  const locale = getLocaleFromPathname(usePathname());
+  const t = getMessages(locale).accountSettings;
+  const homePath = getLocalizedPath(locale);
+  const myEventsPath = getLocalizedPath(locale, "/my-events");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -22,7 +32,7 @@ export default function AccountSettingsPage() {
       const { data } = await supabase.auth.getUser();
 
       if (!isEmailVerified(data.user)) {
-        router.push("/auth");
+        router.push(getLocalizedPath(locale, "/auth"));
         return;
       }
 
@@ -30,7 +40,7 @@ export default function AccountSettingsPage() {
     }
 
     loadUser();
-  }, [router]);
+  }, [locale, router]);
 
   async function updatePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,17 +48,17 @@ export default function AccountSettingsPage() {
     setErrorMessage("");
 
     if (!newPassword) {
-      setErrorMessage("Please enter a new password.");
+      setErrorMessage(t.enterPassword);
       return;
     }
 
     if (newPassword.length < 6) {
-      setErrorMessage("Please use at least 6 characters.");
+      setErrorMessage(t.minimumLength);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("The passwords do not match.");
+      setErrorMessage(t.passwordMismatch);
       return;
     }
 
@@ -61,30 +71,34 @@ export default function AccountSettingsPage() {
     setSaving(false);
 
     if (error) {
-      setErrorMessage(error.message || "Could not update your password.");
+      setErrorMessage(locale === "he" ? t.updateFailed : error.message || t.updateFailed);
       return;
     }
 
     setNewPassword("");
     setConfirmPassword("");
-    setSuccessMessage("Your password has been updated.");
+    setSuccessMessage(t.updated);
   }
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-warm-white px-5 text-navy">
-        Loading account settings...
+        {t.loading}
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/"
-            aria-label="SimchaCam home"
+            href={homePath}
+            aria-label={t.ariaHome}
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
             <Image
@@ -97,33 +111,32 @@ export default function AccountSettingsPage() {
           </Link>
 
           <Link
-            href="/my-events"
+            href={myEventsPath}
             className="text-sm font-semibold text-navy/70 transition hover:text-navy"
           >
-            My Events
+            {t.myEvents}
           </Link>
         </nav>
       </header>
 
       <section className="mx-auto flex max-w-5xl flex-col px-5 py-10 sm:px-8 sm:py-14">
         <Link
-          href="/my-events"
+          href={myEventsPath}
           className="mb-7 inline-flex items-center gap-2 text-sm font-medium text-muted-navy transition hover:text-navy"
         >
           <span aria-hidden="true">←</span>
-          Back to My Events
+          {t.backMyEvents}
         </Link>
 
         <div className="max-w-2xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-            Account
+            {t.eyebrow}
           </p>
           <h1 className="font-display text-5xl font-semibold leading-none tracking-[-0.025em] text-navy sm:text-6xl">
-            Account Settings
+            {t.title}
           </h1>
           <p className="mt-4 text-base leading-7 text-muted-navy">
-            Update your password securely while staying signed in to your
-            SimchaCam account.
+            {t.description}
           </p>
         </div>
 
@@ -133,10 +146,10 @@ export default function AccountSettingsPage() {
         >
           <div className="mb-6">
             <h2 className="font-display text-3xl font-semibold text-navy">
-              Change password
+              {t.changePassword}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-navy">
-              Choose a new password for future logins.
+              {t.changeDescription}
             </p>
           </div>
 
@@ -160,10 +173,11 @@ export default function AccountSettingsPage() {
 
           <label className="block">
             <span className="text-sm font-semibold text-navy">
-              New password
+              {t.newPassword}
             </span>
             <input
               type="password"
+              dir="ltr"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               autoComplete="new-password"
@@ -174,10 +188,11 @@ export default function AccountSettingsPage() {
 
           <label className="mt-5 block">
             <span className="text-sm font-semibold text-navy">
-              Confirm new password
+              {t.confirmPassword}
             </span>
             <input
               type="password"
+              dir="ltr"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"
@@ -191,7 +206,7 @@ export default function AccountSettingsPage() {
             disabled={saving}
             className="mt-7 w-full rounded-xl bg-navy px-6 py-3.5 text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:bg-[#102b4f] disabled:cursor-not-allowed disabled:bg-navy/45"
           >
-            {saving ? "Updating password..." : "Update Password"}
+            {saving ? t.updating : t.update}
           </button>
         </form>
       </section>

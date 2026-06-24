@@ -3,20 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import PublicFooter from "@/app/components/PublicFooter";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const locale = getLocaleFromPathname(usePathname());
+  const t = getMessages(locale).resetPassword;
+  const homePath = getLocalizedPath(locale);
   const exchangedCode = useRef(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
-  const [message, setMessage] = useState(
-    "Checking your password reset link..."
-  );
+  const [message, setMessage] = useState(t.checking);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,9 +46,7 @@ export default function ResetPasswordPage() {
 
         if (error && !cancelled) {
           setReady(false);
-          setMessage(
-            "This password reset link is invalid or has expired. Please request a new one."
-          );
+          setMessage(t.invalidLink);
           return;
         }
       }
@@ -55,7 +60,7 @@ export default function ResetPasswordPage() {
         setMessage(
           session
             ? ""
-            : "This password reset link is invalid or has expired. Please request a new one."
+            : t.invalidLink
         );
       }
     }
@@ -66,18 +71,18 @@ export default function ResetPasswordPage() {
       cancelled = true;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [t.invalidLink]);
 
   async function savePassword() {
     setMessage("");
 
     if (password.length < 6) {
-      setMessage("Please choose a password with at least 6 characters.");
+      setMessage(t.minimumLength);
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage("The passwords do not match.");
+      setMessage(t.passwordMismatch);
       return;
     }
 
@@ -86,16 +91,20 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(locale === "he" ? t.updateFailed : error.message);
       return;
     }
 
     await supabase.auth.signOut();
-    router.push("/auth");
+    router.push(getLocalizedPath(locale, "/auth"));
   }
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <div className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden px-5 py-24">
         <div
           aria-hidden="true"
@@ -107,8 +116,8 @@ export default function ResetPasswordPage() {
         />
 
         <Link
-          href="/"
-          aria-label="SimchaCam home"
+          href={homePath}
+          aria-label={t.ariaHome}
           className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
         >
           <Image
@@ -123,13 +132,13 @@ export default function ResetPasswordPage() {
         <div className="relative z-10 w-full max-w-md">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              Secure reset
+              {t.eyebrow}
             </p>
             <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] sm:text-6xl">
-              Choose a new password
+              {t.title}
             </h1>
             <p className="mt-4 leading-7 text-muted-navy">
-              Enter a new password for your SimchaCam account.
+              {t.description}
             </p>
           </div>
 
@@ -150,14 +159,15 @@ export default function ResetPasswordPage() {
                     className="block text-sm font-semibold"
                     htmlFor="new-password"
                   >
-                    New password
+                    {t.newPassword}
                   </label>
                   <input
                     id="new-password"
                     type="password"
+                    dir="ltr"
                     autoComplete="new-password"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
-                    placeholder="Enter your new password"
+                    placeholder={t.newPasswordPlaceholder}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
@@ -168,14 +178,15 @@ export default function ResetPasswordPage() {
                     className="block text-sm font-semibold"
                     htmlFor="confirm-password"
                   >
-                    Confirm new password
+                    {t.confirmPassword}
                   </label>
                   <input
                     id="confirm-password"
                     type="password"
+                    dir="ltr"
                     autoComplete="new-password"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
-                    placeholder="Confirm your new password"
+                    placeholder={t.confirmPasswordPlaceholder}
                     value={confirmPassword}
                     onChange={(event) =>
                       setConfirmPassword(event.target.value)
@@ -188,15 +199,15 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   className="mt-6 min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
                 >
-                  {loading ? "Saving password..." : "Save New Password"}
+                  {loading ? t.saving : t.save}
                 </button>
               </>
             ) : (
               <Link
-                href="/forgot-password"
+                href={getLocalizedPath(locale, "/forgot-password")}
                 className="flex min-h-12 items-center justify-center rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
               >
-                Request a New Reset Link
+                {t.requestNewLink}
               </Link>
             )}
           </section>

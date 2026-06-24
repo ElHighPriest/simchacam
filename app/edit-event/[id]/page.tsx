@@ -3,9 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import EventPasswordInput from "@/app/components/EventPasswordInput";
 import { isEmailVerified } from "@/lib/auth";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 type EventRecord = {
@@ -19,6 +25,11 @@ type EventRecord = {
 export default function EditEventPage() {
   const params = useParams();
   const router = useRouter();
+  const locale = getLocaleFromPathname(usePathname());
+  const messages = getMessages(locale);
+  const t = messages.editEvent;
+  const homePath = getLocalizedPath(locale);
+  const myEventsPath = getLocalizedPath(locale, "/my-events");
   const id = params.id as string;
 
   const [name, setName] = useState("");
@@ -36,7 +47,7 @@ export default function EditEventPage() {
       const { data: userData } = await supabase.auth.getUser();
 
       if (!isEmailVerified(userData.user)) {
-        router.push("/auth");
+        router.push(getLocalizedPath(locale, "/auth"));
         return;
       }
 
@@ -45,7 +56,7 @@ export default function EditEventPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/auth");
+        router.push(getLocalizedPath(locale, "/auth"));
         return;
       }
 
@@ -58,8 +69,8 @@ export default function EditEventPage() {
 
       if (!response.ok) {
         console.error(data.error);
-        alert("Event not found");
-        router.push("/my-events");
+        alert(t.notFound);
+        router.push(myEventsPath);
         return;
       }
 
@@ -81,11 +92,11 @@ export default function EditEventPage() {
     }
 
     loadEvent();
-  }, [id, router]);
+  }, [id, locale, myEventsPath, router, t.notFound]);
 
   async function saveEvent() {
     if (!name.trim()) {
-      alert("Please enter an event name");
+      alert(t.nameRequired);
       return;
     }
 
@@ -97,7 +108,7 @@ export default function EditEventPage() {
 
     if (!session) {
       setSaving(false);
-      router.push("/auth");
+      router.push(getLocalizedPath(locale, "/auth"));
       return;
     }
 
@@ -116,7 +127,7 @@ export default function EditEventPage() {
 
         if (Number.isNaN(eventAt.getTime())) {
           setSaving(false);
-          alert("Please enter a valid event date and time");
+          alert(t.invalidDate);
           return;
         }
 
@@ -140,11 +151,11 @@ export default function EditEventPage() {
 
     if (!response.ok) {
       console.error(data.error);
-      alert(data.error || "Could not save event");
+      alert(locale === "he" ? t.saveFailed : data.error || t.saveFailed);
       return;
     }
 
-    router.push("/my-events");
+    router.push(myEventsPath);
   }
 
   if (loading) {
@@ -153,7 +164,7 @@ export default function EditEventPage() {
         <div className="text-center">
           <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gold/35 border-t-gold" />
           <p className="text-sm font-medium text-muted-navy">
-            Loading event...
+            {t.loading}
           </p>
         </div>
       </main>
@@ -161,12 +172,16 @@ export default function EditEventPage() {
   }
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-4xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/"
-            aria-label="SimchaCam home"
+            href={homePath}
+            aria-label={t.ariaHome}
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
             <Image
@@ -178,47 +193,46 @@ export default function EditEventPage() {
             />
           </Link>
           <Link
-            href="/my-events"
+            href={myEventsPath}
             className="text-sm font-semibold text-navy/65 transition hover:text-navy"
           >
-            Cancel
+            {t.cancel}
           </Link>
         </nav>
       </header>
 
       <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8 sm:py-14">
         <Link
-          href="/my-events"
+          href={myEventsPath}
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-navy transition hover:text-navy"
         >
           <span aria-hidden="true">←</span>
-          Back to My Events
+          {t.backMyEvents}
         </Link>
 
         <p className="mt-8 text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-          Event settings
+          {t.eyebrow}
         </p>
         <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] sm:text-6xl">
-          Edit Event
+          {t.title}
         </h1>
         <p className="mt-4 max-w-xl leading-7 text-muted-navy">
-          Update the event name or change how invited viewers access this
-          private event.
+          {t.description}
         </p>
 
         <div className="mt-10 space-y-6">
           <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.06)] sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Event details
+              {t.detailsEyebrow}
             </p>
             <h2 className="mt-2 font-display text-3xl font-semibold">
-              Event name
+              {t.eventName}
             </h2>
             <label
               className="mt-6 block text-sm font-semibold"
               htmlFor="edit-event-name"
             >
-              Name shown to viewers
+              {t.nameShown}
             </label>
             <input
               id="edit-event-name"
@@ -231,13 +245,13 @@ export default function EditEventPage() {
           {plan === "premium" ? (
             <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.06)] sm:p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-                Event scheduling
+                {t.scheduleEyebrow}
               </p>
               <h2 className="mt-2 font-display text-3xl font-semibold">
-                Date and time
+                {t.dateTime}
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-navy">
-                Set when this Premium livestream is scheduled to take place.
+                {t.scheduleDescription}
               </p>
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div>
@@ -245,11 +259,12 @@ export default function EditEventPage() {
                     className="block text-sm font-semibold"
                     htmlFor="edit-event-date"
                   >
-                    Event date
+                    {t.eventDate}
                   </label>
                   <input
                     id="edit-event-date"
                     type="date"
+                    dir="ltr"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5"
                     value={eventDate}
                     onChange={(event) => setEventDate(event.target.value)}
@@ -260,11 +275,12 @@ export default function EditEventPage() {
                     className="block text-sm font-semibold"
                     htmlFor="edit-event-time"
                   >
-                    Event time
+                    {t.eventTime}
                   </label>
                   <input
                     id="edit-event-time"
                     type="time"
+                    dir="ltr"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5"
                     value={eventTime}
                     onChange={(event) => setEventTime(event.target.value)}
@@ -275,22 +291,20 @@ export default function EditEventPage() {
           ) : (
             <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
               <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-                Premium feature
+                {t.premiumFeature}
               </div>
               <h2 className="mt-4 font-display text-3xl font-semibold">
-                Event Scheduling
+                {t.scheduling}
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-navy">
-                Upgrade this event to Premium to unlock event scheduling,
-                recording, replay and download.
+                {t.premiumDescription}
               </p>
               <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
                 <p className="text-sm font-semibold text-navy">
-                  Locked on the Free plan
+                  {t.lockedFree}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-muted-navy">
-                  Premium features are enabled after upgrading this specific
-                  event.
+                  {t.premiumFootnote}
                 </p>
               </div>
             </section>
@@ -298,26 +312,32 @@ export default function EditEventPage() {
 
           <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.06)] sm:p-7">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
-              Privacy
+              {t.privacyEyebrow}
             </p>
             <h2 className="mt-2 font-display text-3xl font-semibold">
-              Private viewing
+              {t.privateViewing}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-navy">
-              Enter a new password to replace the current one. Leave this field
-              untouched to keep the existing password.
+              {t.passwordDescription}
             </p>
             <label
               className="mt-6 block text-sm font-semibold"
               htmlFor="edit-event-password"
             >
-              New event password{" "}
-              <span className="font-normal text-muted-navy">(optional)</span>
+              {t.newPassword}{" "}
+              <span className="font-normal text-muted-navy">
+                ({t.optional})
+              </span>
             </label>
             <EventPasswordInput
               id="edit-event-password"
               name="simchacam_new_event_access_code"
-              placeholder="Leave blank to keep current password"
+              placeholder={t.passwordPlaceholder}
+              copyFailedLabel={messages.common.copyFailed}
+              copiedLabel={messages.common.copied}
+              copyLabel={messages.eventPassword.copy}
+              hideLabel={messages.eventPassword.hide}
+              showLabel={messages.eventPassword.show}
               value={password}
               onChange={(value) => {
                 setPassword(value);
@@ -328,15 +348,15 @@ export default function EditEventPage() {
 
           <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
             <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-              Premium recording
+              {t.premiumRecording}
             </div>
             <h2 className="mt-4 font-display text-3xl font-semibold">
-              Recording, Replay & Download
+              {t.recordingTitle}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-navy">
               {hasRecording
-                ? "Premium recording is enabled for this event."
-                : "Premium recording is not enabled for this event."}
+                ? t.recordingEnabled
+                : t.recordingDisabled}
             </p>
           </section>
 
@@ -345,7 +365,7 @@ export default function EditEventPage() {
             disabled={saving}
             className="min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
           >
-            {saving ? "Saving Changes..." : "Save Changes"}
+            {saving ? t.saving : t.save}
           </button>
         </div>
       </div>

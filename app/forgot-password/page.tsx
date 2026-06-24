@@ -3,14 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import PublicFooter from "@/app/components/PublicFooter";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
-function getResetRedirectUrl() {
-  return `${window.location.origin}/reset-password`;
+function getResetRedirectUrl(locale: "en" | "he") {
+  return `${window.location.origin}${getLocalizedPath(locale, "/reset-password")}`;
 }
 
 export default function ForgotPasswordPage() {
+  const locale = getLocaleFromPathname(usePathname());
+  const t = getMessages(locale).forgotPassword;
+  const homePath = getLocalizedPath(locale);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -20,23 +30,25 @@ export default function ForgotPasswordPage() {
     setMessage("");
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: getResetRedirectUrl(),
+      redirectTo: getResetRedirectUrl(locale),
     });
 
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(locale === "he" ? t.error : error.message);
       return;
     }
 
-    setMessage(
-      "If an account exists for that email address, Supabase will send a password reset link. Please check your inbox and spam or junk folder."
-    );
+    setMessage(t.success);
   }
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <div className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden px-5 py-24">
         <div
           aria-hidden="true"
@@ -48,8 +60,8 @@ export default function ForgotPasswordPage() {
         />
 
         <Link
-          href="/"
-          aria-label="SimchaCam home"
+          href={homePath}
+          aria-label={t.ariaHome}
           className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
         >
           <Image
@@ -64,14 +76,13 @@ export default function ForgotPasswordPage() {
         <div className="relative z-10 w-full max-w-md">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-              Account help
+              {t.eyebrow}
             </p>
             <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] sm:text-6xl">
-              Reset your password
+              {t.title}
             </h1>
             <p className="mt-4 leading-7 text-muted-navy">
-              Enter your email address and we&apos;ll send you a secure link to
-              choose a new password.
+              {t.description}
             </p>
           </div>
 
@@ -86,11 +97,12 @@ export default function ForgotPasswordPage() {
             )}
 
             <label className="block text-sm font-semibold" htmlFor="email">
-              Email address
+              {t.email}
             </label>
             <input
               id="email"
               type="email"
+              dir="ltr"
               autoComplete="email"
               className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
               placeholder="you@example.com"
@@ -103,14 +115,14 @@ export default function ForgotPasswordPage() {
               disabled={loading || !email.trim()}
               className="mt-6 min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
             >
-              {loading ? "Sending reset link..." : "Send Reset Link"}
+              {loading ? t.sending : t.send}
             </button>
 
             <Link
-              href="/auth"
+              href={getLocalizedPath(locale, "/auth")}
               className="mt-5 flex justify-center text-sm font-semibold text-gold transition hover:text-[#a9884f]"
             >
-              Back to login
+              {t.backLogin}
             </Link>
           </section>
         </div>

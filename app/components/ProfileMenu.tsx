@@ -67,7 +67,7 @@ export default function ProfileMenu({ onSignOut, user }: ProfileMenuProps) {
             {messages.profile.myEvents}
           </Link>
           <Link
-            href="/account-settings"
+            href={getLocalizedPath(locale, "/account-settings")}
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-sm font-semibold text-navy transition hover:bg-pale-gold/70"
           >

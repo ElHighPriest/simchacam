@@ -2,6 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import PublicFooter from "./PublicFooter";
+import {
+  getLocaleDirection,
+  getLocalizedPath,
+  type Locale,
+} from "@/lib/i18n";
 
 type LegalSection = {
   heading: string;
@@ -13,8 +18,11 @@ type LegalPageProps = {
   eyebrow: string;
   introduction: string;
   lastUpdated?: string;
+  lastUpdatedLabel?: string;
+  locale?: Locale;
   sections: LegalSection[];
   title: string;
+  backHomeLabel?: string;
 };
 
 export default function LegalPage({
@@ -22,15 +30,24 @@ export default function LegalPage({
   eyebrow,
   introduction,
   lastUpdated = "14 June 2026",
+  lastUpdatedLabel = "Last updated",
+  locale = "en",
   sections,
   title,
+  backHomeLabel = "Back to home",
 }: LegalPageProps) {
+  const homePath = getLocalizedPath(locale);
+
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <header className="border-b border-navy/10 bg-warm-white/95 backdrop-blur">
         <nav className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/"
+            href={homePath}
             aria-label="SimchaCam home"
             className="relative block h-10 w-36 shrink-0 overflow-hidden sm:h-12 sm:w-44"
           >
@@ -43,10 +60,10 @@ export default function LegalPage({
             />
           </Link>
           <Link
-            href="/"
+            href={homePath}
             className="text-sm font-semibold text-navy/65 transition hover:text-navy"
           >
-            Back to home
+            {backHomeLabel}
           </Link>
         </nav>
       </header>
@@ -84,7 +101,7 @@ export default function LegalPage({
         </div>
 
         <p className="mt-7 text-sm text-muted-navy">
-          Last updated: {lastUpdated}
+          {lastUpdatedLabel}: {lastUpdated}
         </p>
       </article>
 

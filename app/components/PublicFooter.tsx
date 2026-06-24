@@ -29,10 +29,16 @@ export default function PublicFooter() {
           >
             {messages.nav.pricing}
           </Link>
-          <Link href="/privacy" className="transition hover:text-navy">
+          <Link
+            href={getLocalizedPath(locale, "/privacy")}
+            className="transition hover:text-navy"
+          >
             {messages.common.privacy}
           </Link>
-          <Link href="/terms" className="transition hover:text-navy">
+          <Link
+            href={getLocalizedPath(locale, "/terms")}
+            className="transition hover:text-navy"
+          >
             {messages.common.terms}
           </Link>
           <Link
