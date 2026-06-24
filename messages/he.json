@@ -38,6 +38,47 @@
     "language": "שפה",
     "selectPreferences": "בחר העדפות"
   },
+  "auth": {
+    "metadataTitle": "כניסה או יצירת חשבון | SimchaCam",
+    "metadataDescription": "התחברו או צרו חשבון SimchaCam כדי לשדר שמחות משפחתיות באופן פרטי.",
+    "ariaHome": "דף הבית של SimchaCam",
+    "eyebrow": "שידור חי פרטי",
+    "signupTitle": "יצירת החשבון שלכם",
+    "loginTitle": "טוב שחזרתם",
+    "signupDescription": "צרו ושתפו שידורים חיים פרטיים לשמחות המשפחתיות שלכם.",
+    "loginDescription": "התחברו כדי לנהל את האירועים שלכם ולהתחיל לשדר.",
+    "login": "כניסה",
+    "createAccount": "יצירת חשבון",
+    "firstName": "שם פרטי",
+    "firstNamePlaceholder": "שם פרטי",
+    "lastName": "שם משפחה",
+    "lastNamePlaceholder": "שם משפחה",
+    "email": "כתובת אימייל",
+    "password": "סיסמה",
+    "passwordPlaceholder": "הזינו את הסיסמה שלכם",
+    "forgotPassword": "שכחתם את הסיסמה?",
+    "loading": "אנא המתינו...",
+    "signupSuccess": "בדקו את האימייל שלכם ואשרו את החשבון לפני הכניסה ל-SimchaCam. אם ההודעה אינה מופיעה, בדקו גם בתיקיית הספאם או דואר הזבל.",
+    "signupFootnote": "יש לאשר את כתובת האימייל לפני יצירה או ניהול של אירועים.",
+    "loginFootnote": "רק חשבונות שאושרו יכולים לגשת לתכונות המוגנות של SimchaCam.",
+    "errors": {
+      "emailNotConfirmed": "יש לאשר את כתובת האימייל לפני הכניסה. בדקו את תיבת הדואר ואת תיקיית הספאם או דואר הזבל לקישור האישור.",
+      "invalidCredentials": "כתובת האימייל או הסיסמה שגויות.",
+      "userAlreadyExists": "כבר קיים חשבון עם כתובת האימייל הזו. נסו להתחבר במקום ליצור חשבון חדש.",
+      "weakPassword": "בחרו סיסמה חזקה יותר, באורך של לפחות 6 תווים.",
+      "generic": "לא ניתן להשלים את הפעולה. נסו שוב."
+    }
+  },
+  "support": {
+    "metadataTitle": "תמיכה | SimchaCam",
+    "metadataDescription": "צרו קשר עם התמיכה של SimchaCam לקבלת עזרה, מענה לשאלות או טיפול בבעיות בשידור.",
+    "ariaHome": "דף הבית של SimchaCam",
+    "backHome": "חזרה לדף הבית",
+    "eyebrow": "תמיכה",
+    "title": "צריכים עזרה?",
+    "description": "לתמיכה, שאלות, משוב או בעיה בשידור חי, ניתן לפנות אלינו בכתובת:",
+    "responseTime": "אנו שואפים להשיב בתוך 24 שעות."
+  },
   "hero": {
     "eyebrow": "כל שמחה, גם מרחוק",
     "title": "מחברים את כולם לרגעים החשובים.",

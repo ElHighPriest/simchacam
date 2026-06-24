@@ -38,6 +38,47 @@
     "language": "Language",
     "selectPreferences": "Select your preferences"
   },
+  "auth": {
+    "metadataTitle": "Log In or Create Account | SimchaCam",
+    "metadataDescription": "Log in or create a SimchaCam account to host private family-event livestreams.",
+    "ariaHome": "SimchaCam home",
+    "eyebrow": "Private livestreaming",
+    "signupTitle": "Create your account",
+    "loginTitle": "Welcome back",
+    "signupDescription": "Create and share private livestreams for your family simchas.",
+    "loginDescription": "Sign in to manage your events and start livestreaming.",
+    "login": "Login",
+    "createAccount": "Create Account",
+    "firstName": "First name",
+    "firstNamePlaceholder": "First name",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "Last name",
+    "email": "Email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot Password?",
+    "loading": "Please wait...",
+    "signupSuccess": "Check your email and confirm your account before logging in to SimchaCam. If you do not see the email, check your spam or junk folder.",
+    "signupFootnote": "You will need to confirm your email before creating or managing events.",
+    "loginFootnote": "Only confirmed accounts can access protected SimchaCam features.",
+    "errors": {
+      "emailNotConfirmed": "Please confirm your email address before logging in. Check your inbox for the confirmation link, including your spam or junk folder.",
+      "invalidCredentials": "The email address or password is incorrect.",
+      "userAlreadyExists": "An account already exists for this email address. Please log in instead.",
+      "weakPassword": "Please choose a stronger password with at least 6 characters.",
+      "generic": "Could not complete authentication. Please try again."
+    }
+  },
+  "support": {
+    "metadataTitle": "Support | SimchaCam",
+    "metadataDescription": "Contact SimchaCam support for help, questions, feedback, or livestream issues.",
+    "ariaHome": "SimchaCam home",
+    "backHome": "Back to home",
+    "eyebrow": "Support",
+    "title": "Need help?",
+    "description": "For support, questions, feedback, or issues with a livestream, please contact us at:",
+    "responseTime": "We aim to respond within 24 hours."
+  },
   "hero": {
     "eyebrow": "Every simcha, shared",
     "title": "Bring everyone closer to the celebration.",

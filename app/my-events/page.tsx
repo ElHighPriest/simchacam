@@ -68,7 +68,7 @@ export default function MyEventsPage() {
       const { data: userData } = await supabase.auth.getUser();
 
       if (!isEmailVerified(userData.user)) {
-        router.push("/auth");
+        router.push(getLocalizedPath(locale, "/auth"));
         return;
       }
 
@@ -144,7 +144,7 @@ export default function MyEventsPage() {
     }
 
     loadEvents();
-  }, [router]);
+  }, [locale, router]);
 
   function formatEventDate(eventAt: string | null) {
     if (!eventAt) {
@@ -226,7 +226,7 @@ export default function MyEventsPage() {
 
   async function logout() {
     await supabase.auth.signOut();
-    router.push("/auth");
+    router.push(getLocalizedPath(locale, "/auth"));
   }
 
   async function upgradeToPremium(id: string) {
@@ -238,7 +238,7 @@ export default function MyEventsPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/auth");
+        router.push(getLocalizedPath(locale, "/auth"));
         return;
       }
 

@@ -650,13 +650,13 @@ export default function Home() {
             ) : (
               <>
                 <Link
-                  href="/auth"
+                  href={getLocalizedPath(locale, "/auth")}
                   className="hidden px-3 py-2 text-sm font-medium text-navy/75 transition hover:text-navy sm:block"
                 >
                   {messages.nav.signIn}
                 </Link>
                 <Link
-                  href="/auth"
+                  href={getLocalizedPath(locale, "/auth")}
                   className="hidden min-h-11 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy shadow-sm transition hover:bg-[#b9995c] sm:inline-flex sm:px-5"
                 >
                   {messages.nav.createEvent}
@@ -694,7 +694,7 @@ export default function Home() {
                     {messages.hero.primaryCta}
                   </button>
                   <Link
-                    href="/my-events"
+                    href={getLocalizedPath(locale, "/my-events")}
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
                     {messages.hero.secondarySignedIn}
@@ -703,13 +703,13 @@ export default function Home() {
               ) : (
                 <>
                   <Link
-                    href="/auth"
+                    href={getLocalizedPath(locale, "/auth")}
                     className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
                   >
                     {messages.hero.primaryCta}
                   </Link>
                   <Link
-                    href="/auth"
+                    href={getLocalizedPath(locale, "/auth")}
                     className="min-h-13 rounded-xl border border-navy/20 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-pale-gold/60"
                   >
                     {messages.hero.secondarySignedOut}
@@ -939,7 +939,7 @@ export default function Home() {
                   {messages.hero.primaryCta}
                 </button>
                 <Link
-                  href="/my-events"
+                  href={getLocalizedPath(locale, "/my-events")}
                   className="min-h-13 rounded-xl border border-navy/20 bg-white/40 px-7 py-3.5 text-center text-base font-semibold text-navy transition hover:border-gold hover:bg-white/65"
                 >
                   {messages.hero.secondarySignedIn}
@@ -947,7 +947,7 @@ export default function Home() {
               </>
             ) : (
               <Link
-                href="/auth"
+                href={getLocalizedPath(locale, "/auth")}
                 className="min-h-13 rounded-xl bg-navy px-7 py-3.5 text-center text-base font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:-translate-y-0.5 hover:bg-[#102b4f]"
               >
                 {messages.hero.primaryCta}

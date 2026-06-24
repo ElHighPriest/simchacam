@@ -35,7 +35,10 @@ export default function PublicFooter() {
           <Link href="/terms" className="transition hover:text-navy">
             {messages.common.terms}
           </Link>
-          <Link href="/support" className="transition hover:text-navy">
+          <Link
+            href={getLocalizedPath(locale, "/support")}
+            className="transition hover:text-navy"
+          >
             {messages.common.support}
           </Link>
         </nav>

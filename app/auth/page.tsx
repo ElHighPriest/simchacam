@@ -3,12 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import PublicFooter from "@/app/components/PublicFooter";
+import {
+  getLocaleDirection,
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getMessages,
+} from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 
 export default function AuthPage() {
   const router = useRouter();
+  const locale = getLocaleFromPathname(usePathname());
+  const messages = getMessages(locale);
+  const t = messages.auth;
+  const homePath = getLocalizedPath(locale);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -18,6 +28,26 @@ export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  function getAuthErrorMessage(error: { code?: string; message: string }) {
+    if (error.code === "email_not_confirmed") {
+      return t.errors.emailNotConfirmed;
+    }
+
+    if (error.code === "invalid_credentials") {
+      return t.errors.invalidCredentials;
+    }
+
+    if (error.code === "user_already_exists") {
+      return t.errors.userAlreadyExists;
+    }
+
+    if (error.code === "weak_password") {
+      return t.errors.weakPassword;
+    }
+
+    return locale === "he" ? t.errors.generic : error.message;
+  }
 
   async function handleSubmit() {
     setLoading(true);
@@ -38,14 +68,12 @@ export default function AuthPage() {
       setLoading(false);
 
       if (error) {
-        alert(error.message);
+        alert(getAuthErrorMessage(error));
         return;
       }
 
       await supabase.auth.signOut();
-      setMessage(
-        "Check your email and confirm your account before logging in to SimchaCam. If you do not see the email, check your spam or junk folder."
-      );
+      setMessage(t.signupSuccess);
       setMode("login");
       setPassword("");
       return;
@@ -59,21 +87,19 @@ export default function AuthPage() {
     setLoading(false);
 
     if (error) {
-      if (error.code === "email_not_confirmed") {
-        setMessage(
-          "Please confirm your email address before logging in. Check your inbox for the confirmation link, including your spam or junk folder."
-        );
-      } else {
-        setMessage(error.message);
-      }
+      setMessage(getAuthErrorMessage(error));
       return;
     }
 
-    router.push("/");
+    router.push(homePath);
   }
 
   return (
-    <main className="min-h-screen bg-warm-white text-navy">
+    <main
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      className="min-h-screen bg-warm-white text-navy"
+    >
       <div className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden px-5 py-24">
         <div
           aria-hidden="true"
@@ -85,8 +111,8 @@ export default function AuthPage() {
         />
 
         <Link
-          href="/"
-          aria-label="SimchaCam home"
+          href={homePath}
+          aria-label={t.ariaHome}
           className="absolute left-5 top-5 h-10 w-36 overflow-hidden sm:left-8 sm:top-7 sm:h-12 sm:w-44"
         >
           <Image
@@ -101,15 +127,15 @@ export default function AuthPage() {
         <div className="relative z-10 w-full max-w-md">
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
-            Private livestreaming
+            {t.eyebrow}
           </p>
           <h1 className="mt-3 font-display text-5xl font-semibold leading-none tracking-[-0.025em] sm:text-6xl">
-            {mode === "signup" ? "Create your account" : "Welcome back"}
+            {mode === "signup" ? t.signupTitle : t.loginTitle}
           </h1>
           <p className="mt-4 leading-7 text-muted-navy">
             {mode === "signup"
-              ? "Create and share private livestreams for your family simchas."
-              : "Sign in to manage your events and start livestreaming."}
+              ? t.signupDescription
+              : t.loginDescription}
           </p>
         </div>
 
@@ -127,7 +153,7 @@ export default function AuthPage() {
                   : "min-h-11 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy/60 transition hover:text-navy"
               }
             >
-              Login
+              {t.login}
             </button>
             <button
               type="button"
@@ -141,7 +167,7 @@ export default function AuthPage() {
                   : "min-h-11 rounded-lg px-4 py-2.5 text-sm font-semibold text-navy/60 transition hover:text-navy"
               }
             >
-              Create Account
+              {t.createAccount}
             </button>
           </div>
 
@@ -162,14 +188,14 @@ export default function AuthPage() {
                     className="block text-sm font-semibold"
                     htmlFor="first-name"
                   >
-                    First name
+                    {t.firstName}
                   </label>
                   <input
                     id="first-name"
                     type="text"
                     autoComplete="given-name"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
-                    placeholder="First name"
+                    placeholder={t.firstNamePlaceholder}
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                   />
@@ -180,14 +206,14 @@ export default function AuthPage() {
                     className="block text-sm font-semibold"
                     htmlFor="last-name"
                   >
-                    Last name
+                    {t.lastName}
                   </label>
                   <input
                     id="last-name"
                     type="text"
                     autoComplete="family-name"
                     className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
-                    placeholder="Last name"
+                    placeholder={t.lastNamePlaceholder}
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                   />
@@ -197,11 +223,12 @@ export default function AuthPage() {
 
             <div>
               <label className="block text-sm font-semibold" htmlFor="email">
-                Email address
+                {t.email}
               </label>
               <input
                 id="email"
                 type="email"
+                dir="ltr"
                 autoComplete="email"
                 className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
                 placeholder="you@example.com"
@@ -212,16 +239,17 @@ export default function AuthPage() {
 
             <div>
               <label className="block text-sm font-semibold" htmlFor="password">
-                Password
+                {t.password}
               </label>
               <input
                 id="password"
                 type="password"
+                dir="ltr"
                 autoComplete={
                   mode === "signup" ? "new-password" : "current-password"
                 }
                 className="mt-2 w-full rounded-xl border border-navy/15 bg-warm-white px-4 py-3.5 placeholder:text-muted-navy/55"
-                placeholder="Enter your password"
+                placeholder={t.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -230,7 +258,7 @@ export default function AuthPage() {
                   href="/forgot-password"
                   className="mt-2 inline-flex text-sm font-semibold text-gold transition hover:text-[#a9884f]"
                 >
-                  Forgot Password?
+                  {t.forgotPassword}
                 </Link>
               )}
             </div>
@@ -242,16 +270,16 @@ export default function AuthPage() {
             className="mt-6 min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
           >
             {loading
-              ? "Please wait..."
+              ? t.loading
               : mode === "signup"
-                ? "Create Account"
-                : "Login"}
+                ? t.createAccount
+                : t.login}
           </button>
 
           <p className="mt-5 text-center text-xs leading-5 text-muted-navy">
             {mode === "signup"
-              ? "You will need to confirm your email before creating or managing events."
-              : "Only confirmed accounts can access protected SimchaCam features."}
+              ? t.signupFootnote
+              : t.loginFootnote}
           </p>
           </section>
         </div>
