@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { guides } from "@/content/guides";
 
 const siteUrl = "https://simcha.cam";
 const socialImage = `${siteUrl}/simchacam-social.png`;
@@ -92,15 +93,35 @@ const publicRoutes = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
+  const guideRoutes = [
+    {
+      url: `${siteUrl}/en/blog`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    },
+    ...guides.map((guide) => ({
+      url: `${siteUrl}/en/blog/${guide.slug}`,
+      lastModified: new Date(`${guide.publishedDate}T00:00:00Z`),
+      changeFrequency: "yearly" as const,
+      priority: 0.7,
+      ...(guide.featuredImage
+        ? { images: [`${siteUrl}${guide.featuredImage}`] }
+        : {}),
+    })),
+  ];
 
-  return publicRoutes.map((route) => ({
-    url: `${siteUrl}${route.path}`,
-    lastModified,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-    ...("images" in route ? { images: [...route.images] } : {}),
-    ...("languages" in route
-      ? { alternates: { languages: route.languages } }
-      : {}),
-  }));
+  return [
+    ...publicRoutes.map((route) => ({
+      url: `${siteUrl}${route.path}`,
+      lastModified,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      ...("images" in route ? { images: [...route.images] } : {}),
+      ...("languages" in route
+        ? { alternates: { languages: route.languages } }
+        : {}),
+    })),
+    ...guideRoutes,
+  ];
 }

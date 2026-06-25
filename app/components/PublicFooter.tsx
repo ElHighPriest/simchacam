@@ -29,6 +29,14 @@ export default function PublicFooter() {
           >
             {messages.nav.pricing}
           </Link>
+          {locale === "en" && (
+            <Link
+              href="/en/blog"
+              className="transition hover:text-navy"
+            >
+              Guides
+            </Link>
+          )}
           <Link
             href={getLocalizedPath(locale, "/privacy")}
             className="transition hover:text-navy"
