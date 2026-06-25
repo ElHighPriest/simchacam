@@ -1,10 +1,11 @@
 import "server-only";
 
 import Stripe from "stripe";
+import type { Currency } from "@/lib/i18n";
 
 export type StripeConfig = {
   client: Stripe;
-  premiumCurrency: "gbp" | "ils";
+  premiumCurrency: Currency;
   premiumPriceId: string;
   siteUrl: URL;
 };
@@ -17,13 +18,26 @@ export type StripeWebhookConfig = {
 
 let stripeClient: Stripe | null = null;
 
+export class StripePriceConfigurationError extends Error {
+  currency: Currency;
+
+  constructor(currency: Currency) {
+    super(`Premium checkout is not configured for ${currency.toUpperCase()}`);
+    this.name = "StripePriceConfigurationError";
+    this.currency = currency;
+  }
+}
+
 function getStripeClientConfig() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const premiumPriceGbp =
-    process.env.STRIPE_PRICE_GBP || process.env.STRIPE_PREMIUM_PRICE_ID;
-  const premiumPriceIls = process.env.STRIPE_PRICE_ILS;
+  const premiumPriceIds: Partial<Record<Currency, string>> = {
+    gbp: process.env.STRIPE_PRICE_GBP || process.env.STRIPE_PREMIUM_PRICE_ID,
+    ils: process.env.STRIPE_PRICE_ILS,
+    usd: process.env.STRIPE_PRICE_USD,
+    eur: process.env.STRIPE_PRICE_EUR,
+  };
 
-  if (!secretKey || !premiumPriceGbp) {
+  if (!secretKey || !premiumPriceIds.gbp) {
     throw new Error("Missing Stripe server configuration");
   }
 
@@ -31,12 +45,10 @@ function getStripeClientConfig() {
     throw new Error("Invalid Stripe secret key");
   }
 
-  if (!premiumPriceGbp.startsWith("price_")) {
-    throw new Error("Invalid Stripe GBP price ID");
-  }
-
-  if (premiumPriceIls && !premiumPriceIls.startsWith("price_")) {
-    throw new Error("Invalid Stripe ILS price ID");
+  for (const [currency, priceId] of Object.entries(premiumPriceIds)) {
+    if (priceId && !priceId.startsWith("price_")) {
+      throw new Error(`Invalid Stripe ${currency.toUpperCase()} price ID`);
+    }
   }
 
   stripeClient ??= new Stripe(secretKey, {
@@ -47,13 +59,12 @@ function getStripeClientConfig() {
 
   return {
     client: stripeClient,
-    premiumPriceGbp,
-    premiumPriceIls,
+    premiumPriceIds,
   };
 }
 
 export function getStripeConfig(
-  preference: { currency?: "gbp" | "ils"; locale?: string } | string = "en"
+  preference: { currency?: Currency } = {}
 ): StripeConfig {
   const config = getStripeClientConfig();
   const siteUrlValue = process.env.NEXT_PUBLIC_SITE_URL;
@@ -68,20 +79,17 @@ export function getStripeConfig(
     throw new Error("Invalid site URL");
   }
 
-  const requestedCurrency =
-    typeof preference === "object" ? preference.currency : undefined;
-  const locale = typeof preference === "string" ? preference : preference.locale;
-  const shouldUseIls =
-    requestedCurrency === "ils" ||
-    (!requestedCurrency && locale === "he" && Boolean(config.premiumPriceIls));
+  const premiumCurrency = preference.currency ?? "gbp";
+  const premiumPriceId = config.premiumPriceIds[premiumCurrency];
+
+  if (!premiumPriceId) {
+    throw new StripePriceConfigurationError(premiumCurrency);
+  }
 
   return {
     client: config.client,
-    premiumCurrency: shouldUseIls && config.premiumPriceIls ? "ils" : "gbp",
-    premiumPriceId:
-      shouldUseIls && config.premiumPriceIls
-        ? config.premiumPriceIls
-        : config.premiumPriceGbp,
+    premiumCurrency,
+    premiumPriceId,
     siteUrl,
   };
 }
@@ -101,9 +109,8 @@ export function getStripeWebhookConfig(): StripeWebhookConfig {
   return {
     client: config.client,
     premiumPriceIds: [
-      config.premiumPriceGbp,
-      ...(config.premiumPriceIls ? [config.premiumPriceIls] : []),
-    ],
+      ...new Set(Object.values(config.premiumPriceIds).filter(Boolean)),
+    ] as string[],
     webhookSecret,
   };
 }

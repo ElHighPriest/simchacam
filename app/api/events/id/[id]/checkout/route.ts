@@ -2,7 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { isEmailVerified } from "@/lib/auth";
 import { isCurrency, type Currency } from "@/lib/i18n";
-import { getStripeConfig } from "@/lib/stripe";
+import {
+  getStripeConfig,
+  StripePriceConfigurationError,
+} from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
@@ -19,10 +22,17 @@ export async function POST(
       locale?: unknown;
     };
     locale = body.locale === "he" ? "he" : "en";
-    currency =
-      typeof body.currency === "string" && isCurrency(body.currency)
-        ? body.currency
-        : undefined;
+
+    if (body.currency !== undefined) {
+      if (typeof body.currency !== "string" || !isCurrency(body.currency)) {
+        return NextResponse.json(
+          { error: "Unsupported checkout currency" },
+          { status: 400 }
+        );
+      }
+
+      currency = body.currency;
+    }
   } catch {
     // Existing clients may POST without a JSON body. Keep GBP as the default.
   }
@@ -120,7 +130,7 @@ export async function POST(
 
   try {
     const { client, premiumCurrency, premiumPriceId, siteUrl } =
-      getStripeConfig({ currency, locale });
+      getStripeConfig({ currency });
     const price = await client.prices.retrieve(premiumPriceId);
     const productId =
       typeof price.product === "string" ? price.product : price.product.id;
@@ -245,6 +255,17 @@ export async function POST(
       );
     }
   } catch (error) {
+    if (error instanceof StripePriceConfigurationError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: "CURRENCY_NOT_CONFIGURED",
+          currency: error.currency.toUpperCase(),
+        },
+        { status: 503 }
+      );
+    }
+
     console.error("Could not configure Stripe Checkout", error);
     return NextResponse.json(
       { error: "Checkout is not configured" },

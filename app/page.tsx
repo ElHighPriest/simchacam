@@ -38,7 +38,7 @@ export default function Home() {
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
   const { currency } = useCurrencyPreference(locale);
-  const premiumPrice = getPremiumPriceDisplay(currency);
+  const premiumPrice = getPremiumPriceDisplay(currency, locale);
   const homePath = getLocalizedPath(locale);
   const direction = getLocaleDirection(locale);
   const [user, setUser] = useState<User | null>(null);
@@ -546,7 +546,7 @@ export default function Home() {
                   Available for 30 days after the event
                 </p>
                 <p className="text-sm font-medium text-amber-800 mt-2">
-                  £9.99 Premium Feature
+                  {premiumPrice.featurePrice}
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
                   Create the event first, then upgrade to Premium.

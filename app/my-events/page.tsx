@@ -45,7 +45,7 @@ export default function MyEventsPage() {
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
   const { currency } = useCurrencyPreference(locale);
-  const premiumPrice = getPremiumPriceDisplay(currency);
+  const premiumPrice = getPremiumPriceDisplay(currency, locale);
   const homePath = getLocalizedPath(locale);
   const createEventHref = `${homePath}#create-event`;
   const [user, setUser] = useState<User | null>(null);

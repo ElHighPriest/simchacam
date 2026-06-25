@@ -229,6 +229,8 @@ export default function LanguageSwitcher() {
                 [
                   ["gbp", t.gbp],
                   ["ils", t.ils],
+                  ["usd", t.usd],
+                  ["eur", t.eur],
                 ] as const
               ).map(([currency, label]) => (
                 <button

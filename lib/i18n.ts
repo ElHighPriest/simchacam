@@ -4,7 +4,7 @@ import heMessages from "@/messages/he.json";
 export const locales = ["en", "he"] as const;
 export type Locale = (typeof locales)[number];
 
-export const currencies = ["gbp", "ils"] as const;
+export const currencies = ["gbp", "ils", "usd", "eur"] as const;
 export type Currency = (typeof currencies)[number];
 
 export const defaultLocale: Locale = "en";
@@ -39,18 +39,39 @@ export function getDefaultCurrencyForLocale(locale: Locale): Currency {
   return locale === "he" ? "ils" : "gbp";
 }
 
-export function getPremiumPriceDisplay(preference: Locale | Currency) {
-  return preference === "he" || preference === "ils"
+export function getPremiumPriceDisplay(
+  preference: Locale | Currency,
+  displayLocale?: Locale
+) {
+  const currency: Currency =
+    preference === "en" || preference === "he"
+      ? getDefaultCurrencyForLocale(preference)
+      : preference;
+  const locale =
+    displayLocale ??
+    (preference === "en" || preference === "he" ? preference : "en");
+  const prices: Record<
+    Currency,
+    { amount: string; currency: Uppercase<Currency> }
+  > = {
+    gbp: { amount: "£9.99", currency: "GBP" },
+    ils: { amount: "₪39", currency: "ILS" },
+    usd: { amount: "$12.99", currency: "USD" },
+    eur: { amount: "€11.99", currency: "EUR" },
+  };
+  const selected = prices[currency];
+
+  return locale === "he"
     ? {
-        currency: "ILS",
-        featurePrice: "₪39 תכונת Premium",
-        price: "₪39 לאירוע",
-        upgradeButton: "שדרוג ל-Premium — ₪39",
+        ...selected,
+        featurePrice: `${selected.amount} תכונת Premium`,
+        price: `${selected.amount} לאירוע`,
+        upgradeButton: `שדרוג ל-Premium — ${selected.amount}`,
       }
     : {
-        currency: "GBP",
-        featurePrice: "£9.99 Premium Feature",
-        price: "£9.99 per event",
-        upgradeButton: "Upgrade to Premium — £9.99",
+        ...selected,
+        featurePrice: `${selected.amount} Premium Feature`,
+        price: `${selected.amount} per event`,
+        upgradeButton: `Upgrade to Premium — ${selected.amount}`,
       };
 }

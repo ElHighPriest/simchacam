@@ -35,6 +35,8 @@
     "gbp": "GBP — £",
     "hebrew": "עברית",
     "ils": "ILS — ₪",
+    "usd": "USD — $",
+    "eur": "EUR — €",
     "language": "Language",
     "selectPreferences": "Select your preferences"
   },

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import PremiumPrice from "@/app/components/PremiumPrice";
 import PublicFooter from "@/app/components/PublicFooter";
 import { createPublicPageMetadata } from "@/lib/seo";
 
@@ -143,8 +144,7 @@ export default function PricingPage() {
                 could not be there.
               </p>
               <div className="relative mt-7 flex items-end gap-2">
-                <p className="font-display text-5xl font-semibold">£9.99</p>
-                <p className="pb-1 text-sm text-warm-white/65">per event</p>
+                <PremiumPrice />
               </div>
 
               <ul className="relative mt-7 space-y-4 leading-6 text-warm-white/85">
