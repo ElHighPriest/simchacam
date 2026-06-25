@@ -238,43 +238,58 @@ function renderEmail(
     action === "signup"
       ? locale === "he"
         ? `
-          <p style="margin:24px 0 8px;">לאחר האישור תוכלו:</p>
-          <ul style="margin:0 0 24px;padding-${direction === "rtl" ? "right" : "left"}:22px;">
-            <li style="margin-bottom:8px;">ליצור אירועי שידור חי פרטיים</li>
-            <li style="margin-bottom:8px;">לשתף קישורים מאובטחים עם בני משפחה וחברים</li>
+          <p style="margin:26px 0 10px;color:#0B1F3A;font-size:15px;font-weight:700;line-height:1.6;">לאחר האישור תוכלו:</p>
+          <ul style="margin:0 0 26px;padding-${direction === "rtl" ? "right" : "left"}:22px;color:#516078;font-size:15px;line-height:1.65;">
+            <li style="margin-bottom:7px;">ליצור אירועי שידור חי פרטיים</li>
+            <li style="margin-bottom:7px;">לשתף קישורים מאובטחים עם בני משפחה וחברים</li>
             <li>להתחיל שידור חי ישירות מהטלפון</li>
           </ul>
         `
         : `
-          <p style="margin:24px 0 8px;">Once confirmed, you&apos;ll be able to:</p>
-          <ul style="margin:0 0 24px;padding-left:22px;">
-            <li style="margin-bottom:8px;">Create private livestream events</li>
-            <li style="margin-bottom:8px;">Share secure links with family and friends</li>
+          <p style="margin:26px 0 10px;color:#0B1F3A;font-size:15px;font-weight:700;line-height:1.6;">Once confirmed, you&apos;ll be able to:</p>
+          <ul style="margin:0 0 26px;padding-left:22px;color:#516078;font-size:15px;line-height:1.65;">
+            <li style="margin-bottom:7px;">Create private livestream events</li>
+            <li style="margin-bottom:7px;">Share secure links with family and friends</li>
             <li>Go live directly from your phone</li>
           </ul>
         `
       : "";
 
+  const fallbackLinkLabel =
+    locale === "he"
+      ? "אם הכפתור אינו פועל, העתיקו והדביקו את הקישור בדפדפן:"
+      : "If the button does not work, copy and paste this link into your browser:";
+
   const actionBlock =
     safeUrl && copy.buttonLabel
       ? `
-        <p style="margin:28px 0;">
-          <a
-            href="${safeUrl}"
-            style="display:inline-block;padding:12px 24px;background:#0B1F3A;color:#FAF8F3;text-decoration:none;border-radius:999px;font-weight:700;"
-          >
-            ${escapeHtml(copy.buttonLabel)}
-          </a>
+        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:30px 0 24px;">
+          <tr>
+            <td bgcolor="#C8A96B" style="border-radius:999px;text-align:center;">
+              <a
+                href="${safeUrl}"
+                style="display:inline-block;padding:14px 28px;color:#0B1F3A;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;border-radius:999px;"
+              >
+                ${escapeHtml(copy.buttonLabel)}
+              </a>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:0 0 8px;color:#6A7485;font-size:12px;line-height:1.6;">
+          ${fallbackLinkLabel}
+        </p>
+        <p dir="ltr" style="margin:0 0 26px;text-align:left;font-size:12px;line-height:1.55;word-break:break-all;overflow-wrap:anywhere;">
+          <a href="${safeUrl}" style="color:#35527A;text-decoration:underline;">${safeUrl}</a>
         </p>
       `
       : safeToken
         ? `
-          <p style="margin:24px 0 8px;color:#516078;font-size:14px;">
+          <p style="margin:28px 0 9px;color:#6A7485;font-size:13px;font-weight:700;line-height:1.5;">
             ${escapeHtml(copy.codeLabel ?? "")}
           </p>
           <p
             dir="ltr"
-            style="display:inline-block;margin:0 0 24px;padding:14px 20px;border:1px solid #C8A96B;border-radius:12px;background:#FAF8F3;color:#0B1F3A;font-size:26px;font-weight:700;letter-spacing:0.18em;text-align:center;"
+            style="display:inline-block;margin:0 0 26px;padding:15px 22px;border:1px solid #C8A96B;border-radius:14px;background:#FFFDF8;color:#0B1F3A;font-size:27px;font-weight:700;letter-spacing:0.18em;text-align:center;"
           >
             ${safeToken}
           </p>
@@ -285,6 +300,12 @@ function renderEmail(
     locale === "he"
       ? "כל שמחה, משותפת.<br><strong>צוות SimchaCam</strong>"
       : "Every simcha, shared.<br><strong>The SimchaCam Team</strong>";
+  const brandTagline =
+    locale === "he" ? "כל שמחה, משותפת." : "Every simcha, shared.";
+  const footerDescription =
+    locale === "he"
+      ? "שידורים חיים פרטיים לאירועים משפחתיים"
+      : "Private livestreaming for family events";
 
   const html = `
     <!doctype html>
@@ -293,18 +314,32 @@ function renderEmail(
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
       </head>
-      <body style="margin:0;background:#FAF8F3;color:#0B1F3A;font-family:Arial,Helvetica,sans-serif;direction:${direction};text-align:${alignment};">
+      <body style="margin:0;padding:0;background:#0B1F3A;color:#0B1F3A;font-family:Arial,Helvetica,sans-serif;direction:${direction};text-align:${alignment};">
         <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
           ${escapeHtml(copy.subject)}
         </div>
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FAF8F3;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#0B1F3A" style="width:100%;background:#0B1F3A;">
           <tr>
-            <td style="padding:32px 16px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid rgba(200,169,107,0.45);border-radius:20px;">
+            <td align="center" style="padding:36px 14px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;margin:0 auto;">
                 <tr>
-                  <td style="padding:36px 30px;direction:${direction};text-align:${alignment};">
-                    <p style="margin:0 0 22px;color:#C8A96B;font-size:20px;font-weight:700;">SimchaCam</p>
-                    <h1 style="margin:0 0 18px;color:#0B1F3A;font-size:28px;line-height:1.25;">
+                  <td style="padding:0 8px 18px;text-align:center;">
+                    <p style="margin:0;color:#FAF8F3;font-size:24px;font-weight:700;letter-spacing:-0.02em;">
+                      Simcha<span style="color:#C8A96B;">•</span>Cam
+                    </p>
+                    <p style="margin:7px 0 0;color:#D9D5CB;font-size:12px;letter-spacing:0.08em;">
+                      ${brandTagline}
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor="#FAF8F3" style="padding:0;border:1px solid #C8A96B;border-radius:22px;background:#FAF8F3;overflow:hidden;">
+                    <div style="height:5px;background:#C8A96B;font-size:0;line-height:0;">&nbsp;</div>
+                    <div style="padding:34px 28px 32px;direction:${direction};text-align:${alignment};">
+                    <p style="margin:0 0 18px;color:#9A7A3F;font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">
+                      SimchaCam
+                    </p>
+                    <h1 style="margin:0 0 16px;color:#0B1F3A;font-size:28px;font-weight:700;line-height:1.28;letter-spacing:-0.015em;">
                       ${escapeHtml(copy.heading)}
                     </h1>
                     <p style="margin:0;color:#516078;font-size:16px;line-height:1.7;">
@@ -312,11 +347,20 @@ function renderEmail(
                     </p>
                     ${actionBlock}
                     ${signupBenefits}
-                    <p style="margin:26px 0 0;color:#516078;font-size:14px;line-height:1.7;">
+                    <div style="height:1px;margin:28px 0 22px;background:#E5DECF;font-size:0;line-height:0;">&nbsp;</div>
+                    <p style="margin:0;color:#6A7485;font-size:13px;line-height:1.7;">
                       ${escapeHtml(copy.footer)}
                     </p>
-                    <p style="margin:24px 0 0;color:#0B1F3A;font-size:14px;line-height:1.7;">
+                    <p style="margin:20px 0 0;color:#0B1F3A;font-size:13px;line-height:1.7;">
                       ${teamSignoff}
+                    </p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:18px 16px 0;text-align:center;">
+                    <p style="margin:0;color:#BFC6D1;font-size:11px;line-height:1.6;">
+                      SimchaCam &nbsp;•&nbsp; ${footerDescription}
                     </p>
                   </td>
                 </tr>
