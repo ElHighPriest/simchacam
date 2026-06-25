@@ -12,6 +12,10 @@ import {
   type Currency,
   type Locale,
 } from "@/lib/i18n";
+import {
+  localePreferenceCookie,
+  preferenceMaxAgeSeconds,
+} from "@/lib/preferences";
 
 type PreferenceTab = "language" | "currency";
 type PopoverPosition = {
@@ -23,6 +27,11 @@ const POPOVER_WIDTH = 384;
 const POPOVER_MARGIN = 12;
 const POPOVER_GAP = 10;
 const DESKTOP_BREAKPOINT = 768;
+
+function persistLocalePreference(locale: Locale) {
+  window.localStorage.setItem(localePreferenceCookie, locale);
+  document.cookie = `${localePreferenceCookie}=${locale}; path=/; max-age=${preferenceMaxAgeSeconds}; samesite=lax`;
+}
 
 function buildLanguageHref(pathname: string, locale: Locale) {
   const segments = pathname.split("/").filter(Boolean);
@@ -124,6 +133,7 @@ export default function LanguageSwitcher() {
   }, [isOpen]);
 
   function selectLanguage(locale: Locale) {
+    persistLocalePreference(locale);
     setIsOpen(false);
     router.push(buildLanguageHref(pathname, locale));
   }

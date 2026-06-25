@@ -7,9 +7,12 @@ import {
   type Currency,
   type Locale,
 } from "@/lib/i18n";
+import {
+  currencyPreferenceCookie,
+  preferenceMaxAgeSeconds,
+} from "@/lib/preferences";
 
 const currencyStorageKey = "simchacam_currency";
-const currencyCookieName = "simchacam_currency";
 const currencyChangedEvent = "simchacam:currency-changed";
 
 function getStoredCurrency(): Currency | null {
@@ -22,8 +25,25 @@ function getStoredCurrency(): Currency | null {
   return stored && isCurrency(stored) ? stored : null;
 }
 
+function getCookieCurrency(): Currency | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const stored = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith(`${currencyPreferenceCookie}=`))
+    ?.split("=")[1];
+
+  return stored && isCurrency(stored) ? stored : null;
+}
+
 function getCurrencySnapshot(locale: Locale): Currency {
-  return getStoredCurrency() ?? getDefaultCurrencyForLocale(locale);
+  return (
+    getStoredCurrency() ??
+    getCookieCurrency() ??
+    getDefaultCurrencyForLocale(locale)
+  );
 }
 
 function subscribeToCurrencyChanges(onStoreChange: () => void) {
@@ -44,7 +64,7 @@ function subscribeToCurrencyChanges(onStoreChange: () => void) {
 
 function persistCurrency(currency: Currency) {
   window.localStorage.setItem(currencyStorageKey, currency);
-  document.cookie = `${currencyCookieName}=${currency}; path=/; max-age=31536000; samesite=lax`;
+  document.cookie = `${currencyPreferenceCookie}=${currency}; path=/; max-age=${preferenceMaxAgeSeconds}; samesite=lax`;
   window.dispatchEvent(new Event(currencyChangedEvent));
 }
 
