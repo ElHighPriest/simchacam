@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import LegalPage from "@/app/components/LegalPage";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPublicPageMetadata({
   title: "Terms of Service | SimchaCam",
   description:
     "Read the SimchaCam terms for private family-event livestreaming, Premium recording, replay, and download features.",
-};
+  canonicalPath: "/en/terms",
+  alternatePath: "/he/terms",
+  alternateLocale: "he_IL",
+});
 
 export default function TermsPage() {
   return (

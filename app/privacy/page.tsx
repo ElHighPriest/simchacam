@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import LegalPage from "@/app/components/LegalPage";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPublicPageMetadata({
   title: "Privacy Policy | SimchaCam",
   description:
     "Read how SimchaCam handles account information, private event livestreams, recordings, and family-event privacy.",
-};
+  canonicalPath: "/en/privacy",
+  alternatePath: "/he/privacy",
+  alternateLocale: "he_IL",
+});
 
 export default function PrivacyPage() {
   return (

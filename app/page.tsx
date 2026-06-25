@@ -284,14 +284,6 @@ export default function Home() {
     }
   }
 
-  if (authLoading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        {messages.common.loadingSimchaCam}
-      </main>
-    );
-  }
-
   if (isGoingLive && livekitToken && livekitUrl) {
     return (
       <StreamerRoom

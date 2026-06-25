@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import PublicFooter from "@/app/components/PublicFooter";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "How It Works | SimchaCam",
+export const metadata: Metadata = createPublicPageMetadata({
+  title: "How SimchaCam Works | Private Simcha Livestreaming",
   description:
-    "Learn how SimchaCam helps families create a private event page, share a link, and livestream a simcha from a phone.",
-};
+    "Create a private event, share one secure link and livestream your simcha from a phone. Guests watch in their browser without installing an app.",
+  canonicalPath: "/how-it-works",
+});
 
 const steps = [
   {

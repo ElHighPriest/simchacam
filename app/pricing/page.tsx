@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import PublicFooter from "@/app/components/PublicFooter";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Pricing | SimchaCam",
+export const metadata: Metadata = createPublicPageMetadata({
+  title: "SimchaCam Pricing | Free and Premium Livestreaming",
   description:
-    "Compare SimchaCam Free and Premium plans for private simcha livestreams, recording, replay, and download access.",
-};
+    "Compare SimchaCam Free and Premium event plans for private livestreaming, up to 500 viewers, automatic recording, replay and download.",
+  canonicalPath: "/pricing",
+});
 
 const freeFeatures = [
   "45 minute livestream",
