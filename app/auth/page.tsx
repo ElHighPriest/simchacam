@@ -27,6 +27,7 @@ export default function AuthPage() {
 
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   function getAuthErrorMessage(error: { code?: string; message: string }) {
@@ -99,6 +100,27 @@ export default function AuthPage() {
     }
 
     router.push(homePath);
+  }
+
+  async function continueWithGoogle() {
+    setGoogleLoading(true);
+    setMessage("");
+
+    const redirectTo = `${window.location.origin}${getLocalizedPath(
+      locale,
+      "/auth/callback"
+    )}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error) {
+      setGoogleLoading(false);
+      setMessage(t.oauthFailed);
+    }
   }
 
   return (
@@ -178,16 +200,57 @@ export default function AuthPage() {
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={continueWithGoogle}
+            disabled={loading || googleLoading}
+            className="mt-6 flex min-h-13 w-full items-center justify-center gap-3 rounded-xl border border-navy/15 bg-warm-white px-5 py-3.5 font-semibold text-navy shadow-sm transition hover:border-gold/55 hover:bg-white disabled:cursor-wait disabled:opacity-60"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+            >
+              <path
+                fill="#4285F4"
+                d="M21.6 12.23c0-.71-.06-1.4-.18-2.06H12v3.9h5.38a4.6 4.6 0 0 1-2 3.02v2.53h3.24c1.9-1.75 2.98-4.33 2.98-7.39Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 22c2.7 0 4.98-.9 6.64-2.38l-3.24-2.53c-.9.6-2.05.96-3.4.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.61A10 10 0 0 0 12 22Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M6.39 13.92A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.92V7.47H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.53l3.35-2.61Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.95c1.47 0 2.79.51 3.83 1.5l2.88-2.88A9.65 9.65 0 0 0 12 2a10 10 0 0 0-8.96 5.47l3.35 2.61C7.18 7.71 9.39 5.95 12 5.95Z"
+              />
+            </svg>
+            <span>
+              {googleLoading ? t.googleLoading : t.continueWithGoogle}
+            </span>
+          </button>
+
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-navy/10" />
+            <span className="text-xs font-medium text-muted-navy">
+              {t.orContinueWithEmail}
+            </span>
+            <span className="h-px flex-1 bg-navy/10" />
+          </div>
+
           {message && (
             <div
               role="status"
-              className="mt-5 rounded-xl border border-gold/35 bg-pale-gold/70 px-4 py-3 text-sm leading-6 text-navy"
+              className="rounded-xl border border-gold/35 bg-pale-gold/70 px-4 py-3 text-sm leading-6 text-navy"
             >
               {message}
             </div>
           )}
 
-          <div className="mt-6 space-y-4">
+          <div className={`${message ? "mt-6" : ""} space-y-4`}>
             {mode === "signup" && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -273,7 +336,7 @@ export default function AuthPage() {
 
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="mt-6 min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
           >
             {loading
