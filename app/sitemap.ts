@@ -1,12 +1,20 @@
 import type { MetadataRoute } from "next";
 
 const siteUrl = "https://simcha.cam";
+const socialImage = `${siteUrl}/simchacam-social.png`;
 
 const publicRoutes = [
   {
-    path: "",
+    path: "/en",
     changeFrequency: "weekly",
     priority: 1,
+    images: [socialImage],
+  },
+  {
+    path: "/he",
+    changeFrequency: "weekly",
+    priority: 1,
+    images: [socialImage],
   },
   {
     path: "/how-it-works",
@@ -19,17 +27,32 @@ const publicRoutes = [
     priority: 0.8,
   },
   {
-    path: "/support",
+    path: "/en/support",
     changeFrequency: "monthly",
     priority: 0.6,
   },
   {
-    path: "/privacy",
+    path: "/he/support",
+    changeFrequency: "monthly",
+    priority: 0.6,
+  },
+  {
+    path: "/en/privacy",
     changeFrequency: "yearly",
     priority: 0.4,
   },
   {
-    path: "/terms",
+    path: "/he/privacy",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
+  {
+    path: "/en/terms",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
+  {
+    path: "/he/terms",
     changeFrequency: "yearly",
     priority: 0.4,
   },
@@ -43,5 +66,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
+    ...("images" in route ? { images: [...route.images] } : {}),
   }));
 }

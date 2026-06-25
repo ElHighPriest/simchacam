@@ -178,7 +178,7 @@
   "hero": {
     "eyebrow": "Every simcha, shared",
     "title": "Bring everyone closer to the celebration.",
-    "description": "Simple, private livestreaming for weddings and family simchas. Share the moment beautifully with loved ones anywhere in the world.",
+    "description": "Private, simple livestreaming for weddings, bar mitzvahs, brit milahs and family simchas. Share one secure link so relatives can watch from anywhere.",
     "primaryCta": "Create Your Livestream",
     "secondarySignedIn": "My Events",
     "secondarySignedOut": "Sign In",
@@ -430,7 +430,7 @@
   "why": {
     "eyebrow": "Why families use it",
     "title": "Built for relatives near and far.",
-    "description": "SimchaCam keeps the setup simple for hosts and the viewing simple for guests. Share a private link, protect it with a password if needed, and let family join without installing an app.",
+    "description": "Unlike a general Zoom call or a busy WhatsApp group, SimchaCam is built for family simchas. Share one private link, add a password if needed, and let guests watch in their browser without installing an app.",
     "items": ["Private links", "Password protection", "No app required"]
   },
   "recording": {
