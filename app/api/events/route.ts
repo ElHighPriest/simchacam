@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { hashPassword } from "@/lib/password";
 import { isEmailVerified } from "@/lib/auth";
+import { sendFreeEventCreatedEmail } from "@/lib/transactional-email";
 
 export async function POST(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -70,6 +71,18 @@ export async function POST(request: NextRequest) {
     console.error(error);
     return NextResponse.json({ error: "Could not create event" }, { status: 500 });
   }
+
+  await sendFreeEventCreatedEmail({
+    eventId: data.id,
+    eventName: name,
+    hasPassword: Boolean(password),
+    locale:
+      typeof user.user_metadata?.locale === "string"
+        ? user.user_metadata.locale
+        : null,
+    recipientEmail: user.email,
+    slug,
+  });
 
   return NextResponse.json({ id: data.id });
 }

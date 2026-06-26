@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripeWebhookConfig } from "@/lib/stripe";
+import { sendPremiumEventConfirmedEmail } from "@/lib/transactional-email";
 
 export const runtime = "nodejs";
 
@@ -282,7 +283,7 @@ export async function POST(request: NextRequest) {
 
     const { data: event, error: eventError } = await supabase
       .from("events")
-      .select("id, user_id")
+      .select("id, user_id, name, slug, event_at")
       .eq("id", payment.event_id)
       .maybeSingle();
 
@@ -394,6 +395,28 @@ export async function POST(request: NextRequest) {
     if (webhookUpdateError) {
       throw webhookUpdateError;
     }
+
+    const { data: premiumUser, error: premiumUserError } =
+      await supabase.auth.admin.getUserById(payment.user_id);
+
+    if (premiumUserError) {
+      console.error(
+        "Could not load user for Premium confirmation email",
+        premiumUserError
+      );
+    }
+
+    await sendPremiumEventConfirmedEmail({
+      eventAt: event.event_at,
+      eventId: event.id,
+      eventName: event.name,
+      locale:
+        typeof premiumUser?.user?.user_metadata?.locale === "string"
+          ? premiumUser.user.user_metadata.locale
+          : session.metadata?.locale,
+      recipientEmail: premiumUser?.user?.email ?? session.customer_email,
+      slug: event.slug,
+    });
 
     return NextResponse.json({ received: true });
   } catch (error) {
