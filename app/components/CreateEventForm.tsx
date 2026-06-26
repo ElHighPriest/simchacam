@@ -7,7 +7,6 @@ import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import {
   getLocaleDirection,
   getMessages,
-  getPremiumPriceDisplay,
   type Locale,
 } from "@/lib/i18n";
 
@@ -15,9 +14,11 @@ type CreateEventFormProps = {
   eventName: string;
   homeHref?: string;
   isCreating: boolean;
+  isStartingCheckout?: boolean;
   locale?: Locale;
   onBack: () => void;
   onCreate: () => void;
+  onCreateAndUpgrade: () => void;
   onEventNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   password: string;
@@ -28,9 +29,11 @@ export default function CreateEventForm({
   eventName,
   homeHref = "/",
   isCreating,
+  isStartingCheckout = false,
   locale = "en",
   onBack,
   onCreate,
+  onCreateAndUpgrade,
   onEventNameChange,
   onPasswordChange,
   password,
@@ -39,8 +42,6 @@ export default function CreateEventForm({
   const messages = getMessages(locale);
   const t = messages.createEvent;
   const passwordText = messages.eventPassword;
-  const priceLabel =
-    premiumPriceLabel ?? getPremiumPriceDisplay(locale).featurePrice;
 
   return (
     <main
@@ -154,42 +155,86 @@ export default function CreateEventForm({
             />
           </section>
 
-          <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-7">
-            <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
-              {t.premiumEyebrow}
-            </div>
-            <h2 className="mt-4 font-display text-3xl font-semibold">
-              {t.premiumTitle}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-navy">
-              {t.premiumDescription}
-            </p>
-            <div className="mt-5 grid gap-2 text-sm font-medium text-navy sm:grid-cols-2">
-              {t.premiumFeatures.map((feature) => (
-                <div
-                  key={feature}
-                  className="flex items-start gap-2 rounded-xl bg-white/45 px-3 py-2"
-                >
-                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                  <span>{feature}</span>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <section className="rounded-[1.5rem] border border-navy/10 bg-white/75 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-6">
+              <div className="inline-flex rounded-full bg-navy/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-navy">
+                {t.freeEyebrow}
+              </div>
+              <h2 className="mt-4 font-display text-3xl font-semibold">
+                {t.freeTitle}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-navy">
+                {t.freeDescription}
+              </p>
+              <div className="mt-5 grid gap-2 text-sm font-medium text-navy">
+                {t.freeFeatures.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-start gap-2 rounded-xl bg-warm-white/70 px-3 py-2"
+                  >
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-navy/35" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[1.5rem] border border-gold/40 bg-pale-gold/55 p-5 shadow-[0_16px_44px_rgba(11,31,58,0.05)] sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex rounded-full bg-gold/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#80652f]">
+                  {t.premiumEyebrow}
                 </div>
-              ))}
+                {premiumPriceLabel && (
+                  <p className="rounded-full bg-white/65 px-3 py-1 text-sm font-semibold text-navy">
+                    {premiumPriceLabel}
+                  </p>
+                )}
+              </div>
+              <h2 className="mt-4 font-display text-3xl font-semibold">
+                {t.premiumTitle}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-navy">
+                {t.premiumDescription}
+              </p>
+              <div className="mt-5 grid gap-2 text-sm font-medium text-navy">
+                {t.premiumFeatures.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-start gap-2 rounded-xl bg-white/45 px-3 py-2"
+                  >
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-start">
+            <div>
+              <button
+                onClick={onCreate}
+                disabled={isCreating || isStartingCheckout}
+                className="min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+              >
+                {isCreating && !isStartingCheckout
+                  ? t.submitting
+                  : t.submitFree}
+              </button>
             </div>
-            <div className="mt-5 rounded-xl border border-gold/30 bg-white/55 px-4 py-3">
-              <p className="text-sm font-semibold text-navy">{priceLabel}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-navy">
-                {t.premiumFootnote}
+            <div>
+              <button
+                onClick={onCreateAndUpgrade}
+                disabled={isCreating || isStartingCheckout}
+                className="min-h-14 w-full rounded-xl bg-gold px-6 py-4 text-lg font-semibold text-navy shadow-[0_12px_28px_rgba(200,169,107,0.22)] transition hover:bg-[#b9995c] disabled:cursor-wait disabled:bg-gold/45"
+              >
+                {isStartingCheckout ? t.upgradeSubmitting : t.submitUpgrade}
+              </button>
+              <p className="mt-2 text-xs leading-5 text-muted-navy sm:px-2 sm:text-center">
+                {t.upgradeHelper}
               </p>
             </div>
-          </section>
-
-          <button
-            onClick={onCreate}
-            disabled={isCreating}
-            className="min-h-14 w-full rounded-xl bg-navy px-6 py-4 text-lg font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.18)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
-          >
-            {isCreating ? t.submitting : t.submit}
-          </button>
+          </div>
         </div>
       </div>
     </main>

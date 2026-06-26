@@ -207,9 +207,18 @@
     "passwordLabel": "Event password",
     "optional": "optional",
     "passwordPlaceholder": "Choose a password",
-    "premiumEyebrow": "Premium upgrade",
+    "freeEyebrow": "Free",
+    "freeTitle": "Simple private livestream",
+    "freeDescription": "Create a private event link and stream for up to 45 minutes. Perfect for a quick family moment or small simcha.",
+    "freeFeatures": [
+      "Private viewer link",
+      "Up to 45 minute livestream",
+      "Easy sharing with guests",
+      "No app required for viewers"
+    ],
+    "premiumEyebrow": "Premium",
     "premiumTitle": "More time, more guests, and a lasting replay",
-    "premiumDescription": "Create your event first, then upgrade that event to Premium when you are ready. Premium gives families a fuller livestream experience for bigger simchas.",
+    "premiumDescription": "For bigger simchas, longer streams, more guests, automatic recording, replay and download.",
     "premiumFeatures": [
       "Event Scheduling (date and time)",
       "Automatic recording",
@@ -218,9 +227,12 @@
       "Up to 500 viewers",
       "Up to 6 hour livestreams"
     ],
-    "premiumFootnote": "Premium is purchased after event creation and applies only to this specific event.",
     "submit": "Create Event",
+    "submitFree": "Create Free Event",
+    "submitUpgrade": "Create Premium Event",
+    "upgradeHelper": "Creates your event first, then takes you securely to checkout.",
     "submitting": "Creating Event...",
+    "upgradeSubmitting": "Creating checkout...",
     "alerts": {
       "confirmEmail": "Please confirm your email before creating an event",
       "eventNameRequired": "Please enter an event name",
@@ -248,6 +260,7 @@
     "premiumTitle": "Recording, Replay & Download",
     "premiumDescription": "Add automatic recording, replay for 30 days, download access, and a longer Premium livestream for this event.",
     "checkoutLoading": "Creating checkout...",
+    "upgradeAgain": "Your event is still saved as a Free event. You can try upgrading again here.",
     "readyEyebrow": "When you're ready",
     "readyDescription": "Start the livestream when the celebration begins. You can also return and start it later from My Events.",
     "goLive": "Go Live",

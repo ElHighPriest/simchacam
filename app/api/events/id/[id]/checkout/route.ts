@@ -14,14 +14,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   let locale = "en";
+  let requestedCancelPath: string | undefined;
   let currency: Currency | undefined;
 
   try {
     const body = (await request.json()) as {
+      cancelPath?: unknown;
       currency?: unknown;
       locale?: unknown;
     };
     locale = body.locale === "he" ? "he" : "en";
+    requestedCancelPath =
+      typeof body.cancelPath === "string" ? body.cancelPath : undefined;
 
     if (body.currency !== undefined) {
       if (typeof body.currency !== "string" || !isCurrency(body.currency)) {
@@ -181,11 +185,17 @@ export async function POST(
       payment_id: payment.id,
     };
     const myEventsPath = locale === "he" ? "/he/my-events" : "/en/my-events";
+    const editEventPath =
+      locale === "he"
+        ? `/he/edit-event/${event.id}`
+        : `/en/edit-event/${event.id}`;
+    const cancelPath =
+      requestedCancelPath === editEventPath ? editEventPath : myEventsPath;
     const successUrl =
       `${new URL(myEventsPath, siteUrl).toString()}` +
       "?checkout=success&session_id={CHECKOUT_SESSION_ID}";
     const cancelUrl =
-      `${new URL(myEventsPath, siteUrl).toString()}` +
+      `${new URL(cancelPath, siteUrl).toString()}` +
       "?checkout=cancelled";
 
     try {

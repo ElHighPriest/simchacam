@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import CreateEventForm from "./components/CreateEventForm";
 import LanguageSwitcher from "./components/LanguageSwitcher";
@@ -55,6 +55,8 @@ export default function Home() {
   const [copyMessage, setCopyMessage] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const createSubmissionRef = useRef(false);
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
@@ -120,18 +122,24 @@ export default function Home() {
     setEventCreated(false);
   }
 
-  async function createEvent() {
+  async function createEventRecord() {
+    if (createSubmissionRef.current) {
+      return null;
+    }
+
     if (!isEmailVerified(user)) {
       alert(messages.createEvent.alerts.confirmEmail);
-      return;
+      return null;
     }
 
     if (!eventName.trim()) {
       alert(messages.createEvent.alerts.eventNameRequired);
-      return;
+      return null;
     }
 
+    createSubmissionRef.current = true;
     setIsCreating(true);
+    setCheckoutError("");
 
     const slug = makeSlug(eventName);
 
@@ -141,35 +149,70 @@ export default function Home() {
 
     if (!session) {
       setIsCreating(false);
+      createSubmissionRef.current = false;
       alert(messages.createEvent.alerts.loginRequired);
+      return null;
+    }
+
+    try {
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name: eventName,
+          slug,
+          password: password || null,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data.error);
+        alert(data.error || messages.createEvent.alerts.createFailed);
+        return null;
+      }
+
+      return { id: data.id as string, slug };
+    } catch (error) {
+      console.error(error);
+      alert(messages.createEvent.alerts.createFailed);
+      return null;
+    } finally {
+      setIsCreating(false);
+      createSubmissionRef.current = false;
+    }
+  }
+
+  async function createFreeEvent() {
+    const created = await createEventRecord();
+
+    if (!created) {
       return;
     }
 
-    const response = await fetch("/api/events", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        name: eventName,
-        slug,
-        password: password || null,
-      }),
-    });
-    const data = await response.json();
-
-    setIsCreating(false);
-
-    if (!response.ok) {
-      console.error(data.error);
-      alert(data.error || messages.createEvent.alerts.createFailed);
-      return;
-    }
-
-    setEventId(data.id);
-    setEventSlug(slug);
+    setEventId(created.id);
+    setEventSlug(created.slug);
     setEventCreated(true);
+  }
+
+  async function createAndUpgrade() {
+    const created = await createEventRecord();
+
+    if (!created) {
+      return;
+    }
+
+    setEventId(created.id);
+    setEventSlug(created.slug);
+    setEventCreated(true);
+
+    await upgradeToPremium(created.id, {
+      cancelPath: getLocalizedPath(locale, `/edit-event/${created.id}`),
+      showInlineError: true,
+    });
   }
 
   async function copyLink() {
@@ -200,12 +243,24 @@ export default function Home() {
     }
   }
 
-  async function upgradeToPremium() {
-    if (!eventId) {
-      return;
+  async function upgradeToPremium(
+    targetEventId = eventId,
+    options?: { cancelPath?: string; showInlineError?: boolean }
+  ) {
+    if (!targetEventId) {
+      return false;
     }
 
     setIsStartingCheckout(true);
+    setCheckoutError("");
+
+    function handleCheckoutError(message: string) {
+      if (options?.showInlineError) {
+        setCheckoutError(message);
+      } else {
+        alert(message);
+      }
+    }
 
     try {
       const {
@@ -213,32 +268,40 @@ export default function Home() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert(messages.eventCreated.alerts.checkoutLogin);
-        return;
+        handleCheckoutError(messages.eventCreated.alerts.checkoutLogin);
+        return false;
       }
 
       const response = await fetch(
-        `/api/events/id/${encodeURIComponent(eventId)}/checkout`,
+        `/api/events/id/${encodeURIComponent(targetEventId)}/checkout`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ locale, currency }),
+          body: JSON.stringify({
+            locale,
+            currency,
+            cancelPath: options?.cancelPath,
+          }),
         }
       );
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        alert(data.error || messages.eventCreated.alerts.checkoutFailed);
-        return;
+        handleCheckoutError(
+          data.error || messages.eventCreated.alerts.checkoutFailed
+        );
+        return false;
       }
 
       window.location.assign(data.url);
+      return true;
     } catch (error) {
       console.error(error);
-      alert(messages.eventCreated.alerts.checkoutFailed);
+      handleCheckoutError(messages.eventCreated.alerts.checkoutFailed);
+      return false;
     } finally {
       setIsStartingCheckout(false);
     }
@@ -437,7 +500,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={upgradeToPremium}
+                onClick={() => upgradeToPremium()}
                 disabled={isStartingCheckout}
                 className="min-h-12 shrink-0 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.16)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
               >
@@ -446,6 +509,14 @@ export default function Home() {
                   : premiumPrice.upgradeButton}
               </button>
             </div>
+            {checkoutError && (
+              <p
+                role="alert"
+                className="mt-4 rounded-xl border border-recording-red/20 bg-white/65 px-4 py-3 text-sm font-medium text-recording-red"
+              >
+                {checkoutError} {messages.eventCreated.upgradeAgain}
+              </p>
+            )}
           </section>
 
           <section className="mt-8 border-t border-gold/30 pt-8 text-center">
@@ -474,13 +545,15 @@ export default function Home() {
         eventName={eventName}
         homeHref={homePath}
         isCreating={isCreating}
+        isStartingCheckout={isStartingCheckout}
         locale={locale}
         onBack={() => setShowForm(false)}
-        onCreate={createEvent}
+        onCreate={createFreeEvent}
+        onCreateAndUpgrade={createAndUpgrade}
         onEventNameChange={setEventName}
         onPasswordChange={setPassword}
         password={password}
-        premiumPriceLabel={premiumPrice.featurePrice}
+        premiumPriceLabel={premiumPrice.price}
       />
     );
   }
@@ -577,7 +650,7 @@ export default function Home() {
           </section>
 
           <button
-            onClick={createEvent}
+            onClick={createFreeEvent}
             disabled={isCreating}
             className="w-full bg-black text-white px-6 py-3 rounded-lg text-lg disabled:bg-gray-400"
           >
