@@ -110,18 +110,8 @@ export default function PreLiveSetup({
         <LanguageSwitcher />
       </header>
 
-      <section className="grid min-h-0 flex-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex min-h-[45dvh] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="h-full max-h-full w-full object-contain"
-          />
-        </div>
-
-        <aside className="flex flex-col rounded-2xl border border-white/10 bg-navy/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
+      <section className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 p-4">
+        <div className="rounded-2xl border border-white/10 bg-navy/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             {t.setupLabel}
           </p>
@@ -146,29 +136,39 @@ export default function PreLiveSetup({
               </li>
             ))}
           </ul>
+        </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:mt-auto lg:grid-cols-1">
-            <button
-              type="button"
-              onClick={handleStart}
-              disabled={isStarting}
-              className="min-h-13 rounded-xl bg-recording-red px-6 py-3.5 text-base font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.25)] transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
-            >
-              {isStarting ? t.starting : t.start}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                stopPreview();
-                onCancel();
-              }}
-              disabled={isStarting}
-              className="min-h-12 rounded-xl border border-white/15 bg-white/8 px-6 py-3 font-semibold text-white transition hover:bg-white/12 disabled:cursor-wait disabled:text-white/45"
-            >
-              {t.cancel}
-            </button>
-          </div>
-        </aside>
+        <div className="flex min-h-[45dvh] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="h-full max-h-full w-full object-contain"
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={isStarting}
+            className="min-h-13 rounded-xl bg-recording-red px-6 py-3.5 text-base font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.25)] transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
+          >
+            {isStarting ? t.starting : t.start}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              stopPreview();
+              onCancel();
+            }}
+            disabled={isStarting}
+            className="min-h-12 rounded-xl border border-white/15 bg-white/8 px-6 py-3 font-semibold text-white transition hover:bg-white/12 disabled:cursor-wait disabled:text-white/45"
+          >
+            {t.cancel}
+          </button>
+        </div>
       </section>
     </main>
   );

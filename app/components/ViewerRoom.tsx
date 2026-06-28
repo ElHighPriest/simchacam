@@ -152,10 +152,10 @@ function ViewerContent({
       </header>
 
       <section className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-1.5 sm:p-3">
-        <div className="flex h-full w-full max-w-6xl items-center justify-center overflow-hidden">
+        <div className="flex h-full w-full items-center justify-center overflow-hidden">
           <ParticipantTile
             trackRef={streamerTrack}
-            className="h-full max-h-full w-full max-w-full overflow-hidden rounded-lg sm:rounded-xl"
+            className="h-full max-h-full w-full max-w-full overflow-hidden rounded-lg [&_.lk-participant-media-video]:h-full [&_.lk-participant-media-video]:w-full [&_.lk-participant-media-video[data-lk-orientation=landscape]]:object-cover [&_.lk-participant-media-video[data-lk-orientation=portrait]]:object-contain sm:rounded-xl"
           />
         </div>
       </section>
