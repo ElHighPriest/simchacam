@@ -397,11 +397,10 @@
   "preLiveSetup": {
     "eyebrow": "Before you go live",
     "setupLabel": "Setup",
-    "title": "Frame the livestream",
-    "description": "Your event is not live yet. Guests will stay on the waiting page until you start the livestream.",
+    "title": "Ready to go live?",
+    "description": "For best quality, turn your phone sideways and frame your shot before going live.",
     "guidance": [
-      "Turn your phone sideways for best quality.",
-      "Check framing, lighting and sound.",
+      "Check lighting and sound.",
       "Keep the phone plugged in if possible.",
       "Use strong Wi-Fi or reliable mobile data."
     ],

@@ -110,15 +110,15 @@ export default function PreLiveSetup({
         <LanguageSwitcher />
       </header>
 
-      <section className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col gap-4 p-4">
-        <div className="rounded-2xl border border-white/10 bg-navy/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)]">
+      <section className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4">
+        <div className="rounded-2xl border border-white/10 bg-navy/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.24)] sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             {t.setupLabel}
           </p>
-          <h2 className="mt-3 font-display text-3xl font-semibold">
+          <h2 className="mt-2 font-display text-2xl font-semibold sm:text-3xl">
             {t.title}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-white/72">
+          <p className="mt-2 text-sm leading-6 text-white/78">
             {t.description}
           </p>
 
@@ -128,17 +128,9 @@ export default function PreLiveSetup({
             </p>
           )}
 
-          <ul className="mt-5 space-y-3 text-sm leading-6 text-white/82">
-            {t.guidance.map((item) => (
-              <li key={item} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
-        <div className="flex min-h-[45dvh] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+        <div className="flex h-[42dvh] min-h-64 max-h-[30rem] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
           <video
             ref={videoRef}
             autoPlay
@@ -147,6 +139,15 @@ export default function PreLiveSetup({
             className="h-full max-h-full w-full object-contain"
           />
         </div>
+
+        <ul className="grid gap-2 rounded-2xl border border-white/10 bg-white/8 p-3 text-sm leading-5 text-white/82 sm:grid-cols-3">
+          {t.guidance.map((item) => (
+            <li key={item} className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <button

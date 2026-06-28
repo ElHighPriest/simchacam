@@ -2,7 +2,6 @@
 
 import "@livekit/components-styles";
 import {
-  ControlBar,
   LiveKitRoom,
   ParticipantTile,
   RoomAudioRenderer,
@@ -389,74 +388,165 @@ function StreamerContent({
 
   return (
     <main
-      className="flex h-[100dvh] max-h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-black text-white"
+      className="relative flex h-[100dvh] max-h-[100dvh] min-h-0 w-full overflow-hidden bg-black text-white"
       data-stream-session-id={sessionId}
       data-stream-hard-ends-at={hardEndsAt}
     >
-      <header className="flex shrink-0 items-start justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold sm:text-2xl">SimchaCam</h1>
-          <p className="text-xs text-gray-400 sm:text-sm">{t.cameraActive}</p>
-        </div>
-        <div className="flex shrink-0 items-start gap-2">
-          <LanguageSwitcher />
-          <div className="flex flex-col items-end gap-1 text-right">
-            <p className="text-sm text-gray-300">
-              {viewerCount}{" "}
-              {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
-            </p>
-          {recordingEnabled && (
-            <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774]">
-              {t.recordingEnabled}
-            </p>
-          )}
-          {recordingNotice && (
-            <p className="max-w-52 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-              {recordingNotice}
-            </p>
-          )}
-          {recordingWarning && (
-            <p className="max-w-52 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-200">
-              {recordingWarning}
-            </p>
-          )}
-          </div>
-        </div>
-      </header>
-
-      <section className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-2 py-1 sm:px-4 sm:py-2">
+      <section className="absolute inset-0 flex items-center justify-center overflow-hidden">
         {localCameraTrack ? (
           <ParticipantTile
             trackRef={localCameraTrack}
-            className="h-full max-h-full w-full max-w-5xl overflow-hidden rounded-xl sm:rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
+            className="h-full max-h-full w-full overflow-hidden [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
           />
         ) : (
           <div className="text-center text-gray-400">{t.startingCamera}</div>
         )}
       </section>
 
-      <footer className="shrink-0 px-3 py-2 sm:px-4 sm:py-3">
-        <div className="overflow-hidden">
-          <ControlBar
-            controls={{
-              microphone: true,
-              camera: true,
-              screenShare: false,
-              chat: false,
-              leave: lifecycleMode === "legacy",
-            }}
-          />
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 bg-gradient-to-b from-black/65 to-transparent px-3 pb-10 pt-3 sm:px-4 sm:pt-4">
+        <div className="min-w-0 rounded-2xl bg-black/35 px-3 py-2 backdrop-blur">
+          <div className="flex items-center gap-2 text-xs font-semibold text-white">
+            <span className="h-2 w-2 rounded-full bg-[#68d391]" />
+            {t.cameraActive}
+          </div>
+          <p className="mt-1 text-xs text-white/70">
+            {viewerCount}{" "}
+            {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
+          </p>
         </div>
-        {lifecycleMode === "server-owned" && (
+        <div className="pointer-events-auto flex shrink-0 items-start gap-2">
+          <LanguageSwitcher />
+        </div>
+      </header>
+
+      {(recordingEnabled || recordingNotice || recordingWarning) && (
+        <div className="pointer-events-none absolute inset-x-3 top-20 z-10 flex flex-wrap gap-2 sm:top-24">
+          {recordingEnabled && (
+            <p className="rounded-full bg-recording-red/20 px-2.5 py-1 text-xs font-semibold text-[#ff7774] backdrop-blur">
+              {t.recordingEnabled}
+            </p>
+          )}
+          {recordingNotice && (
+            <p className="max-w-52 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-200 backdrop-blur">
+              {recordingNotice}
+            </p>
+          )}
+          {recordingWarning && (
+            <p className="max-w-52 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-200 backdrop-blur">
+              {recordingWarning}
+            </p>
+          )}
+        </div>
+      )}
+
+      <footer className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-12 sm:px-4">
+        <div className="mx-auto grid max-w-xl grid-cols-[1fr_1fr_2fr] gap-3">
           <button
             type="button"
-            onClick={endStream}
-            disabled={isEndingStream}
-            className="mt-2 min-h-11 w-full rounded-xl bg-recording-red px-6 py-2.5 font-semibold text-white transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55 sm:mt-3 sm:min-h-12 sm:py-3"
+            onClick={toggleMicrophone}
+            aria-label={
+              isMicrophoneEnabled ? t.muteMicrophone : t.unmuteMicrophone
+            }
+            aria-pressed={isMicrophoneEnabled}
+            className="flex min-h-12 items-center justify-center rounded-xl bg-white/14 text-white backdrop-blur transition hover:bg-white/20"
           >
-            {isEndingStream ? t.endingStream : t.endStream}
+            {isMicrophoneEnabled ? (
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              >
+                <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <path d="M12 19v3" />
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              >
+                <path d="m2 2 20 20" />
+                <path d="M9 9v3a3 3 0 0 0 5.1 2.1" />
+                <path d="M15 9.34V6a3 3 0 0 0-5.94-.6" />
+                <path d="M19 10v2a7 7 0 0 1-.64 2.93" />
+                <path d="M5 10v2a7 7 0 0 0 11.9 5" />
+                <path d="M12 19v3" />
+              </svg>
+            )}
           </button>
-        )}
+
+          <button
+            type="button"
+            onClick={toggleCamera}
+            aria-label={isCameraEnabled ? t.turnCameraOff : t.turnCameraOn}
+            aria-pressed={isCameraEnabled}
+            className="flex min-h-12 items-center justify-center rounded-xl bg-white/14 text-white backdrop-blur transition hover:bg-white/20"
+          >
+            {isCameraEnabled ? (
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              >
+                <path d="m16 13 5 3V8l-5 3" />
+                <rect x="3" y="6" width="13" height="12" rx="2" />
+              </svg>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              >
+                <path d="m2 2 20 20" />
+                <path d="M16 16V8a2 2 0 0 0-2-2H8" />
+                <path d="M3 7.36V16a2 2 0 0 0 2 2h11" />
+                <path d="m16 11 5-3v8l-2.5-1.5" />
+              </svg>
+            )}
+          </button>
+
+          {lifecycleMode === "server-owned" && (
+            <button
+              type="button"
+              onClick={endStream}
+              disabled={isEndingStream}
+              className="min-h-12 rounded-xl bg-recording-red px-4 py-3 font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.26)] transition hover:bg-[#cc302d] disabled:cursor-wait disabled:bg-recording-red/55"
+            >
+              {isEndingStream ? t.endingStream : t.endStream}
+            </button>
+          )}
+
+          {lifecycleMode === "legacy" && (
+            <button
+              type="button"
+              onClick={() => room.disconnect()}
+              className="min-h-12 rounded-xl bg-recording-red px-4 py-3 font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.26)] transition hover:bg-[#cc302d]"
+            >
+              {t.leaveStream}
+            </button>
+          )}
+        </div>
       </footer>
 
       <RoomAudioRenderer />
