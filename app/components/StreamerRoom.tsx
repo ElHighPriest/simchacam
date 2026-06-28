@@ -385,12 +385,10 @@ function StreamerContent({
                   strokeLinejoin="round"
                   strokeWidth="2"
                 >
-                  <path d="M4 8h3l2-2h6l2 2h3v10H4Z" />
-                  <circle cx="12" cy="13" r="3" />
-                  <path d="M8 11a5 5 0 0 1 7.5-2.4" />
-                  <path d="M15.5 6.5v2.1h-2.1" />
-                  <path d="M16 15a5 5 0 0 1-7.5 2.4" />
-                  <path d="M8.5 19.5v-2.1h2.1" />
+                  <path d="M17 2v5h-5" />
+                  <path d="M7 22v-5h5" />
+                  <path d="M18.8 9A7 7 0 0 0 7.2 5.2L5 7.4" />
+                  <path d="M5.2 15A7 7 0 0 0 16.8 18.8L19 16.6" />
                 </svg>
               </button>
 
@@ -581,12 +579,10 @@ function StreamerContent({
               strokeLinejoin="round"
               strokeWidth="2"
             >
-              <path d="M4 8h3l2-2h6l2 2h3v10H4Z" />
-              <circle cx="12" cy="13" r="3" />
-              <path d="M8 11a5 5 0 0 1 7.5-2.4" />
-              <path d="M15.5 6.5v2.1h-2.1" />
-              <path d="M16 15a5 5 0 0 1-7.5 2.4" />
-              <path d="M8.5 19.5v-2.1h2.1" />
+              <path d="M17 2v5h-5" />
+              <path d="M7 22v-5h5" />
+              <path d="M18.8 9A7 7 0 0 0 7.2 5.2L5 7.4" />
+              <path d="M5.2 15A7 7 0 0 0 16.8 18.8L19 16.6" />
             </svg>
           </button>
 
