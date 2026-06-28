@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import {
   getLocaleDirection,
   getMessages,
@@ -98,7 +97,7 @@ export default function PreLiveSetup({
       dir={getLocaleDirection(locale)}
       className="flex min-h-[100dvh] w-full max-w-full flex-col overflow-x-hidden bg-black text-white"
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-navy/70 px-4 py-3 backdrop-blur">
+      <header className="flex shrink-0 items-center border-b border-white/10 bg-navy/70 px-4 py-3 backdrop-blur">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             {t.eyebrow}
@@ -107,7 +106,6 @@ export default function PreLiveSetup({
             {eventName || "SimchaCam"}
           </h1>
         </div>
-        <LanguageSwitcher />
       </header>
 
       <section className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4">

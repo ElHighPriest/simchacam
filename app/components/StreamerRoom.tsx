@@ -13,7 +13,6 @@ import {
 } from "@livekit/components-react";
 import { Track, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
-import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import {
   getLocaleDirection,
   getLocalizedPath,
@@ -270,9 +269,6 @@ function StreamerContent({
         </section>
 
         <aside className="flex w-56 shrink-0 flex-col border-l border-white/10 bg-zinc-950/95 p-3">
-          <div className="mb-3">
-            <LanguageSwitcher />
-          </div>
           <div className="flex flex-wrap gap-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white">
               <span className="h-2 w-2 rounded-full bg-[#68d391]" />
@@ -488,9 +484,6 @@ function StreamerContent({
             {viewerCount}{" "}
             {viewerCount === 1 ? t.viewerSingular : t.viewerPlural}
           </p>
-        </div>
-        <div className="pointer-events-auto flex shrink-0 items-start gap-2">
-          <LanguageSwitcher />
         </div>
       </header>
 
