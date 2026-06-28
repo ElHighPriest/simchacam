@@ -385,12 +385,12 @@ function StreamerContent({
                   strokeLinejoin="round"
                   strokeWidth="2"
                 >
-                  <path d="M7 7h2l1.5-2h3L15 7h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
-                  <circle cx="12" cy="12.5" r="2.5" />
-                  <path d="M3 12a9 9 0 0 1 14.7-7" />
-                  <path d="M17 2v4h-4" />
-                  <path d="M21 12a9 9 0 0 1-14.7 7" />
-                  <path d="M7 22v-4h4" />
+                  <path d="M4 8h3l2-2h6l2 2h3v10H4Z" />
+                  <circle cx="12" cy="13" r="3" />
+                  <path d="M8 11a5 5 0 0 1 7.5-2.4" />
+                  <path d="M15.5 6.5v2.1h-2.1" />
+                  <path d="M16 15a5 5 0 0 1-7.5 2.4" />
+                  <path d="M8.5 19.5v-2.1h2.1" />
                 </svg>
               </button>
 
@@ -581,12 +581,12 @@ function StreamerContent({
               strokeLinejoin="round"
               strokeWidth="2"
             >
-              <path d="M7 7h2l1.5-2h3L15 7h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
-              <circle cx="12" cy="12.5" r="2.5" />
-              <path d="M3 12a9 9 0 0 1 14.7-7" />
-              <path d="M17 2v4h-4" />
-              <path d="M21 12a9 9 0 0 1-14.7 7" />
-              <path d="M7 22v-4h4" />
+              <path d="M4 8h3l2-2h6l2 2h3v10H4Z" />
+              <circle cx="12" cy="13" r="3" />
+              <path d="M8 11a5 5 0 0 1 7.5-2.4" />
+              <path d="M15.5 6.5v2.1h-2.1" />
+              <path d="M16 15a5 5 0 0 1-7.5 2.4" />
+              <path d="M8.5 19.5v-2.1h2.1" />
             </svg>
           </button>
 

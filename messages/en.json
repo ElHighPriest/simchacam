@@ -406,7 +406,7 @@
       "Use strong Wi-Fi or reliable mobile data."
     ],
     "previewError": "Could not start the camera preview. Check camera and microphone permissions, then try Start Livestream.",
-    "start": "Start Livestream",
+    "start": "Go Live",
     "starting": "Starting Livestream...",
     "cancel": "Back"
   },
