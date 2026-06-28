@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
 import { isEmailVerified } from "@/lib/auth";
-import { getActiveViewerCount } from "@/lib/livekit-rooms";
+import {
+  getActiveViewerCount,
+  getStreamTokenTtlSeconds,
+} from "@/lib/livekit-rooms";
 import {
   cleanupExpiredStreamSessionForRoom,
   loadActiveStreamSessionForRoom,
@@ -48,6 +51,7 @@ export async function POST(request: NextRequest) {
     });
     let canPublish = false;
     const streamState = await cleanupExpiredStreamSessionForRoom(roomName);
+    const activeSession = await loadActiveStreamSessionForRoom(roomName);
 
     if (streamState.expired) {
       return NextResponse.json(
@@ -112,9 +116,6 @@ export async function POST(request: NextRequest) {
       ) {
         return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
       }
-
-      const activeSession = await loadActiveStreamSessionForRoom(roomName);
-
       if (activeSession) {
         const viewerCount = await getActiveViewerCount(roomName);
 
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     const token = new AccessToken(apiKey, apiSecret, {
       identity: participantName,
-      ttl: "2h",
+      ttl: getStreamTokenTtlSeconds(activeSession?.hard_ends_at),
     });
 
     token.addGrant({

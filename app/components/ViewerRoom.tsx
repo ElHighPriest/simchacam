@@ -39,6 +39,7 @@ function ViewerContent({
   const messages = getMessages(locale);
   const t = messages.viewer;
   const [status, setStatus] = useState<string | null>(null);
+  const [showHostDelayMessage, setShowHostDelayMessage] = useState(false);
 
   const tracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: false }],
@@ -48,6 +49,22 @@ function ViewerContent({
   const streamerTrack = tracks.find(
     (trackRef) => trackRef.participant.identity === "streamer"
   );
+
+  useEffect(() => {
+    if (streamerTrack) {
+      const reset = window.setTimeout(() => {
+        setShowHostDelayMessage(false);
+      }, 0);
+
+      return () => window.clearTimeout(reset);
+    }
+
+    const timeout = window.setTimeout(() => {
+      setShowHostDelayMessage(true);
+    }, 30000);
+
+    return () => window.clearTimeout(timeout);
+  }, [streamerTrack]);
 
   useEffect(() => {
     async function checkStatus() {
@@ -101,7 +118,9 @@ function ViewerContent({
             {eventName}
           </h1>
           <p className="mt-3 text-white/70">
-            {t.connectingToLivestream}
+            {showHostDelayMessage
+              ? t.hostNotPresent
+              : t.connectingToLivestream}
           </p>
         </div>
       </main>

@@ -331,6 +331,8 @@
   },
   "viewer": {
     "loading": "טוען אירוע...",
+    "loadFailed": "לא הצלחנו לטעון את האירוע. בדקו את החיבור ונסו שוב.",
+    "tryAgain": "נסו שוב",
     "eventUnavailable": "האירוע אינו זמין",
     "couldNotOpen": "לא הצלחנו לפתוח את האירוע",
     "eventNotFound": "האירוע לא נמצא.",
@@ -365,6 +367,7 @@
     "connecting": "מתחבר...",
     "joinLivestream": "הצטרפות לשידור",
     "connectingToLivestream": "מתחבר לשידור החי...",
+    "hostNotPresent": "המארח עדיין לא מחובר. העמוד ימשיך לנסות להתחבר אוטומטית.",
     "eventFull": "השידור מלא כרגע. נסו שוב בעוד זמן קצר.",
     "connectFailed": "לא ניתן להתחבר לשידור.",
     "recordingAccessFailed": "לא ניתן לגשת להקלטה."

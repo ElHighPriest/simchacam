@@ -23,14 +23,23 @@ export async function POST(
   try {
     const { id } = await params;
     const context = await getOwnedStreamContext(accessToken, id);
+    let cleanupError: string | null = null;
 
-    await deleteStreamRoom(context.event.slug);
+    try {
+      await deleteStreamRoom(context.event.slug);
+    } catch (error) {
+      cleanupError =
+        error instanceof Error ? error.message : "Unknown LiveKit cleanup error";
+      console.error("Could not delete LiveKit room while ending stream", error);
+    }
+
     const session = await endActiveStreamSession(context);
 
     return NextResponse.json({
       status: "ended",
       eventId: context.event.id,
       sessionId: session?.id ?? null,
+      cleanupError,
     });
   } catch (error) {
     console.error("Could not stop server-owned stream", error);

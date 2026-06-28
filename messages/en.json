@@ -331,6 +331,8 @@
   },
   "viewer": {
     "loading": "Loading event...",
+    "loadFailed": "We couldn't load this event. Please check your connection and try again.",
+    "tryAgain": "Try Again",
     "eventUnavailable": "Event unavailable",
     "couldNotOpen": "We couldn't open this event",
     "eventNotFound": "Event not found.",
@@ -365,6 +367,7 @@
     "connecting": "Connecting...",
     "joinLivestream": "Join Livestream",
     "connectingToLivestream": "Connecting to the livestream...",
+    "hostNotPresent": "The host is not connected yet. This page will keep trying automatically.",
     "eventFull": "This livestream is currently full. Please try again shortly.",
     "connectFailed": "Could not connect to livestream.",
     "recordingAccessFailed": "Could not access recording."

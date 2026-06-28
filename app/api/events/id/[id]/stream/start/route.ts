@@ -45,7 +45,8 @@ export async function POST(
       createdSession.session.viewer_limit
     );
     const publisher = await createPublisherToken(
-      createdSession.session.room_name
+      createdSession.session.room_name,
+      createdSession.session.hard_ends_at
     );
     await markStreamLive(context, createdSession.session.id);
 

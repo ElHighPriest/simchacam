@@ -6,6 +6,10 @@ import {
   TwirpError,
 } from "livekit-server-sdk";
 
+const TOKEN_EXPIRY_BUFFER_SECONDS = 5 * 60;
+const MIN_TOKEN_TTL_SECONDS = 5 * 60;
+const DEFAULT_TOKEN_TTL_SECONDS = 2 * 60 * 60;
+
 function getLiveKitConfig() {
   const apiKey = process.env.LIVEKIT_API_KEY;
   const apiSecret = process.env.LIVEKIT_API_SECRET;
@@ -88,11 +92,33 @@ export async function getActiveViewerCount(roomName: string) {
   }
 }
 
-export async function createPublisherToken(roomName: string) {
+export function getStreamTokenTtlSeconds(hardEndsAt?: string | null) {
+  if (!hardEndsAt) {
+    return DEFAULT_TOKEN_TTL_SECONDS;
+  }
+
+  const expiresAt = new Date(hardEndsAt).getTime();
+
+  if (Number.isNaN(expiresAt)) {
+    return DEFAULT_TOKEN_TTL_SECONDS;
+  }
+
+  const secondsUntilHardEnd = Math.ceil((expiresAt - Date.now()) / 1000);
+
+  return Math.max(
+    MIN_TOKEN_TTL_SECONDS,
+    secondsUntilHardEnd + TOKEN_EXPIRY_BUFFER_SECONDS
+  );
+}
+
+export async function createPublisherToken(
+  roomName: string,
+  hardEndsAt?: string | null
+) {
   const config = getLiveKitConfig();
   const token = new AccessToken(config.apiKey, config.apiSecret, {
     identity: "streamer",
-    ttl: "2h",
+    ttl: getStreamTokenTtlSeconds(hardEndsAt),
   });
 
   token.addGrant({

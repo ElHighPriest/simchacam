@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import ViewerRoom from "@/app/components/ViewerRoom";
 import {
@@ -109,33 +109,53 @@ export default function ViewerPageClient({
   const [recordingAction, setRecordingAction] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState("");
   const autoJoinStarted = useRef(false);
+  const hasLoadedEvent = useRef(false);
 
-  useEffect(() => {
-    async function loadEvent() {
-      try {
-        const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
-        const data = await response.json();
+  const loadEvent = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/events/${encodeURIComponent(slug)}`);
+      const data = await response.json();
 
-        if (!response.ok) {
-          console.error(data.error);
+      if (!response.ok) {
+        console.error(data.error);
+        if (!hasLoadedEvent.current) {
           setEventError(t.eventNotFound);
           setEventLoading(false);
-          return;
         }
+        return;
+      }
 
-        setEvent(data);
+      setEvent(data);
+      hasLoadedEvent.current = true;
+      setEventError("");
+      setEventLoading(false);
+    } catch (error) {
+      console.error(error);
+      if (!hasLoadedEvent.current) {
+        setEventError(t.loadFailed);
         setEventLoading(false);
-      } catch (error) {
-        console.error(error);
       }
     }
+  }, [slug, t.eventNotFound, t.loadFailed]);
 
-    loadEvent();
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => {
+      void loadEvent();
+    }, 0);
 
     const interval = setInterval(loadEvent, 3000);
 
-    return () => clearInterval(interval);
-  }, [slug, t.eventNotFound]);
+    return () => {
+      window.clearTimeout(initialLoad);
+      clearInterval(interval);
+    };
+  }, [loadEvent]);
+
+  function retryLoadEvent() {
+    setEventLoading(true);
+    setEventError("");
+    void loadEvent();
+  }
 
   const eventHasPassword = Boolean(event?.hasPassword);
 
@@ -371,6 +391,12 @@ export default function ViewerPageClient({
           <p className="mt-4 text-muted-navy">
             {eventError || t.eventNotFound}
           </p>
+          <button
+            onClick={retryLoadEvent}
+            className="mt-6 min-h-12 rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
+          >
+            {t.tryAgain}
+          </button>
         </div>
       </main>
     );
