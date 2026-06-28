@@ -64,9 +64,9 @@ export function getPremiumPriceDisplay(
   return locale === "he"
     ? {
         ...selected,
-        featurePrice: `${selected.amount} תכונת Premium`,
+        featurePrice: `${selected.amount} לאירוע פרימיום`,
         price: `${selected.amount} לאירוע`,
-        upgradeButton: `שדרוג ל-Premium — ${selected.amount}`,
+        upgradeButton: `שדרוג לפרימיום — ${selected.amount}`,
       }
     : {
         ...selected,

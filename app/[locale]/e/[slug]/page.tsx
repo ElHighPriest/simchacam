@@ -15,11 +15,11 @@ export async function generateMetadata({
   return {
     title:
       locale === "he"
-        ? "שידור חי פרטי | SimchaCam"
+        ? "שידור חי פרטי למשפחה | SimchaCam"
         : "Private Event Livestream | SimchaCam",
     description:
       locale === "he"
-        ? "צפו בשידור חי פרטי, צפייה חוזרת או הקלטה של אירוע SimchaCam עם קישור שהוזמנתם אליו."
+        ? "צפו בשידור חי פרטי, בשידור חוזר או בהקלטה של אירוע SimchaCam דרך הקישור שקיבלתם."
         : "Watch a private SimchaCam event livestream, replay, or recording with an invited event link.",
     robots: {
       index: false,

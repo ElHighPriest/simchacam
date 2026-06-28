@@ -10,7 +10,7 @@ export default function HebrewTermsOfService() {
       backHomeLabel="חזרה לדף הבית"
       eyebrow="השימוש ב-SimchaCam"
       title="תנאי שימוש"
-      introduction="תנאים אלה חלים על השימוש ב-SimchaCam בידי מארחי אירועים, בעלי חשבונות וצופים מוזמנים. אנא קראו אותם לפני יצירה או צפייה באירוע."
+      introduction="תנאים אלה חלים על השימוש ב-SimchaCam בידי מארחי אירועים, בעלי חשבונות וצופים מוזמנים. קראו אותם לפני יצירה או צפייה באירוע."
       lastUpdated="22 ביוני 2026"
       lastUpdatedLabel="עודכן לאחרונה"
       sections={[

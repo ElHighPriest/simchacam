@@ -245,12 +245,12 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
   const copy =
     locale === "he"
       ? {
-          subject: "האירוע שלך ב־SimchaCam מוכן",
+          subject: "האירוע שלכם ב־SimchaCam מוכן",
           preheader: "האירוע נוצר. אפשר לשתף את הקישור הפרטי עם האורחים.",
           eyebrow: "אירוע נוצר",
-          heading: "האירוע שלך מוכן",
+          heading: "האירוע שלכם מוכן",
           intro:
-            "יצרנו את עמוד השידור הפרטי שלך. אפשר לשתף את קישור הצפייה עם האורחים ולחזור לעריכת האירוע בכל שלב.",
+            "עמוד השידור הפרטי שלכם מוכן. אפשר לשתף את קישור הצפייה עם האורחים ולחזור לעריכה בכל שלב.",
           eventName: "שם האירוע",
           viewerLink: "קישור לצופים",
           hostLink: "קישור למארח",
@@ -264,9 +264,9 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
             "בדקו את המצלמה והמיקרופון",
             "השאירו את הטלפון טעון או מחובר לחשמל",
           ],
-          premiumTitle: "פתחו Premium לאירוע שלכם",
+          premiumTitle: "שדרגו את האירוע לפרימיום",
           premiumBody:
-            "Premium מוסיף תזמון, שידור ארוך יותר, הקלטה, צפייה חוזרת והורדה לאירוע הזה.",
+            "פרימיום מוסיף תזמון, שידור ארוך יותר, הקלטה, צפייה חוזרת והורדה לאירוע הזה.",
           premium: [
             "תזמון אירוע (תאריך ושעה)",
             "עד 6 שעות שידור",
@@ -275,7 +275,7 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
             "הורדת הקלטות",
             "עד 500 צופים",
           ],
-          upgrade: "שדרוג ל-Premium",
+          upgrade: "שדרוג לפרימיום",
         }
       : {
           subject: "Your SimchaCam event is ready",
@@ -366,12 +366,12 @@ export function renderPremiumEventConfirmedEmail(
   const copy =
     locale === "he"
       ? {
-          subject: "אירוע הפרימיום שלך מוכן",
-          preheader: "Premium הופעל לאירוע שלך ב-SimchaCam.",
-          eyebrow: "Premium הופעל",
-          heading: "אירוע ה-Premium שלך מוכן",
+          subject: "אירוע הפרימיום שלכם מוכן",
+          preheader: "פרימיום הופעל לאירוע שלכם ב-SimchaCam.",
+          eyebrow: "פרימיום הופעל",
+          heading: "אירוע הפרימיום שלכם מוכן",
           intro:
-            "האירוע שלך שודרג ל-Premium. ההקלטה, הצפייה החוזרת וההורדה יהיו זמינות בהתאם לתכונות Premium.",
+            "האירוע שודרג לפרימיום. ההקלטה, הצפייה החוזרת וההורדה יהיו זמינות כחלק מהשדרוג.",
           eventName: "שם האירוע",
           viewerLink: "קישור לצופים",
           hostLink: "קישור למארח",
@@ -381,7 +381,7 @@ export function renderPremiumEventConfirmedEmail(
           addDateBody:
             "כך האורחים ידעו מתי השידור החי שלכם מתחיל.",
           addDate: "הוספת תאריך ושעה",
-          premiumTitle: "אירוע ה-Premium כולל:",
+          premiumTitle: "אירוע הפרימיום כולל:",
           premium: [
             "תזמון אירוע",
             "עד 6 שעות שידור",

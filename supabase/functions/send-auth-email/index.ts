@@ -128,7 +128,7 @@ const content: Record<Locale, Record<AuthAction, EmailContent>> = {
     signup: {
       subject: "אישור כתובת האימייל שלך ב-SimchaCam",
       heading: "ברוכים הבאים ל-SimchaCam",
-      introduction: "נא לאשר את כתובת האימייל כדי להשלים את יצירת החשבון.",
+      introduction: "אשרו את כתובת המייל כדי להשלים את יצירת החשבון.",
       buttonLabel: "אישור כתובת האימייל",
       footer:
         "אם לא יצרתם חשבון ב-SimchaCam, ניתן להתעלם מהודעה זו.",
@@ -238,9 +238,9 @@ function renderEmail(
     action === "signup"
       ? locale === "he"
         ? `
-          <p style="margin:26px 0 10px;color:#0B1F3A;font-size:15px;font-weight:700;line-height:1.6;">לאחר האישור תוכלו:</p>
+          <p style="margin:26px 0 10px;color:#0B1F3A;font-size:15px;font-weight:700;line-height:1.6;">אחרי האישור תוכלו:</p>
           <ul style="margin:0 0 26px;padding-${direction === "rtl" ? "right" : "left"}:22px;color:#516078;font-size:15px;line-height:1.65;">
-            <li style="margin-bottom:7px;">ליצור אירועי שידור חי פרטיים</li>
+            <li style="margin-bottom:7px;">ליצור שידורים חיים פרטיים לשמחות משפחתיות</li>
             <li style="margin-bottom:7px;">לשתף קישורים מאובטחים עם בני משפחה וחברים</li>
             <li>להתחיל שידור חי ישירות מהטלפון</li>
           </ul>
@@ -257,7 +257,7 @@ function renderEmail(
 
   const fallbackLinkLabel =
     locale === "he"
-      ? "אם הכפתור אינו פועל, העתיקו והדביקו את הקישור בדפדפן:"
+      ? "אם הכפתור לא עובד, אפשר להעתיק את הקישור לדפדפן:"
       : "If the button does not work, copy and paste this link into your browser:";
 
   const actionBlock =
@@ -298,10 +298,10 @@ function renderEmail(
 
   const teamSignoff =
     locale === "he"
-      ? "כל שמחה, משותפת.<br><strong>צוות SimchaCam</strong>"
+      ? "כל שמחה, גם מרחוק.<br><strong>צוות SimchaCam</strong>"
       : "Every simcha, shared.<br><strong>The SimchaCam Team</strong>";
   const brandTagline =
-    locale === "he" ? "כל שמחה, משותפת." : "Every simcha, shared.";
+    locale === "he" ? "כל שמחה, גם מרחוק." : "Every simcha, shared.";
   const footerDescription =
     locale === "he"
       ? "שידורים חיים פרטיים לאירועים משפחתיים"
@@ -378,12 +378,12 @@ function renderEmail(
     actionUrl ?? (token ? `${copy.codeLabel ?? "Code"}: ${token}` : ""),
     action === "signup"
       ? locale === "he"
-        ? "לאחר האישור תוכלו ליצור אירועים פרטיים, לשתף קישורים מאובטחים ולהתחיל שידור חי מהטלפון."
+        ? "אחרי האישור תוכלו ליצור שידורים חיים פרטיים לשמחות משפחתיות, לשתף קישורים מאובטחים ולהתחיל שידור חי מהטלפון."
         : "Once confirmed, you can create private events, share secure links and go live from your phone."
       : "",
     copy.footer,
     locale === "he"
-      ? "כל שמחה, משותפת.\nצוות SimchaCam"
+      ? "כל שמחה, גם מרחוק.\nצוות SimchaCam"
       : "Every simcha, shared.\nThe SimchaCam Team",
   ].filter(Boolean);
 
