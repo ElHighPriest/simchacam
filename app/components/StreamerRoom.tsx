@@ -6,6 +6,7 @@ import {
   ParticipantTile,
   RoomAudioRenderer,
   useLocalParticipant,
+  useMediaDeviceSelect,
   useParticipants,
   useRoomContext,
   useTracks,
@@ -58,12 +59,31 @@ function StreamerContent({
   const room = useRoomContext();
   const recordingStartRequested = useRef(false);
   const [isEndingStream, setIsEndingStream] = useState(false);
+  const [isSwitchingCamera, setIsSwitchingCamera] = useState(false);
   const [recordingNotice, setRecordingNotice] = useState("");
   const [recordingWarning, setRecordingWarning] = useState("");
   const participants = useParticipants();
   const viewerCount = participants.filter(
     (participant) => participant.identity !== localParticipant.identity
   ).length;
+  const localVideoTrack = Array.from(
+    localParticipant.videoTrackPublications.values()
+  ).find((publication) => publication.source === Track.Source.Camera)
+    ?.videoTrack;
+  const {
+    activeDeviceId: activeVideoDeviceId,
+    devices: videoDevices,
+    setActiveMediaDevice,
+  } = useMediaDeviceSelect({
+    kind: "videoinput",
+    requestPermissions: isCameraEnabled,
+    room,
+  });
+  const selectableVideoDevices =
+    videoDevices.filter((device) => device.deviceId !== "default") ?? [];
+  const switchableVideoDevices =
+    selectableVideoDevices.length > 1 ? selectableVideoDevices : videoDevices;
+  const canSwitchCamera = switchableVideoDevices.length > 1;
 
   const tracks = useTracks(
     [{ source: Track.Source.Camera, withPlaceholder: true }],
@@ -75,21 +95,17 @@ function StreamerContent({
   );
 
   useEffect(() => {
-    const cameraTrack = Array.from(
-      localParticipant.videoTrackPublications.values()
-    ).find((publication) => publication.source === Track.Source.Camera)?.videoTrack;
-
     if (
       !eventId ||
       !recordingEnabled ||
-      !cameraTrack ||
+      !localVideoTrack ||
       recordingStartRequested.current
     ) {
       return;
     }
 
     recordingStartRequested.current = true;
-    const captureSettings = cameraTrack.mediaStreamTrack.getSettings();
+    const captureSettings = localVideoTrack.mediaStreamTrack.getSettings();
     const orientation =
       captureSettings.height &&
       captureSettings.width &&
@@ -142,7 +158,7 @@ function StreamerContent({
   }, [
     eventId,
     localCameraTrack,
-    localParticipant,
+    localVideoTrack,
     recordingEnabled,
     t.recordingConnectionWarning,
     t.recordingResumeWarning,
@@ -201,6 +217,40 @@ function StreamerContent({
     }
   }
 
+  async function switchCamera() {
+    if (isSwitchingCamera || !canSwitchCamera) {
+      return;
+    }
+
+    setIsSwitchingCamera(true);
+
+    try {
+      const currentDeviceId =
+        localVideoTrack?.mediaStreamTrack.getSettings().deviceId ||
+        activeVideoDeviceId;
+      const currentIndex = switchableVideoDevices.findIndex(
+        (device) => device.deviceId === currentDeviceId
+      );
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + 1) % switchableVideoDevices.length
+          : 0;
+      const nextDevice = switchableVideoDevices[nextIndex];
+
+      if (nextDevice) {
+        if (!isCameraEnabled) {
+          await localParticipant.setCameraEnabled(true);
+        }
+
+        await setActiveMediaDevice(nextDevice.deviceId);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSwitchingCamera(false);
+    }
+  }
+
   if (isLandscape) {
     return (
       <main
@@ -212,7 +262,7 @@ function StreamerContent({
           {localCameraTrack ? (
             <ParticipantTile
               trackRef={localCameraTrack}
-              className="h-full max-h-full w-full overflow-hidden rounded-2xl [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
+              className="h-full max-h-full w-full overflow-hidden rounded-2xl [&_.lk-participant-metadata]:hidden [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
             />
           ) : (
             <div className="text-center text-gray-400">{t.startingCamera}</div>
@@ -271,7 +321,7 @@ function StreamerContent({
           </div>
 
           <div className="mt-auto space-y-3 pt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={toggleMicrophone}
@@ -315,6 +365,33 @@ function StreamerContent({
                     <path d="M12 19v3" />
                   </svg>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={switchCamera}
+                aria-label={t.switchCamera}
+                disabled={!canSwitchCamera || isSwitchingCamera}
+                title={t.switchCamera}
+                className="flex min-h-12 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                >
+                  <path d="M7 7h2l1.5-2h3L15 7h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
+                  <circle cx="12" cy="12.5" r="2.5" />
+                  <path d="M3 12a9 9 0 0 1 14.7-7" />
+                  <path d="M17 2v4h-4" />
+                  <path d="M21 12a9 9 0 0 1-14.7 7" />
+                  <path d="M7 22v-4h4" />
+                </svg>
               </button>
 
               <button
@@ -396,7 +473,7 @@ function StreamerContent({
         {localCameraTrack ? (
           <ParticipantTile
             trackRef={localCameraTrack}
-            className="h-full max-h-full w-full overflow-hidden [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
+            className="h-full max-h-full w-full overflow-hidden [&_.lk-participant-metadata]:hidden [&_video]:h-full [&_video]:w-full [&_video]:object-contain"
           />
         ) : (
           <div className="text-center text-gray-400">{t.startingCamera}</div>
@@ -440,7 +517,7 @@ function StreamerContent({
       )}
 
       <footer className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-12 sm:px-4">
-        <div className="mx-auto grid max-w-xl grid-cols-[1fr_1fr_2fr] gap-3">
+        <div className="mx-auto grid max-w-xl grid-cols-[1fr_1fr_1fr_2fr] gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggleMicrophone}
@@ -484,6 +561,33 @@ function StreamerContent({
                 <path d="M12 19v3" />
               </svg>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={switchCamera}
+            aria-label={t.switchCamera}
+            disabled={!canSwitchCamera || isSwitchingCamera}
+            title={t.switchCamera}
+            className="flex min-h-12 items-center justify-center rounded-xl bg-white/14 text-white backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            >
+              <path d="M7 7h2l1.5-2h3L15 7h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
+              <circle cx="12" cy="12.5" r="2.5" />
+              <path d="M3 12a9 9 0 0 1 14.7-7" />
+              <path d="M17 2v4h-4" />
+              <path d="M21 12a9 9 0 0 1-14.7 7" />
+              <path d="M7 22v-4h4" />
+            </svg>
           </button>
 
           <button

@@ -383,6 +383,7 @@
     "leaveStream": "Leave Stream",
     "muteMicrophone": "Mute microphone",
     "unmuteMicrophone": "Unmute microphone",
+    "switchCamera": "Switch camera",
     "turnCameraOff": "Turn camera off",
     "turnCameraOn": "Turn camera on",
     "recordingSignInWarning": "Recording could not start because you are not signed in.",
@@ -398,7 +399,7 @@
     "eyebrow": "Before you go live",
     "setupLabel": "Setup",
     "title": "Ready to go live?",
-    "description": "For best quality, turn your phone sideways and frame your shot before going live.",
+    "description": "Turn your phone sideways, frame your shot, then start.",
     "guidance": [
       "Check lighting and sound.",
       "Keep the phone plugged in if possible.",
