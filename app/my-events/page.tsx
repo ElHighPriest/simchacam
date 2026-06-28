@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import PreLiveSetup from "@/app/components/PreLiveSetup";
 import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
 import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
@@ -62,6 +63,7 @@ export default function MyEventsPage() {
   const [liveHardEndsAt, setLiveHardEndsAt] = useState("");
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [isGoingLive, setIsGoingLive] = useState(false);
+  const [setupEventId, setSetupEventId] = useState("");
 
   useEffect(() => {
     async function loadEvents() {
@@ -269,7 +271,11 @@ export default function MyEventsPage() {
     }
   }
 
-  async function goLive(id: string) {
+  function openPreLiveSetup(id: string) {
+    setSetupEventId(id);
+  }
+
+  async function startLivestream(id: string) {
     try {
       const {
         data: { session },
@@ -277,7 +283,7 @@ export default function MyEventsPage() {
 
       if (!session) {
         alert(messages.myEvents.messages.goLiveLogin);
-        return;
+        return false;
       }
 
       const response = await fetch(
@@ -293,7 +299,7 @@ export default function MyEventsPage() {
 
       if (!response.ok) {
         alert(data.error || messages.myEvents.messages.goLiveFailed);
-        return;
+        return false;
       }
 
       setEvents((currentEvents) =>
@@ -308,9 +314,12 @@ export default function MyEventsPage() {
       setLivekitUrl(data.url);
       setRecordingEnabled(Boolean(data.recordingEnabled));
       setIsGoingLive(true);
+      setSetupEventId("");
+      return true;
     } catch (error) {
       console.error(error);
       alert(messages.myEvents.messages.goLiveFailed);
+      return false;
     }
   }
 
@@ -325,6 +334,19 @@ export default function MyEventsPage() {
         recordingEnabled={recordingEnabled}
         lifecycleMode="server-owned"
         locale={locale}
+      />
+    );
+  }
+
+  if (setupEventId) {
+    const setupEvent = events.find((event) => event.id === setupEventId);
+
+    return (
+      <PreLiveSetup
+        eventName={setupEvent?.name}
+        locale={locale}
+        onCancel={() => setSetupEventId("")}
+        onStart={() => startLivestream(setupEventId)}
       />
     );
   }
@@ -595,7 +617,11 @@ export default function MyEventsPage() {
                                   </Link>
                                 ) : (
                                   <button
-                                    onClick={() => goLive(event.id)}
+                                    onClick={() =>
+                                      isLive
+                                        ? startLivestream(event.id)
+                                        : openPreLiveSetup(event.id)
+                                    }
                                     className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-recording-red px-6 py-3 font-semibold text-white shadow-[0_10px_24px_rgba(229,57,53,0.18)] transition hover:bg-[#cc302d] sm:w-auto"
                                   >
                                     <span className="h-2 w-2 rounded-full bg-white" />

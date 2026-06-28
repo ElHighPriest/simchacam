@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import CreateEventForm from "./components/CreateEventForm";
 import LanguageSwitcher from "./components/LanguageSwitcher";
+import PreLiveSetup from "./components/PreLiveSetup";
 import ProfileMenu from "./components/ProfileMenu";
 import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
@@ -64,6 +65,7 @@ export default function Home() {
   const [liveHardEndsAt, setLiveHardEndsAt] = useState("");
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [isGoingLive, setIsGoingLive] = useState(false);
+  const [showPreLiveSetup, setShowPreLiveSetup] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -307,7 +309,7 @@ export default function Home() {
     }
   }
 
-  async function goLive() {
+  async function startLivestream() {
     try {
       const {
         data: { session },
@@ -315,7 +317,7 @@ export default function Home() {
 
       if (!session) {
         alert(messages.eventCreated.alerts.goLiveLogin);
-        return;
+        return false;
       }
 
       const response = await fetch(
@@ -331,7 +333,7 @@ export default function Home() {
 
       if (!response.ok) {
         alert(data.error || messages.eventCreated.alerts.goLiveFailed);
-        return;
+        return false;
       }
 
       setEventId(data.eventId);
@@ -341,9 +343,12 @@ export default function Home() {
       setLivekitUrl(data.url);
       setRecordingEnabled(Boolean(data.recordingEnabled));
       setIsGoingLive(true);
+      setShowPreLiveSetup(false);
+      return true;
     } catch (error) {
       console.error(error);
       alert(messages.eventCreated.alerts.goLiveFailed);
+      return false;
     }
   }
 
@@ -358,6 +363,17 @@ export default function Home() {
         recordingEnabled={recordingEnabled}
         lifecycleMode="server-owned"
         locale={locale}
+      />
+    );
+  }
+
+  if (showPreLiveSetup) {
+    return (
+      <PreLiveSetup
+        eventName={eventName}
+        locale={locale}
+        onCancel={() => setShowPreLiveSetup(false)}
+        onStart={startLivestream}
       />
     );
   }
@@ -527,7 +543,7 @@ export default function Home() {
               {messages.eventCreated.readyDescription}
             </p>
             <button
-              onClick={goLive}
+              onClick={() => setShowPreLiveSetup(true)}
               className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-xl bg-recording-red px-6 py-4 text-lg font-semibold text-white shadow-[0_12px_28px_rgba(229,57,53,0.2)] transition hover:bg-[#cc302d]"
             >
               <span className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_0_5px_rgba(255,255,255,0.18)]" />
