@@ -27,6 +27,20 @@ type ViewerRoomProps = {
   slug: string;
 };
 
+function isIOSOrIPadOSBrowser() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+
+  return (
+    /iPad|iPhone|iPod/.test(userAgent) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
 function ViewerContent({
   eventName,
   eventAt,
@@ -109,6 +123,12 @@ function ViewerContent({
       return;
     }
 
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsTheatreMode(false);
@@ -119,6 +139,8 @@ function ViewerContent({
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
     };
   }, [isTheatreMode]);
 
@@ -126,6 +148,11 @@ function ViewerContent({
     const videoShell = videoShellRef.current;
 
     if (!videoShell) {
+      return;
+    }
+
+    if (isIOSOrIPadOSBrowser()) {
+      setIsTheatreMode(true);
       return;
     }
 
