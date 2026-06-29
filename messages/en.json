@@ -371,6 +371,8 @@
     "hostNotPresent": "The host is not connected yet. This page will keep trying automatically.",
     "eventFull": "This livestream is currently full. Please try again shortly.",
     "audioStartFailed": "Sound did not start. Tap Watch Live again, and check your device volume or silent mode.",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
     "connectFailed": "Could not connect to livestream.",
     "recordingAccessFailed": "Could not access recording."
   },
