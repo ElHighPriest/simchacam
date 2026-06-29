@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Room } from "livekit-client";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
 import ViewerRoom from "@/app/components/ViewerRoom";
 import {
@@ -108,8 +109,21 @@ export default function ViewerPageClient({
   const [streamError, setStreamError] = useState("");
   const [recordingAction, setRecordingAction] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState("");
-  const autoJoinStarted = useRef(false);
+  const [viewerRoom, setViewerRoom] = useState<Room | null>(null);
+  const viewerRoomRef = useRef<Room | null>(null);
   const hasLoadedEvent = useRef(false);
+
+  function getViewerRoom() {
+    if (!viewerRoomRef.current) {
+      viewerRoomRef.current = new Room({
+        adaptiveStream: true,
+        dynacast: true,
+      });
+      setViewerRoom(viewerRoomRef.current);
+    }
+
+    return viewerRoomRef.current;
+  }
 
   const loadEvent = useCallback(async () => {
     try {
@@ -160,78 +174,11 @@ export default function ViewerPageClient({
   const eventHasPassword = Boolean(event?.hasPassword);
 
   useEffect(() => {
-    if (
-      event?.status !== "live" ||
-      (eventHasPassword && !passwordPassed) ||
-      autoJoinStarted.current
-    ) {
-      return;
-    }
-
-    autoJoinStarted.current = true;
-
-    async function autoJoinLivestream() {
-      try {
-        const response = await fetch("/api/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            roomName: slug,
-            participantName: `viewer-${Math.random()
-              .toString(36)
-              .substring(2, 8)}`,
-            password: enteredPassword,
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          if (response.status === 403 && data.code === "EVENT_FULL") {
-            setToken("");
-            setServerUrl("");
-            setStreamError(
-              t.eventFull
-            );
-            return;
-          }
-
-          if (response.status === 410 || data.code === "STREAM_ENDED") {
-            autoJoinStarted.current = false;
-            setToken("");
-            setServerUrl("");
-            setEventError("");
-            setEvent((currentEvent) =>
-              currentEvent ? { ...currentEvent, status: "ended" } : currentEvent
-            );
-            return;
-          }
-
-          throw new Error(data.error);
-        }
-
-        setStreamError("");
-        setToken(data.token);
-        setServerUrl(data.url);
-      } catch (error) {
-        autoJoinStarted.current = false;
-        console.error(error);
-        setEventError(t.connectFailed);
-      }
-    }
-
-    autoJoinLivestream();
-  }, [
-    enteredPassword,
-    event?.status,
-    eventHasPassword,
-    passwordPassed,
-    slug,
-    t.connectFailed,
-    t.eventFull,
-  ]);
+    return () => {
+      viewerRoomRef.current?.disconnect();
+      viewerRoomRef.current = null;
+    };
+  }, []);
 
   async function checkPassword() {
     const response = await fetch(`/api/events/${encodeURIComponent(slug)}`, {
@@ -257,6 +204,16 @@ export default function ViewerPageClient({
     setStreamError("");
 
     try {
+      const room = getViewerRoom();
+
+      try {
+        await room.startAudio();
+      } catch (error) {
+        console.error(error);
+        setStreamError(t.audioStartFailed);
+        return;
+      }
+
       const response = await fetch("/api/token", {
         method: "POST",
         headers: {
@@ -284,7 +241,6 @@ export default function ViewerPageClient({
         }
 
         if (response.status === 410 || data.code === "STREAM_ENDED") {
-          autoJoinStarted.current = false;
           setToken("");
           setServerUrl("");
           setEventError("");
@@ -302,7 +258,7 @@ export default function ViewerPageClient({
       setServerUrl(data.url);
     } catch (error) {
       console.error(error);
-      setEventError(t.connectFailed);
+      setStreamError(t.connectFailed);
     } finally {
       setStreamLoading(false);
     }
@@ -335,7 +291,6 @@ export default function ViewerPageClient({
 
       if (!response.ok) {
         if (response.status === 410 || data.code === "STREAM_ENDED") {
-          autoJoinStarted.current = false;
           setToken("");
           setServerUrl("");
           setEventError("");
@@ -473,9 +428,10 @@ export default function ViewerPageClient({
     );
   }
 
-  if (token && serverUrl) {
+  if (token && serverUrl && viewerRoom) {
     return (
       <ViewerRoom
+        room={viewerRoom}
         token={token}
         serverUrl={serverUrl}
         eventName={event.name}
@@ -701,8 +657,11 @@ export default function ViewerPageClient({
         {formattedDate && (
           <p className="mt-4 font-medium text-muted-navy">{formattedDate}</p>
         )}
-        <p className="mt-5 text-muted-navy">
+        <p className="mt-5 leading-7 text-muted-navy">
           {t.readyToWatch}
+        </p>
+        <p className="mt-2 text-sm leading-6 text-muted-navy">
+          {t.watchLiveDescription}
         </p>
 
         {streamError && (

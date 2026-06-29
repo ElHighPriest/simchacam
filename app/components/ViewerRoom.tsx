@@ -7,6 +7,7 @@ import {
   RoomAudioRenderer,
   useTracks,
 } from "@livekit/components-react";
+import type { Room } from "livekit-client";
 import { Track } from "livekit-client";
 import { useEffect, useState } from "react";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/i18n";
 
 type ViewerRoomProps = {
+  room: Room;
   token: string;
   serverUrl: string;
   eventName: string | null;
@@ -166,6 +168,7 @@ function ViewerContent({
 }
 
 export default function ViewerRoom({
+  room,
   token,
   serverUrl,
   eventName,
@@ -177,12 +180,9 @@ export default function ViewerRoom({
     <LiveKitRoom
       lang={locale}
       dir={getLocaleDirection(locale)}
+      room={room}
       video={false}
       audio={false}
-      options={{
-        adaptiveStream: true,
-        dynacast: true,
-      }}
       token={token}
       serverUrl={serverUrl}
       connect={true}
