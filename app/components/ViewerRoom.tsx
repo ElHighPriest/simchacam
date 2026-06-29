@@ -27,6 +27,11 @@ type ViewerRoomProps = {
   slug: string;
 };
 
+type IOSFullscreenVideoElement = HTMLVideoElement & {
+  webkitEnterFullscreen?: () => void;
+  webkitEnterFullScreen?: () => void;
+};
+
 function isIOSOrIPadOSBrowser() {
   if (typeof navigator === "undefined") {
     return false;
@@ -39,6 +44,32 @@ function isIOSOrIPadOSBrowser() {
     /iPad|iPhone|iPod/.test(userAgent) ||
     (platform === "MacIntel" && navigator.maxTouchPoints > 1)
   );
+}
+
+function tryEnterIOSVideoFullscreen(videoShell: HTMLDivElement) {
+  const video = videoShell.querySelector(
+    "video"
+  ) as IOSFullscreenVideoElement | null;
+
+  if (!video) {
+    return false;
+  }
+
+  try {
+    if (typeof video.webkitEnterFullscreen === "function") {
+      video.webkitEnterFullscreen();
+      return true;
+    }
+
+    if (typeof video.webkitEnterFullScreen === "function") {
+      video.webkitEnterFullScreen();
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
 }
 
 function ViewerContent({
@@ -152,6 +183,10 @@ function ViewerContent({
     }
 
     if (isIOSOrIPadOSBrowser()) {
+      if (tryEnterIOSVideoFullscreen(videoShell)) {
+        return;
+      }
+
       setIsTheatreMode(true);
       return;
     }
