@@ -372,8 +372,8 @@ export async function startParticipantRecording(
     {
       encodingOptions:
         orientation === "portrait"
-          ? EncodingOptionsPreset.PORTRAIT_H264_1080P_30
-          : EncodingOptionsPreset.H264_1080P_30,
+          ? EncodingOptionsPreset.PORTRAIT_H264_720P_30
+          : EncodingOptionsPreset.H264_720P_30,
     }
   );
 

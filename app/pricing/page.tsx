@@ -23,7 +23,7 @@ const premiumFeatures = [
   "Up to 6 hour livestream",
   "Up to 500 viewers",
   "Automatic recording",
-  "Up to 1080p where supported",
+  "Reliable 720p HD where supported",
   "Replay for 30 days",
   "Download recording",
 ];
@@ -161,7 +161,8 @@ export default function PricingPage() {
 
           <p className="mx-auto mt-9 max-w-2xl text-center text-sm leading-6 text-muted-navy">
             Stream quality depends on the host&apos;s device, connection and
-            surroundings. Premium recording is up to 1080p where supported.
+            surroundings. Premium recording uses reliable 720p HD where
+            supported.
           </p>
         </div>
       </section>
