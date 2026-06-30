@@ -763,8 +763,8 @@ export default function StreamerRoom({
       video={{
         facingMode: "environment",
         resolution: {
-          width: 1920,
-          height: 1080,
+          width: 1280,
+          height: 720,
           frameRate: 30,
         },
       }}
