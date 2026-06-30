@@ -41,12 +41,38 @@ const siteUrl = "https://simcha.cam";
 const defaultTitle = "SimchaCam | Private Livestreaming for Simchas";
 const defaultDescription =
   "Private, simple livestreaming for weddings, bar mitzvahs, brit milahs and family simchas. Share one secure link so relatives can watch from anywhere.";
+const defaultSocialImage = `${siteUrl}/og/homepage-social.png`;
+const defaultSocialImageSize = {
+  width: 1402,
+  height: 1122,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "SimchaCam",
   title: defaultTitle,
   description: defaultDescription,
+  openGraph: {
+    title: defaultTitle,
+    description: defaultDescription,
+    url: siteUrl,
+    siteName: "SimchaCam",
+    type: "website",
+    images: [
+      {
+        url: defaultSocialImage,
+        width: defaultSocialImageSize.width,
+        height: defaultSocialImageSize.height,
+        alt: "SimchaCam private livestreaming for family simchas",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+    images: [defaultSocialImage],
+  },
   robots: {
     index: true,
     follow: true,

@@ -3,7 +3,11 @@ import Home from "@/app/page";
 import { isLocale, locales, type Locale } from "@/lib/i18n";
 
 const siteUrl = "https://simcha.cam";
-const socialImage = "/simchacam-social.png";
+const socialImage = `${siteUrl}/og/homepage-social.png`;
+const socialImageSize = {
+  width: 1402,
+  height: 1122,
+};
 const englishTitle = "SimchaCam | Private Livestreaming for Simchas";
 const englishDescription =
   "Private, simple livestreaming for weddings, bar mitzvahs, brit milahs and family simchas. Share one secure link so relatives can watch from anywhere.";
@@ -51,8 +55,8 @@ export async function generateMetadata({
       images: [
         {
           url: socialImage,
-          width: 1200,
-          height: 630,
+          width: socialImageSize.width,
+          height: socialImageSize.height,
           alt:
             locale === "he"
               ? "SimchaCam - שידור חי פרטי לשמחות"

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
 export const siteUrl = "https://simcha.cam";
-export const socialImage = "/simchacam-social.png";
+export const socialImage = `${siteUrl}/og/homepage-social.png`;
+export const socialImageSize = {
+  width: 1402,
+  height: 1122,
+};
 
 type PublicPageMetadataOptions = {
   title: string;
@@ -50,8 +54,8 @@ export function createPublicPageMetadata({
       images: [
         {
           url: socialImage,
-          width: 1200,
-          height: 630,
+          width: socialImageSize.width,
+          height: socialImageSize.height,
           alt: imageAlt,
         },
       ],
