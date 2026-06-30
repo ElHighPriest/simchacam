@@ -9,7 +9,7 @@ type EventPageProps = {
 
 const fallbackTitle = "Private Event Livestream | SimchaCam";
 const eventDescription = "Join this private SimchaCam livestream.";
-const eventSocialImageUrl = `${siteUrl}/og/event-logo.jpg`;
+const eventSocialImageUrl = `${siteUrl}/og/event-logo.png`;
 const eventSocialImageSize = {
   width: 1254,
   height: 1254,
