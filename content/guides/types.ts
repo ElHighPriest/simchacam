@@ -8,6 +8,9 @@ export type Guide = {
   author: string;
   readingTime: string;
   featuredImage?: string;
+  featuredImageAlt?: string;
+  featuredImageWidth?: number;
+  featuredImageHeight?: number;
   seoTitle: string;
   seoDescription: string;
   content: ReactNode;

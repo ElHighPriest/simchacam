@@ -31,8 +31,14 @@ export async function generateMetadata({
     title: guide.seoTitle,
     description: guide.seoDescription,
     canonicalPath: `/en/blog/${guide.slug}`,
-    imageAlt: guide.title,
+    imageAlt: guide.featuredImageAlt ?? guide.title,
   });
+  const featuredImageUrl = guide.featuredImage
+    ? `${siteUrl}${guide.featuredImage}`
+    : undefined;
+  const featuredImageWidth = guide.featuredImageWidth ?? 1200;
+  const featuredImageHeight = guide.featuredImageHeight ?? 630;
+  const featuredImageAlt = guide.featuredImageAlt ?? guide.title;
 
   return {
     ...metadata,
@@ -41,6 +47,31 @@ export async function generateMetadata({
       type: "article",
       publishedTime: guide.publishedDate,
       authors: [guide.author],
+      ...(featuredImageUrl
+        ? {
+            images: [
+              {
+                url: featuredImageUrl,
+                width: featuredImageWidth,
+                height: featuredImageHeight,
+                alt: featuredImageAlt,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      ...metadata.twitter,
+      ...(featuredImageUrl
+        ? {
+            images: [
+              {
+                url: featuredImageUrl,
+                alt: featuredImageAlt,
+              },
+            ],
+          }
+        : {}),
     },
   };
 }
@@ -131,37 +162,38 @@ export default async function GuidePage({ params }: GuidePageProps) {
         </header>
 
         {guide.featuredImage && (
-          <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-[1.5rem] bg-navy/5 shadow-[0_18px_50px_rgba(11,31,58,0.1)]">
+          <div className="mt-10 overflow-hidden rounded-[1.5rem] bg-navy/5 shadow-[0_18px_50px_rgba(11,31,58,0.1)]">
             <Image
               src={guide.featuredImage}
-              alt={guide.title}
-              fill
+              alt={guide.featuredImageAlt ?? guide.title}
+              width={guide.featuredImageWidth ?? 1200}
+              height={guide.featuredImageHeight ?? 630}
               sizes="(max-width: 768px) 100vw, 768px"
-              className="object-cover"
+              className="h-auto w-full"
             />
           </div>
         )}
 
-        <div className="mt-10 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_p]:max-w-none">
+        <div className="mt-10 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_li]:pl-1 [&_p]:max-w-none [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
           {guide.content}
         </div>
 
         <aside className="mt-14 rounded-[1.5rem] border border-gold/35 bg-pale-gold/65 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#80652f]">
-            Share your simcha
+            Plan with confidence
           </p>
           <h2 className="mt-3 font-display text-3xl font-semibold text-navy">
-            Bring family closer to the celebration.
+            Create a free test event before the big day.
           </h2>
           <p className="mt-3 leading-7 text-muted-navy">
-            Create a private event, share one secure link and go live from your
-            phone when the celebration begins.
+            Set up a private SimchaCam event, share the link with someone you
+            trust and check the camera, sound and connection before it matters.
           </p>
           <Link
             href="/en/auth"
             className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
           >
-            Create Your Livestream
+            Create a Free Event
           </Link>
         </aside>
       </article>
