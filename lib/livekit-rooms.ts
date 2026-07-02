@@ -92,6 +92,28 @@ export async function getActiveViewerCount(roomName: string) {
   }
 }
 
+export async function isParticipantInRoom(
+  roomName: string,
+  participantIdentity: string
+) {
+  try {
+    const participants = await getRoomServiceClient().listParticipants(roomName);
+
+    return participants.some(
+      (participant) => participant.identity === participantIdentity
+    );
+  } catch (error) {
+    if (
+      error instanceof TwirpError &&
+      (error.status === 404 || error.code === "not_found")
+    ) {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
 export function getStreamTokenTtlSeconds(hardEndsAt?: string | null) {
   if (!hardEndsAt) {
     return DEFAULT_TOKEN_TTL_SECONDS;

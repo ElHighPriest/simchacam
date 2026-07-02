@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cleanupExpiredStreamSessions } from "@/lib/stream-lifecycle";
+import { cleanupStreamLifecycle } from "@/lib/stream-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -23,7 +23,7 @@ async function handleCron(request: NextRequest) {
   }
 
   try {
-    const summary = await cleanupExpiredStreamSessions();
+    const summary = await cleanupStreamLifecycle();
 
     return NextResponse.json(summary);
   } catch (error) {

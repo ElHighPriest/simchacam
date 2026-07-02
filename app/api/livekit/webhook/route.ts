@@ -9,6 +9,8 @@ import {
 
 export const runtime = "nodejs";
 
+const STREAMER_IDENTITY = "streamer";
+
 function getServerConfig() {
   const apiKey = process.env.LIVEKIT_API_KEY;
   const apiSecret = process.env.LIVEKIT_API_SECRET;
@@ -25,6 +27,46 @@ function getServerConfig() {
     supabaseUrl,
     supabaseServiceRoleKey,
   };
+}
+
+function createServiceSupabase(
+  config: NonNullable<ReturnType<typeof getServerConfig>>
+) {
+  return createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+async function updateStreamerPresence(
+  supabase: ReturnType<typeof createServiceSupabase>,
+  roomName: string,
+  presence: "connected" | "disconnected"
+) {
+  const now = new Date().toISOString();
+  const updates =
+    presence === "connected"
+      ? {
+          host_last_connected_at: now,
+          host_last_disconnected_at: null,
+          updated_at: now,
+        }
+      : {
+          host_last_disconnected_at: now,
+          updated_at: now,
+        };
+
+  const { error } = await supabase
+    .from("event_stream_sessions")
+    .update(updates)
+    .eq("room_name", roomName)
+    .in("status", ["starting", "live"]);
+
+  if (error) {
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -53,6 +95,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
+  const supabase = createServiceSupabase(config);
+
+  if (
+    webhookEvent.event === "participant_joined" ||
+    webhookEvent.event === "participant_left" ||
+    webhookEvent.event === "participant_connection_aborted"
+  ) {
+    const participantIdentity = webhookEvent.participant?.identity;
+    const roomName = webhookEvent.room?.name;
+
+    if (participantIdentity !== STREAMER_IDENTITY || !roomName) {
+      return NextResponse.json({ received: true });
+    }
+
+    try {
+      await updateStreamerPresence(
+        supabase,
+        roomName,
+        webhookEvent.event === "participant_joined"
+          ? "connected"
+          : "disconnected"
+      );
+      console.log("Updated streamer presence from LiveKit webhook", {
+        event: webhookEvent.event,
+        roomName,
+      });
+    } catch (error) {
+      console.error("Could not update streamer presence", {
+        event: webhookEvent.event,
+        roomName,
+        error,
+      });
+    }
+
+    return NextResponse.json({ received: true });
+  }
+
   if (
     webhookEvent.event !== "egress_updated" &&
     webhookEvent.event !== "egress_ended"
@@ -69,16 +148,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = createClient(
-    config.supabaseUrl,
-    config.supabaseServiceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
   const { data: segment, error: segmentError } = await supabase
     .from("event_recording_segments")
     .select("id, event_id")
