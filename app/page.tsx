@@ -905,7 +905,12 @@ export default function Home() {
                 </p>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-navy">
                   {messages.pricing.free.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
+                    <li key={feature} className="flex items-start gap-2">
+                      <span className="mt-0.5 font-semibold text-gold">
+                        ✓
+                      </span>
+                      <span>{feature}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -932,7 +937,9 @@ export default function Home() {
                     key={feature}
                     className="flex items-start gap-2 rounded-xl bg-white/55 px-3 py-2"
                   >
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span className="mt-0.5 shrink-0 font-semibold text-gold">
+                      ✓
+                    </span>
                     <span>{feature}</span>
                   </div>
                 ))}

@@ -190,7 +190,11 @@
     "primaryCta": "Create Your Livestream",
     "secondarySignedIn": "My Events",
     "secondarySignedOut": "Sign In",
-    "bullets": ["No app required", "Private event links", "Live from your phone"]
+    "bullets": [
+      "No app required",
+      "Private event links",
+      "Live from your phone"
+    ]
   },
   "createEvent": {
     "ariaHome": "SimchaCam home",
@@ -211,21 +215,23 @@
     "freeTitle": "Simple private livestream",
     "freeDescription": "Create a private event link and stream for up to 45 minutes. Perfect for a quick family moment or small simcha.",
     "freeFeatures": [
-      "Private viewer link",
-      "Up to 45 minute livestream",
-      "Easy sharing with guests",
-      "No app required for viewers"
+      "Up to 45 minutes streaming",
+      "Up to 30 viewers",
+      "Private link for guests",
+      "No app required for viewers",
+      "Stream directly from your phone"
     ],
     "premiumEyebrow": "Premium",
     "premiumTitle": "More time, more guests, and a lasting replay",
-    "premiumDescription": "For bigger simchas, longer streams, more guests, automatic recording, replay and download.",
+    "premiumDescription": "Everything in Free, plus Premium tools for bigger simchas and larger family events.",
     "premiumFeatures": [
       "Event Scheduling (date and time)",
       "Automatic recording",
       "Replay for 30 days",
       "Download recording",
+      "Nominate someone else to stream",
       "Up to 500 viewers",
-      "Up to 6 hour livestreams"
+      "Up to 3 hours streaming"
     ],
     "submit": "Create Event",
     "submitFree": "Create Free Event",
@@ -467,11 +473,11 @@
       "description": "Perfect for a simple, private family livestream.",
       "included": "Included",
       "features": [
-        "45 minute livestream",
+        "Up to 45 minutes streaming",
         "Up to 30 viewers",
-        "Private event link",
-        "Password protection",
-        "No recording, replay, or download"
+        "Private link for guests",
+        "No app required for viewers",
+        "Stream directly from your phone"
       ]
     },
     "premium": {
@@ -480,14 +486,13 @@
       "featurePrice": "£9.99 Premium Feature",
       "upgradeButton": "Upgrade to Premium — £9.99",
       "oneOff": "One-off upgrade",
-      "description": "For longer events, more guests, and a family replay.",
+      "description": "Everything in Free, plus:",
       "features": [
-        "Event scheduling with date/time",
-        "Up to 6 hour livestream",
+        "Up to 3 hours streaming",
         "Up to 500 viewers",
-        "Automatic recording",
-        "Replay for 30 days",
-        "Download recording"
+        "Private replay after the event",
+        "Nominate someone else to stream",
+        "Best for weddings, bar mitzvahs and larger family events"
       ]
     }
   },
@@ -495,7 +500,11 @@
     "eyebrow": "Why families use it",
     "title": "Built for relatives near and far.",
     "description": "Unlike a general Zoom call or a busy WhatsApp group, SimchaCam is built for family simchas. Share one private link, add a password if needed, and let guests watch in their browser without installing an app.",
-    "items": ["Private links", "Password protection", "No app required"]
+    "items": [
+      "Private links",
+      "Password protection",
+      "No app required"
+    ]
   },
   "recording": {
     "eyebrow": "Recording & replay",

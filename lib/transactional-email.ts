@@ -277,10 +277,11 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
             "×¤×¨×™×ž×™×•× ×ž×•×¡×™×£ ×ª×–×ž×•×Ÿ, ×©×™×“×•×¨ ××¨×•×š ×™×•×ª×¨, ×”×§×œ×˜×”, ×¦×¤×™×™×” ×—×•×–×¨×ª ×•×”×•×¨×“×” ×œ××™×¨×•×¢ ×”×–×”.",
           premium: [
             "×ª×–×ž×•×Ÿ ××™×¨×•×¢ (×ª××¨×™×š ×•×©×¢×”)",
-            "×¢×“ 6 ×©×¢×•×ª ×©×™×“×•×¨",
+            "עד 3 שעות שידור",
             "×”×§×œ×˜×” ××•×˜×•×ž×˜×™×ª",
             "×¦×¤×™×™×” ×—×•×–×¨×ª ×œ-30 ×™×•×",
             "×”×•×¨×“×ª ×”×§×œ×˜×•×ª",
+            "אפשר למנות מישהו אחר שישדר במקומך",
             "×¢×“ 500 ×¦×•×¤×™×",
           ],
           upgrade: "×©×“×¨×•×’ ×œ×¤×¨×™×ž×™×•×",
@@ -311,10 +312,11 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
             "Premium adds scheduling, longer streaming, recording, replay and download for this event.",
           premium: [
             "Event scheduling (date & time)",
-            "Up to 6 hours of streaming",
+            "Up to 3 hours of streaming",
             "Automatic recording",
             "Replay for 30 days",
             "Download recordings",
+            "Nominate someone else to stream",
             "Up to 500 viewers",
           ],
           upgrade: "Upgrade to Premium",
@@ -392,10 +394,11 @@ export function renderPremiumEventConfirmedEmail(
           premiumTitle: "××™×¨×•×¢ ×”×¤×¨×™×ž×™×•× ×›×•×œ×œ:",
           premium: [
             "×ª×–×ž×•×Ÿ ××™×¨×•×¢",
-            "×¢×“ 6 ×©×¢×•×ª ×©×™×“×•×¨",
+            "עד 3 שעות שידור",
             "×”×§×œ×˜×” ××•×˜×•×ž×˜×™×ª",
             "×¦×¤×™×™×” ×—×•×–×¨×ª ×œ-30 ×™×•×",
             "×”×•×¨×“×ª ×”×§×œ×˜×•×ª",
+            "אפשר למנות מישהו אחר שישדר במקומך",
             "×¢×“ 500 ×¦×•×¤×™×",
           ],
           finish:
@@ -420,10 +423,11 @@ export function renderPremiumEventConfirmedEmail(
           premiumTitle: "Your Premium event includes:",
           premium: [
             "Event scheduling",
-            "Up to 6 hours of streaming",
+            "Up to 3 hours of streaming",
             "Automatic recording",
             "Replay for 30 days",
             "Download recordings",
+            "Nominate someone else to stream",
             "Up to 500 viewers",
           ],
           finish:

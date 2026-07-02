@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import PremiumPrice from "@/app/components/PremiumPrice";
@@ -8,24 +8,24 @@ import { createPublicPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = createPublicPageMetadata({
   title: "SimchaCam Pricing | Free and Premium Livestreaming",
   description:
-    "Compare SimchaCam Free and Premium event plans for private livestreaming, up to 500 viewers, automatic recording, replay and download.",
+    "Compare SimchaCam Free and Premium event plans for private livestreaming, up to 500 viewers, nominated streamers, replay and download.",
   canonicalPath: "/pricing",
 });
 
 const freeFeatures = [
-  "45 minute livestream",
+  "Up to 45 minutes streaming",
   "Up to 30 viewers",
-  "Private event link",
-  "Password protection",
+  "Private link for guests",
+  "No app required for viewers",
+  "Stream directly from your phone",
 ];
 
 const premiumFeatures = [
-  "Up to 6 hour livestream",
+  "Up to 3 hours streaming",
   "Up to 500 viewers",
-  "Automatic recording",
-  "Reliable 720p HD where supported",
-  "Replay for 30 days",
-  "Download recording",
+  "Private replay after the event",
+  "Nominate someone else to stream",
+  "Best for weddings, bar mitzvahs and larger family events",
 ];
 
 function Feature({ children }: { children: React.ReactNode }) {
@@ -33,8 +33,10 @@ function Feature({ children }: { children: React.ReactNode }) {
     <li className="flex gap-3">
       <span
         aria-hidden="true"
-        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold"
-      />
+        className="mt-0.5 shrink-0 font-semibold text-gold"
+      >
+        âœ“
+      </span>
       <span>{children}</span>
     </li>
   );
@@ -104,20 +106,14 @@ export default function PricingPage() {
                 Bring family closer
               </h2>
               <p className="mt-3 leading-7 text-muted-navy">
-                Everything you need for a simple, private family livestream.
+                Included Free features for a simple, private family livestream.
               </p>
-              <p className="mt-7 font-display text-5xl font-semibold">£0</p>
+              <p className="mt-7 font-display text-5xl font-semibold">Â£0</p>
 
               <ul className="mt-7 space-y-4 leading-6 text-navy/80">
                 {freeFeatures.map((feature) => (
                   <Feature key={feature}>{feature}</Feature>
                 ))}
-                <li className="flex gap-3 text-muted-navy">
-                  <span aria-hidden="true" className="shrink-0">
-                    —
-                  </span>
-                  <span>No recording, replay or download</span>
-                </li>
               </ul>
 
               <Link
@@ -140,8 +136,7 @@ export default function PricingPage() {
                 Keep the memories
               </h2>
               <p className="relative mt-3 leading-7 text-warm-white/70">
-                A longer livestream with automatic recording for everyone who
-                could not be there.
+                Everything in Free, plus Premium tools for bigger simchas.
               </p>
               <div className="relative mt-7 flex items-end gap-2">
                 <PremiumPrice />
@@ -153,9 +148,12 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <div className="relative mt-9 rounded-xl border border-gold/30 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-gold lg:mt-auto lg:translate-y-3">
-                Premium purchases coming soon
-              </div>
+              <Link
+                href="/auth"
+                className="relative mt-9 inline-flex min-h-12 items-center justify-center rounded-xl border border-gold/30 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-gold transition hover:bg-white/10 lg:mt-auto lg:translate-y-3"
+              >
+                Create an event, then upgrade to Premium
+              </Link>
             </article>
           </div>
 
@@ -171,3 +169,4 @@ export default function PricingPage() {
     </main>
   );
 }
+

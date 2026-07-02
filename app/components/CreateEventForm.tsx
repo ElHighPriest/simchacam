@@ -172,7 +172,9 @@ export default function CreateEventForm({
                     key={feature}
                     className="flex items-start gap-2 rounded-xl bg-warm-white/70 px-3 py-2"
                   >
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-navy/35" />
+                    <span className="mt-0.5 shrink-0 font-semibold text-gold">
+                      ✓
+                    </span>
                     <span>{feature}</span>
                   </div>
                 ))}
@@ -202,7 +204,9 @@ export default function CreateEventForm({
                     key={feature}
                     className="flex items-start gap-2 rounded-xl bg-white/45 px-3 py-2"
                   >
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                    <span className="mt-0.5 shrink-0 font-semibold text-gold">
+                      ✓
+                    </span>
                     <span>{feature}</span>
                   </div>
                 ))}

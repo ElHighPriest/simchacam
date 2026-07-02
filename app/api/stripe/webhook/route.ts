@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
       .update({
         plan: "premium",
         status: "active",
-        stream_limit_seconds: 21600,
+        stream_limit_seconds: 10800,
         viewer_limit: 500,
         recording_enabled: true,
         replay_retention_days: 30,
