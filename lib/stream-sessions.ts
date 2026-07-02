@@ -1,7 +1,10 @@
 import "server-only";
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { isEmailVerified } from "@/lib/auth";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  EventPermissionError,
+  getStreamEventContext,
+} from "@/lib/event-permissions";
 
 type EntitlementPlan = "free" | "premium";
 type StreamSessionStatus = "starting" | "live" | "ended";
@@ -44,95 +47,30 @@ export class StreamLifecycleError extends Error {
   }
 }
 
-function getSupabaseConfig() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
-    throw new StreamLifecycleError("Missing server credentials", 500);
-  }
-
-  return { serviceRoleKey, supabaseAnonKey, supabaseUrl };
-}
-
 export async function getOwnedStreamContext(
   accessToken: string,
   eventId: string
 ): Promise<OwnedStreamContext> {
-  const config = getSupabaseConfig();
-  const authSupabase = createClient(
-    config.supabaseUrl,
-    config.supabaseAnonKey
-  );
-  const {
-    data: { user },
-  } = await authSupabase.auth.getUser(accessToken);
+  try {
+    const context = await getStreamEventContext(accessToken, eventId);
 
-  if (!isEmailVerified(user)) {
-    throw new StreamLifecycleError("Unauthorized", 401);
-  }
-
-  const serviceSupabase = createClient(
-    config.supabaseUrl,
-    config.serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
+    return {
+      entitlement: {
+        plan: context.entitlement.plan,
+        recording_enabled: context.entitlement.recording_enabled,
+        stream_limit_seconds: context.entitlement.stream_limit_seconds,
+        viewer_limit: context.entitlement.viewer_limit,
       },
+      event: context.event,
+      serviceSupabase: context.serviceSupabase,
+    };
+  } catch (error) {
+    if (error instanceof EventPermissionError) {
+      throw new StreamLifecycleError(error.message, error.status);
     }
-  );
-  const { data: event, error: eventError } = await serviceSupabase
-    .from("events")
-    .select("id, slug, status, user_id")
-    .eq("id", eventId)
-    .maybeSingle();
 
-  if (eventError) {
-    console.error("Could not load event for stream lifecycle", eventError);
-    throw new StreamLifecycleError("Could not load event", 500);
+    throw error;
   }
-
-  if (!event) {
-    throw new StreamLifecycleError("Event not found", 404);
-  }
-
-  if (event.user_id !== user.id) {
-    throw new StreamLifecycleError("Forbidden", 403);
-  }
-
-  const { data: entitlement, error: entitlementError } = await serviceSupabase
-    .from("event_entitlements")
-    .select(
-      "plan, status, stream_limit_seconds, viewer_limit, recording_enabled"
-    )
-    .eq("event_id", eventId)
-    .maybeSingle();
-
-  if (entitlementError) {
-    console.error("Could not load stream entitlement", entitlementError);
-    throw new StreamLifecycleError("Could not load event entitlement", 500);
-  }
-
-  if (!entitlement || entitlement.status !== "active") {
-    throw new StreamLifecycleError("Event entitlement is not active", 409);
-  }
-
-  if (entitlement.plan !== "free" && entitlement.plan !== "premium") {
-    throw new StreamLifecycleError("Invalid event entitlement", 500);
-  }
-
-  return {
-    entitlement: {
-      plan: entitlement.plan,
-      recording_enabled: entitlement.recording_enabled,
-      stream_limit_seconds: entitlement.stream_limit_seconds,
-      viewer_limit: entitlement.viewer_limit,
-    },
-    event,
-    serviceSupabase,
-  };
 }
 
 async function loadActiveSession(

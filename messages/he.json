@@ -308,7 +308,14 @@
       "scheduled": "מתוכנן",
       "recordingReady": "ההקלטה מוכנה",
       "recordingProcessing": "ההקלטה בעיבוד",
-      "passwordProtected": "מוגן בסיסמה"
+      "passwordProtected": "מוגן בסיסמה",
+      "nominatedStreamer": "משדר מוזמן"
+    },
+    "nominationDialog": {
+      "title": "מינוי משדר",
+      "description": "הזמינו אדם שאתם סומכים עליו לעלות לשידור עבור אירוע הפרימיום הזה. עליו להירשם או להתחבר עם אותה כתובת מייל.",
+      "emailLabel": "כתובת המייל של המשדר",
+      "send": "שליחת הזמנה"
     },
     "actions": {
       "copyLink": "העתקת קישור",
@@ -321,7 +328,11 @@
       "viewRecordingStatus": "בדיקת מצב ההקלטה",
       "viewEvent": "צפייה באירוע",
       "premiumEnabled": "פרימיום פעיל",
-      "creatingCheckout": "מכינים תשלום..."
+      "creatingCheckout": "מכינים תשלום...",
+      "nominateStreamer": "מינוי משדר",
+      "sendingNomination": "שולחים מינוי...",
+      "revokeNomination": "ביטול",
+      "revokingNomination": "מבטלים..."
     },
     "messages": {
       "endedFree": "השידור החינמי הסתיים. אין הקלטה זמינה.",
@@ -330,7 +341,16 @@
       "checkoutFailed": "לא ניתן להתחיל תשלום פרימיום",
       "goLiveLogin": "יש להתחבר לפני התחלת שידור חי",
       "goLiveFailed": "לא ניתן להתחיל את השידור",
-      "shareText": "הצטרפו לשידור החי של {eventName}"
+      "shareText": "הצטרפו לשידור החי של {eventName}",
+      "nominatedStreamerInfo": "מינו אתכם לשדר את האירוע הזה. אפשר לעלות לשידור ולשתף את קישור הצפייה, אבל רק בעל האירוע יכול לערוך הגדרות.",
+      "activeNominations": "משדרים מוזמנים:",
+      "nominationPrompt": "הזינו את כתובת המייל של המשדר. עליו להתחבר עם אותה כתובת.",
+      "nominationEmailRequired": "יש להזין את כתובת המייל של המשדר.",
+      "nominationLogin": "יש להתחבר לפני מינוי משדר.",
+      "nominationSent": "המינוי נשלח.",
+      "nominationFailed": "לא ניתן למנות משדר.",
+      "nominationRevokeConfirm": "לבטל את המינוי ל-{email}?",
+      "nominationRevokeFailed": "לא ניתן לבטל את המינוי."
     }
   },
   "viewer": {

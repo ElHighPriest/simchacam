@@ -27,11 +27,23 @@ type Event = {
   status: string | null;
   event_at: string | null;
   hasPassword: boolean;
+  nominationEmail?: string | null;
+  nominationId?: string | null;
+  nominations?: StreamerNomination[];
   plan: "free" | "premium" | null;
   recording: {
     status: "ready" | "processing" | "failed";
     expiresAt: string | null;
   } | null;
+  role: "owner" | "nominated_streamer";
+};
+
+type StreamerNomination = {
+  acceptedAt: string | null;
+  createdAt: string | null;
+  email: string;
+  id: string;
+  revokedAt: string | null;
 };
 
 type EventGroup = {
@@ -55,6 +67,11 @@ export default function MyEventsPage() {
   const [copiedSlug, setCopiedSlug] = useState("");
   const [copyFailedSlug, setCopyFailedSlug] = useState("");
   const [upgradingEventId, setUpgradingEventId] = useState("");
+  const [nominatingEventId, setNominatingEventId] = useState("");
+  const [nominationDialogEventId, setNominationDialogEventId] = useState("");
+  const [nominationEmail, setNominationEmail] = useState("");
+  const [nominationError, setNominationError] = useState("");
+  const [revokingNominationId, setRevokingNominationId] = useState("");
 
   const [livekitToken, setLivekitToken] = useState("");
   const [livekitUrl, setLivekitUrl] = useState("");
@@ -68,6 +85,9 @@ export default function MyEventsPage() {
   useEffect(() => {
     async function loadEvents() {
       const { data: userData } = await supabase.auth.getUser();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!isEmailVerified(userData.user)) {
         router.push(getLocalizedPath(locale, "/auth"));
@@ -86,11 +106,17 @@ export default function MyEventsPage() {
         console.error(error);
       }
 
-      const eventIds = (data || []).map((event) => event.id);
+      const ownedEvents = (data || []).map((event) => ({
+        ...event,
+        role: "owner" as const,
+      }));
+      let nominatedEvents: Event[] = [];
+      const eventIds = ownedEvents.map((event) => event.id);
       const entitlementPlans = new Map<
         string,
         "free" | "premium"
       >();
+      const nominationMap = new Map<string, StreamerNomination[]>();
 
       if (eventIds.length > 0) {
         const { data: entitlements, error: entitlementError } = await supabase
@@ -112,11 +138,70 @@ export default function MyEventsPage() {
         }
       }
 
+      if (session) {
+        const premiumOwnerEventIds = ownedEvents
+          .filter((event) => entitlementPlans.get(event.id) === "premium")
+          .map((event) => event.id);
+
+        await Promise.all(
+          premiumOwnerEventIds.map(async (eventId) => {
+            try {
+              const response = await fetch(
+                `/api/events/id/${encodeURIComponent(
+                  eventId
+                )}/streamer-nominations`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                }
+              );
+
+              if (!response.ok) {
+                return;
+              }
+
+              const body = (await response.json()) as {
+                nominations?: StreamerNomination[];
+              };
+              nominationMap.set(
+                eventId,
+                (body.nominations ?? []).filter(
+                  (nomination) => !nomination.revokedAt
+                )
+              );
+            } catch (nominationError) {
+              console.error(nominationError);
+            }
+          })
+        );
+
+        try {
+          const response = await fetch("/api/events/nominated", {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (response.ok) {
+            const body = (await response.json()) as { events?: Event[] };
+            nominatedEvents = body.events ?? [];
+          }
+        } catch (nominatedError) {
+          console.error(nominatedError);
+        }
+      }
+
       const eventsWithRecordings = await Promise.all(
-        (data || []).map(async (event) => {
+        [...ownedEvents, ...nominatedEvents].map(async (event) => {
+          const eventPlan = "plan" in event ? event.plan : null;
           const eventWithPlan = {
             ...event,
-            plan: entitlementPlans.get(event.id) ?? null,
+            nominations: nominationMap.get(event.id) ?? [],
+            plan:
+              eventPlan ??
+              entitlementPlans.get(event.id) ??
+              (event.role === "nominated_streamer" ? "premium" : null),
           };
 
           try {
@@ -224,6 +309,162 @@ export default function MyEventsPage() {
     setEvents((currentEvents) =>
       currentEvents.filter((event) => event.id !== id)
     );
+  }
+
+  function openNominationDialog(eventId: string) {
+    setNominationDialogEventId(eventId);
+    setNominationEmail("");
+    setNominationError("");
+  }
+
+  function closeNominationDialog() {
+    if (nominatingEventId) {
+      return;
+    }
+
+    setNominationDialogEventId("");
+    setNominationEmail("");
+    setNominationError("");
+  }
+
+  async function nominateStreamer(event: Event) {
+    const email = nominationEmail.trim();
+
+    if (!email) {
+      setNominationError(messages.myEvents.messages.nominationEmailRequired);
+      return;
+    }
+
+    setNominatingEventId(event.id);
+    setNominationError("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert(messages.myEvents.messages.nominationLogin);
+        router.push(getLocalizedPath(locale, "/auth"));
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(event.id)}/streamer-nominations`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, locale }),
+        }
+      );
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+        nomination?: StreamerNomination;
+      } | null;
+
+      if (!response.ok || !body?.nomination) {
+        setNominationError(
+          body?.error || messages.myEvents.messages.nominationFailed
+        );
+        return;
+      }
+
+      const nomination = body.nomination;
+
+      setEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === event.id
+            ? {
+                ...currentEvent,
+                nominations: [
+                  nomination,
+                  ...(currentEvent.nominations ?? []),
+                ],
+              }
+            : currentEvent
+        )
+      );
+      setNominationDialogEventId("");
+      setNominationEmail("");
+      alert(messages.myEvents.messages.nominationSent);
+    } catch (error) {
+      console.error(error);
+      setNominationError(messages.myEvents.messages.nominationFailed);
+    } finally {
+      setNominatingEventId("");
+    }
+  }
+
+  async function revokeStreamerNomination(
+    event: Event,
+    nomination: StreamerNomination
+  ) {
+    const confirmed = window.confirm(
+      messages.myEvents.messages.nominationRevokeConfirm.replace(
+        "{email}",
+        nomination.email
+      )
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRevokingNominationId(nomination.id);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        alert(messages.myEvents.messages.nominationLogin);
+        router.push(getLocalizedPath(locale, "/auth"));
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(event.id)}/streamer-nominations`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ nominationId: nomination.id }),
+        }
+      );
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        alert(body?.error || messages.myEvents.messages.nominationRevokeFailed);
+        return;
+      }
+
+      setEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === event.id
+            ? {
+                ...currentEvent,
+                nominations: (currentEvent.nominations ?? []).filter(
+                  (currentNomination) =>
+                    currentNomination.id !== nomination.id
+                ),
+              }
+            : currentEvent
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      alert(messages.myEvents.messages.nominationRevokeFailed);
+    } finally {
+      setRevokingNominationId("");
+    }
   }
 
   async function logout() {
@@ -395,6 +636,9 @@ export default function MyEventsPage() {
         ),
     },
   ];
+  const nominationDialogEvent = events.find(
+    (event) => event.id === nominationDialogEventId
+  );
 
   return (
     <main
@@ -508,9 +752,17 @@ export default function MyEventsPage() {
                       const isEndedFreeWithoutRecording =
                         isEnded && event.plan !== "premium" && !event.recording;
                       const isEndedPremium = isEnded && event.plan === "premium";
+                      const isNominatedStreamer =
+                        event.role === "nominated_streamer";
+                      const canManageEvent = event.role === "owner";
                       const canUpgrade =
-                        event.plan === "free" && event.status !== "ended";
+                        canManageEvent &&
+                        event.plan === "free" &&
+                        event.status !== "ended";
+                      const canNominateStreamer =
+                        canManageEvent && event.plan === "premium";
                       const isUpgrading = upgradingEventId === event.id;
+                      const isNominating = nominatingEventId === event.id;
                       const showEventDate =
                         Boolean(event.event_at) || event.plan === "premium";
                       const copyButtonText =
@@ -540,6 +792,11 @@ export default function MyEventsPage() {
                                       {event.plan === "premium"
                                         ? messages.myEvents.badges.premium
                                         : messages.myEvents.badges.free}
+                                    </span>
+                                  )}
+                                  {isNominatedStreamer && (
+                                    <span className="rounded-full border border-navy/10 bg-navy/5 px-3 py-1 text-xs font-semibold text-navy/70">
+                                      {messages.myEvents.badges.nominatedStreamer}
                                     </span>
                                   )}
                                   <span
@@ -592,6 +849,46 @@ export default function MyEventsPage() {
                                     `/e/${event.slug}`
                                   )}`}
                                 </p>
+                                {isNominatedStreamer && (
+                                  <p className="mt-3 max-w-xl rounded-xl border border-navy/10 bg-navy/[0.025] px-4 py-3 text-sm leading-6 text-muted-navy">
+                                    {messages.myEvents.messages.nominatedStreamerInfo}
+                                  </p>
+                                )}
+                                {canNominateStreamer &&
+                                  (event.nominations?.length ?? 0) > 0 && (
+                                    <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-navy">
+                                      <span className="font-semibold text-navy/70">
+                                        {messages.myEvents.messages.activeNominations}
+                                      </span>
+                                      {event.nominations?.map((nomination) => (
+                                        <span
+                                          key={nomination.id}
+                                          className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-pale-gold/60 px-3 py-1 text-xs font-semibold text-navy/75"
+                                        >
+                                          <span dir="ltr">{nomination.email}</span>
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              revokeStreamerNomination(
+                                                event,
+                                                nomination
+                                              )
+                                            }
+                                            disabled={
+                                              revokingNominationId ===
+                                              nomination.id
+                                            }
+                                            className="text-navy/45 transition hover:text-recording-red disabled:cursor-wait"
+                                          >
+                                            {revokingNominationId ===
+                                            nomination.id
+                                              ? messages.myEvents.actions.revokingNomination
+                                              : messages.myEvents.actions.revokeNomination}
+                                          </button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
                               </div>
 
                               <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto">
@@ -644,10 +941,23 @@ export default function MyEventsPage() {
                                   </button>
                                 )}
 
-                                {event.plan === "premium" && (
+                                {canManageEvent && event.plan === "premium" && (
                                   <div className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/35 bg-pale-gold/60 px-6 py-3 text-sm font-semibold text-[#80652f] sm:w-auto">
                                     {messages.myEvents.actions.premiumEnabled}
                                   </div>
+                                )}
+
+                                {canNominateStreamer && (
+                                  <button
+                                    type="button"
+                                    onClick={() => openNominationDialog(event.id)}
+                                    disabled={isNominating}
+                                    className="flex min-h-12 w-full items-center justify-center rounded-xl border border-navy/10 bg-white px-6 py-3 text-sm font-semibold text-navy/75 transition hover:bg-navy/5 disabled:cursor-wait disabled:text-navy/40 sm:w-auto"
+                                  >
+                                    {isNominating
+                                      ? messages.myEvents.actions.sendingNomination
+                                      : messages.myEvents.actions.nominateStreamer}
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -655,14 +965,16 @@ export default function MyEventsPage() {
 
                           {isEndedFreeWithoutRecording ? (
                             <div className="flex justify-end border-t border-navy/8 bg-navy/[0.015] px-4 py-3 sm:px-6">
-                              <button
-                                onClick={() =>
-                                  deleteEvent(event.id, event.name)
-                                }
-                                className="rounded-lg px-3 py-2 text-sm font-medium text-navy/45 transition hover:bg-white hover:text-recording-red"
-                              >
-                                {messages.common.delete}
-                              </button>
+                              {canManageEvent && (
+                                <button
+                                  onClick={() =>
+                                    deleteEvent(event.id, event.name)
+                                  }
+                                  className="rounded-lg px-3 py-2 text-sm font-medium text-navy/45 transition hover:bg-white hover:text-recording-red"
+                                >
+                                  {messages.common.delete}
+                                </button>
+                              )}
                             </div>
                           ) : (
                             <div className="flex flex-wrap gap-x-1 gap-y-2 border-t border-navy/8 bg-navy/[0.025] px-4 py-3 sm:px-6">
@@ -686,15 +998,17 @@ export default function MyEventsPage() {
                               </button>
                               {!isEndedPremium && (
                                 <>
-                                  <Link
-                                    href={getLocalizedPath(
-                                      locale,
-                                      `/edit-event/${event.id}`
-                                    )}
-                                    className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
-                                  >
-                                    {messages.myEvents.actions.editEvent}
-                                  </Link>
+                                  {canManageEvent && (
+                                    <Link
+                                      href={getLocalizedPath(
+                                        locale,
+                                        `/edit-event/${event.id}`
+                                      )}
+                                      className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
+                                    >
+                                      {messages.myEvents.actions.editEvent}
+                                    </Link>
+                                  )}
                                   <Link
                                     href={getLocalizedPath(locale, `/e/${event.slug}`)}
                                     className="rounded-lg px-3 py-2 text-sm font-medium text-navy/70 transition hover:bg-white hover:text-navy"
@@ -703,14 +1017,16 @@ export default function MyEventsPage() {
                                   </Link>
                                 </>
                               )}
-                              <button
-                                onClick={() =>
-                                  deleteEvent(event.id, event.name)
-                                }
-                                className="rounded-lg px-3 py-2 text-sm font-medium text-recording-red/80 transition hover:bg-red-50 hover:text-recording-red sm:ml-auto"
-                              >
-                                {messages.common.delete}
-                              </button>
+                              {canManageEvent && (
+                                <button
+                                  onClick={() =>
+                                    deleteEvent(event.id, event.name)
+                                  }
+                                  className="rounded-lg px-3 py-2 text-sm font-medium text-recording-red/80 transition hover:bg-red-50 hover:text-recording-red sm:ml-auto"
+                                >
+                                  {messages.common.delete}
+                                </button>
+                              )}
                             </div>
                           )}
                         </article>
@@ -722,6 +1038,111 @@ export default function MyEventsPage() {
           </div>
         )}
       </div>
+
+      {nominationDialogEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-navy/55 px-4 py-4 backdrop-blur-sm sm:items-center sm:px-6"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeNominationDialog();
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nominate-streamer-title"
+            className="w-full max-w-md rounded-[1.5rem] border border-gold/30 bg-warm-white p-5 text-navy shadow-[0_24px_80px_rgba(11,31,58,0.28)] sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
+                  {messages.myEvents.badges.premium}
+                </p>
+                <h2
+                  id="nominate-streamer-title"
+                  className="mt-2 font-display text-3xl font-semibold leading-tight text-navy"
+                >
+                  {messages.myEvents.nominationDialog.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeNominationDialog}
+                disabled={Boolean(nominatingEventId)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-navy/10 bg-white text-xl leading-none text-navy/55 transition hover:text-navy disabled:cursor-wait"
+                aria-label={messages.common.cancel}
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-muted-navy">
+              {messages.myEvents.nominationDialog.description}
+            </p>
+            <p className="wrap-anywhere mt-3 rounded-xl border border-navy/10 bg-white/65 px-4 py-3 text-sm font-semibold text-navy">
+              {nominationDialogEvent.name}
+            </p>
+
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                nominateStreamer(nominationDialogEvent);
+              }}
+            >
+              <label className="block">
+                <span className="text-sm font-semibold text-navy">
+                  {messages.myEvents.nominationDialog.emailLabel}
+                </span>
+                <input
+                  type="email"
+                  value={nominationEmail}
+                  onChange={(event) => {
+                    setNominationEmail(event.target.value);
+                    setNominationError("");
+                  }}
+                  dir="ltr"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  className="mt-2 w-full rounded-xl border border-navy/15 bg-white px-4 py-3 text-left text-base text-navy outline-none transition placeholder:text-muted-navy/45 focus:border-gold focus:ring-4 focus:ring-gold/15"
+                />
+              </label>
+
+              {nominationError && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-recording-red/20 bg-red-50 px-4 py-3 text-sm font-medium text-recording-red"
+                >
+                  {nominationError}
+                </p>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={closeNominationDialog}
+                  disabled={Boolean(nominatingEventId)}
+                  className="min-h-12 rounded-xl border border-navy/15 bg-white px-5 py-3 font-semibold text-navy transition hover:bg-navy/5 disabled:cursor-wait disabled:text-navy/40"
+                >
+                  {messages.common.cancel}
+                </button>
+                <button
+                  type="submit"
+                  disabled={nominatingEventId === nominationDialogEvent.id}
+                  className="min-h-12 rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white shadow-[0_12px_28px_rgba(11,31,58,0.14)] transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+                >
+                  {nominatingEventId === nominationDialogEvent.id
+                    ? messages.myEvents.actions.sendingNomination
+                    : messages.myEvents.nominationDialog.send}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

@@ -9,7 +9,7 @@ import {
   type EgressInfo,
   S3Upload,
 } from "livekit-server-sdk";
-import { isEmailVerified } from "@/lib/auth";
+import { getStreamEventContext } from "@/lib/event-permissions";
 import { getR2Config } from "@/lib/r2";
 
 export type RecordingStatus =
@@ -60,61 +60,21 @@ export async function getOwnedRecordingEvent(
     return null;
   }
 
-  const supabase = createClient(config.supabaseUrl, config.supabaseAnonKey);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser(accessToken);
-
-  if (!isEmailVerified(user)) {
-    return null;
-  }
-
-  const authenticatedSupabase = createClient(
-    config.supabaseUrl,
-    config.supabaseAnonKey,
-    {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
+  const context = await getStreamEventContext(accessToken, eventId).catch(
+    (error) => {
+      console.error("Could not verify recording permission", error);
+      return null;
     }
   );
-  const { data: event, error } = await authenticatedSupabase
-    .from("events")
-    .select("id, slug, user_id")
-    .eq("id", eventId)
-    .single();
 
-  if (error || !event || event.user_id !== user.id) {
-    return null;
-  }
-
-  const serviceSupabase = createClient(
-    config.supabaseUrl,
-    config.supabaseServiceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
-  const { data: entitlement, error: entitlementError } = await serviceSupabase
-    .from("event_entitlements")
-    .select("status, recording_enabled")
-    .eq("event_id", eventId)
-    .maybeSingle();
-
-  if (entitlementError) {
-    console.error("Could not load recording entitlement", entitlementError);
+  if (!context) {
     return null;
   }
 
   return {
-    entitlement,
-    event,
-    serviceSupabase,
+    entitlement: context.entitlement,
+    event: context.event,
+    serviceSupabase: context.serviceSupabase,
   };
 }
 

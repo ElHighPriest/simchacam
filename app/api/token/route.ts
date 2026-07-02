@@ -2,7 +2,10 @@ import { AccessToken } from "livekit-server-sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
-import { isEmailVerified } from "@/lib/auth";
+import {
+  EventPermissionError,
+  getStreamEventContextBySlug,
+} from "@/lib/event-permissions";
 import {
   getActiveViewerCount,
   getStreamTokenTtlSeconds,
@@ -42,7 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -68,34 +70,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(accessToken);
+      try {
+        await getStreamEventContextBySlug(accessToken, roomName);
+      } catch (error) {
+        if (error instanceof EventPermissionError) {
+          return NextResponse.json(
+            { error: error.message },
+            { status: error.status }
+          );
+        }
 
-      if (!isEmailVerified(user)) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-
-      const authenticatedSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      });
-
-      const { data: event, error: eventError } = await authenticatedSupabase
-        .from("events")
-        .select("user_id")
-        .eq("slug", roomName)
-        .single();
-
-      if (eventError || !event) {
-        return NextResponse.json({ error: "Event not found" }, { status: 404 });
-      }
-
-      if (user.id !== event.user_id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        throw error;
       }
 
       canPublish = true;

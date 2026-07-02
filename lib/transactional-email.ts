@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 
 import { getLocalizedPath, type Locale } from "@/lib/i18n";
 
@@ -11,6 +11,14 @@ type EventEmailInput = {
   hasPassword?: boolean;
   locale?: string | null;
   recipientEmail?: string | null;
+  slug: string;
+};
+
+type StreamerNominationEmailInput = {
+  eventName: string;
+  locale?: string | null;
+  nominatedEmail: string;
+  ownerName?: string | null;
   slug: string;
 };
 
@@ -95,7 +103,7 @@ function renderFallbackLink(url: string, locale: EmailLocale) {
   const safeUrl = escapeHtml(url);
   const label =
     locale === "he"
-      ? "אם הכפתור אינו פועל, העתיקו והדביקו את הקישור בדפדפן:"
+      ? "×× ×”×›×¤×ª×•×¨ ××™× ×• ×¤×•×¢×œ, ×”×¢×ª×™×§×• ×•×”×“×‘×™×§×• ××ª ×”×§×™×©×•×¨ ×‘×“×¤×“×¤×Ÿ:"
       : "If the button does not work, copy and paste this link into your browser:";
 
   return `
@@ -170,10 +178,10 @@ function renderLayout({
   const direction = locale === "he" ? "rtl" : "ltr";
   const alignment = locale === "he" ? "right" : "left";
   const tagline =
-    locale === "he" ? "כל שמחה, משותפת." : "Every simcha, shared.";
+    locale === "he" ? "×›×œ ×©×ž×—×”, ×ž×©×•×ª×¤×ª." : "Every simcha, shared.";
   const footer =
     locale === "he"
-      ? "שידורים חיים פרטיים לאירועים משפחתיים"
+      ? "×©×™×“×•×¨×™× ×—×™×™× ×¤×¨×˜×™×™× ×œ××™×¨×•×¢×™× ×ž×©×¤×—×ª×™×™×"
       : "Private livestreaming for family events";
 
   return `
@@ -195,7 +203,7 @@ function renderLayout({
                 <tr>
                   <td style="padding:0 8px 18px;text-align:center;">
                     <p style="margin:0;color:#FAF8F3;font-size:24px;font-weight:700;letter-spacing:-0.02em;">
-                      Simcha<span style="color:#E53935;">•</span>Cam
+                      Simcha<span style="color:#E53935;">&bull;</span>Cam
                     </p>
                     <p style="margin:7px 0 0;color:#D9D5CB;font-size:12px;letter-spacing:0.08em;">
                       ${escapeHtml(tagline)}
@@ -213,7 +221,7 @@ function renderLayout({
                 <tr>
                   <td style="padding:18px 16px 0;text-align:center;">
                     <p style="margin:0;color:#BFC6D1;font-size:11px;line-height:1.6;">
-                      SimchaCam &nbsp;•&nbsp; ${escapeHtml(footer)}
+                      SimchaCam &nbsp;&bull;&nbsp; ${escapeHtml(footer)}
                     </p>
                   </td>
                 </tr>
@@ -245,37 +253,37 @@ export function renderFreeEventCreatedEmail(input: EventEmailInput): EmailRender
   const copy =
     locale === "he"
       ? {
-          subject: "האירוע שלכם ב־SimchaCam מוכן",
-          preheader: "האירוע נוצר. אפשר לשתף את הקישור הפרטי עם האורחים.",
-          eyebrow: "אירוע נוצר",
-          heading: "האירוע שלכם מוכן",
+          subject: "×”××™×¨×•×¢ ×©×œ×›× ×‘Ö¾SimchaCam ×ž×•×›×Ÿ",
+          preheader: "×”××™×¨×•×¢ × ×•×¦×¨. ××¤×©×¨ ×œ×©×ª×£ ××ª ×”×§×™×©×•×¨ ×”×¤×¨×˜×™ ×¢× ×”××•×¨×—×™×.",
+          eyebrow: "××™×¨×•×¢ × ×•×¦×¨",
+          heading: "×”××™×¨×•×¢ ×©×œ×›× ×ž×•×›×Ÿ",
           intro:
-            "עמוד השידור הפרטי שלכם מוכן. אפשר לשתף את קישור הצפייה עם האורחים ולחזור לעריכה בכל שלב.",
-          eventName: "שם האירוע",
-          viewerLink: "קישור לצופים",
-          hostLink: "קישור למארח",
-          password: "הגנה בסיסמה",
-          passwordEnabled: "פעילה",
-          edit: "עריכת האירוע",
-          checklistTitle: "לפני האירוע",
-          checklistBody: "כמה צעדים פשוטים שיעזרו לשידור לעבור בנחת.",
+            "×¢×ž×•×“ ×”×©×™×“×•×¨ ×”×¤×¨×˜×™ ×©×œ×›× ×ž×•×›×Ÿ. ××¤×©×¨ ×œ×©×ª×£ ××ª ×§×™×©×•×¨ ×”×¦×¤×™×™×” ×¢× ×”××•×¨×—×™× ×•×œ×—×–×•×¨ ×œ×¢×¨×™×›×” ×‘×›×œ ×©×œ×‘.",
+          eventName: "×©× ×”××™×¨×•×¢",
+          viewerLink: "×§×™×©×•×¨ ×œ×¦×•×¤×™×",
+          hostLink: "×§×™×©×•×¨ ×œ×ž××¨×—",
+          password: "×”×’× ×” ×‘×¡×™×¡×ž×”",
+          passwordEnabled: "×¤×¢×™×œ×”",
+          edit: "×¢×¨×™×›×ª ×”××™×¨×•×¢",
+          checklistTitle: "×œ×¤× ×™ ×”××™×¨×•×¢",
+          checklistBody: "×›×ž×” ×¦×¢×“×™× ×¤×©×•×˜×™× ×©×™×¢×–×¨×• ×œ×©×™×“×•×¨ ×œ×¢×‘×•×¨ ×‘× ×—×ª.",
           checklist: [
-            "שתפו את קישור הצפייה עם האורחים",
-            "בדקו את המצלמה והמיקרופון",
-            "השאירו את הטלפון טעון או מחובר לחשמל",
+            "×©×ª×¤×• ××ª ×§×™×©×•×¨ ×”×¦×¤×™×™×” ×¢× ×”××•×¨×—×™×",
+            "×‘×“×§×• ××ª ×”×ž×¦×œ×ž×” ×•×”×ž×™×§×¨×•×¤×•×Ÿ",
+            "×”×©××™×¨×• ××ª ×”×˜×œ×¤×•×Ÿ ×˜×¢×•×Ÿ ××• ×ž×—×•×‘×¨ ×œ×—×©×ž×œ",
           ],
-          premiumTitle: "שדרגו את האירוע לפרימיום",
+          premiumTitle: "×©×“×¨×’×• ××ª ×”××™×¨×•×¢ ×œ×¤×¨×™×ž×™×•×",
           premiumBody:
-            "פרימיום מוסיף תזמון, שידור ארוך יותר, הקלטה, צפייה חוזרת והורדה לאירוע הזה.",
+            "×¤×¨×™×ž×™×•× ×ž×•×¡×™×£ ×ª×–×ž×•×Ÿ, ×©×™×“×•×¨ ××¨×•×š ×™×•×ª×¨, ×”×§×œ×˜×”, ×¦×¤×™×™×” ×—×•×–×¨×ª ×•×”×•×¨×“×” ×œ××™×¨×•×¢ ×”×–×”.",
           premium: [
-            "תזמון אירוע (תאריך ושעה)",
-            "עד 6 שעות שידור",
-            "הקלטה אוטומטית",
-            "צפייה חוזרת ל-30 יום",
-            "הורדת הקלטות",
-            "עד 500 צופים",
+            "×ª×–×ž×•×Ÿ ××™×¨×•×¢ (×ª××¨×™×š ×•×©×¢×”)",
+            "×¢×“ 6 ×©×¢×•×ª ×©×™×“×•×¨",
+            "×”×§×œ×˜×” ××•×˜×•×ž×˜×™×ª",
+            "×¦×¤×™×™×” ×—×•×–×¨×ª ×œ-30 ×™×•×",
+            "×”×•×¨×“×ª ×”×§×œ×˜×•×ª",
+            "×¢×“ 500 ×¦×•×¤×™×",
           ],
-          upgrade: "שדרוג לפרימיום",
+          upgrade: "×©×“×¨×•×’ ×œ×¤×¨×™×ž×™×•×",
         }
       : {
           subject: "Your SimchaCam event is ready",
@@ -366,32 +374,32 @@ export function renderPremiumEventConfirmedEmail(
   const copy =
     locale === "he"
       ? {
-          subject: "אירוע הפרימיום שלכם מוכן",
-          preheader: "פרימיום הופעל לאירוע שלכם ב-SimchaCam.",
-          eyebrow: "פרימיום הופעל",
-          heading: "אירוע הפרימיום שלכם מוכן",
+          subject: "××™×¨×•×¢ ×”×¤×¨×™×ž×™×•× ×©×œ×›× ×ž×•×›×Ÿ",
+          preheader: "×¤×¨×™×ž×™×•× ×”×•×¤×¢×œ ×œ××™×¨×•×¢ ×©×œ×›× ×‘-SimchaCam.",
+          eyebrow: "×¤×¨×™×ž×™×•× ×”×•×¤×¢×œ",
+          heading: "××™×¨×•×¢ ×”×¤×¨×™×ž×™×•× ×©×œ×›× ×ž×•×›×Ÿ",
           intro:
-            "האירוע שודרג לפרימיום. ההקלטה, הצפייה החוזרת וההורדה יהיו זמינות כחלק מהשדרוג.",
-          eventName: "שם האירוע",
-          viewerLink: "קישור לצופים",
-          hostLink: "קישור למארח",
-          edit: "עריכת האירוע",
-          dateTime: "תאריך ושעה",
-          addDateTitle: "אל תשכחו להוסיף תאריך ושעה",
+            "×”××™×¨×•×¢ ×©×•×“×¨×’ ×œ×¤×¨×™×ž×™×•×. ×”×”×§×œ×˜×”, ×”×¦×¤×™×™×” ×”×—×•×–×¨×ª ×•×”×”×•×¨×“×” ×™×”×™×• ×–×ž×™× ×•×ª ×›×—×œ×§ ×ž×”×©×“×¨×•×’.",
+          eventName: "×©× ×”××™×¨×•×¢",
+          viewerLink: "×§×™×©×•×¨ ×œ×¦×•×¤×™×",
+          hostLink: "×§×™×©×•×¨ ×œ×ž××¨×—",
+          edit: "×¢×¨×™×›×ª ×”××™×¨×•×¢",
+          dateTime: "×ª××¨×™×š ×•×©×¢×”",
+          addDateTitle: "××œ ×ª×©×›×—×• ×œ×”×•×¡×™×£ ×ª××¨×™×š ×•×©×¢×”",
           addDateBody:
-            "כך האורחים ידעו מתי השידור החי שלכם מתחיל.",
-          addDate: "הוספת תאריך ושעה",
-          premiumTitle: "אירוע הפרימיום כולל:",
+            "×›×š ×”××•×¨×—×™× ×™×“×¢×• ×ž×ª×™ ×”×©×™×“×•×¨ ×”×—×™ ×©×œ×›× ×ž×ª×—×™×œ.",
+          addDate: "×”×•×¡×¤×ª ×ª××¨×™×š ×•×©×¢×”",
+          premiumTitle: "××™×¨×•×¢ ×”×¤×¨×™×ž×™×•× ×›×•×œ×œ:",
           premium: [
-            "תזמון אירוע",
-            "עד 6 שעות שידור",
-            "הקלטה אוטומטית",
-            "צפייה חוזרת ל-30 יום",
-            "הורדת הקלטות",
-            "עד 500 צופים",
+            "×ª×–×ž×•×Ÿ ××™×¨×•×¢",
+            "×¢×“ 6 ×©×¢×•×ª ×©×™×“×•×¨",
+            "×”×§×œ×˜×” ××•×˜×•×ž×˜×™×ª",
+            "×¦×¤×™×™×” ×—×•×–×¨×ª ×œ-30 ×™×•×",
+            "×”×•×¨×“×ª ×”×§×œ×˜×•×ª",
+            "×¢×“ 500 ×¦×•×¤×™×",
           ],
           finish:
-            "האורחים לא צריכים אפליקציה. הם פשוט פותחים את קישור הצפייה הפרטי.",
+            "×”××•×¨×—×™× ×œ× ×¦×¨×™×›×™× ××¤×œ×™×§×¦×™×”. ×”× ×¤×©×•×˜ ×¤×•×ª×—×™× ××ª ×§×™×©×•×¨ ×”×¦×¤×™×™×” ×”×¤×¨×˜×™.",
         }
       : {
           subject: "Your Premium event is ready",
@@ -473,6 +481,77 @@ export function renderPremiumEventConfirmedEmail(
   return { html, subject: copy.subject, text };
 }
 
+export function renderStreamerNominationEmail(
+  input: StreamerNominationEmailInput
+): EmailRender {
+  const locale = getEmailLocale(input.locale);
+  const myEventsUrl = absoluteUrl(getLocalizedPath(locale, "/my-events"));
+  const viewerUrl = absoluteUrl(getLocalizedPath(locale, `/e/${input.slug}`));
+  const copy =
+    locale === "he"
+      ? {
+          subject: "מינו אתכם לשדר אירוע ב-SimchaCam",
+          preheader:
+            "בעל האירוע ביקש מכם לשדר את השידור החי ב-SimchaCam.",
+          eyebrow: "מינוי לשידור",
+          heading: "מינו אתכם לשדר את האירוע הזה",
+          intro:
+            "בעל האירוע ביקש מכם להיות המשדר הרשמי. כדי לראות את האירוע, התחברו ל-SimchaCam עם אותה כתובת מייל שקיבלה את ההודעה הזו.",
+          eventName: "שם האירוע",
+          viewerLink: "קישור לצופים",
+          nominatedEmail: "כתובת המייל להתחברות",
+          cta: "הרשמה או כניסה",
+          note:
+            "אפשר להתחבר עם אימייל וסיסמה או עם Google, כל עוד משתמשים באותה כתובת מייל.",
+        }
+      : {
+          subject: "You have been nominated to stream a SimchaCam event",
+          preheader:
+            "The event owner has nominated you to stream their SimchaCam event.",
+          eyebrow: "Streamer nomination",
+          heading: "You have been nominated to stream this event",
+          intro:
+            "The event owner has asked you to be the official streamer. To access the event, sign up or log in to SimchaCam using the same email address that received this message.",
+          eventName: "Event name",
+          viewerLink: "Viewer link",
+          nominatedEmail: "Email to use when signing in",
+          cta: "Sign Up or Log In",
+          note:
+            "You can use email/password or Google sign-in, as long as you use this same email address.",
+        };
+
+  const infoItems = [
+    { label: copy.eventName, value: input.eventName },
+    { label: copy.viewerLink, value: viewerUrl },
+    { label: copy.nominatedEmail, value: input.nominatedEmail },
+  ];
+  const html = renderLayout({
+    locale,
+    preheader: copy.preheader,
+    subject: copy.subject,
+    children: `
+      <p style="margin:0 0 18px;color:#9A7A3F;font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;">${escapeHtml(copy.eyebrow)}</p>
+      <h1 style="margin:0 0 16px;color:#0B1F3A;font-size:28px;font-weight:700;line-height:1.28;letter-spacing:-0.015em;">${escapeHtml(copy.heading)}</h1>
+      <p style="margin:0;color:#516078;font-size:16px;line-height:1.7;">${escapeHtml(copy.intro)}</p>
+      ${renderInfoList(infoItems)}
+      ${renderSection(copy.cta, copy.note)}
+      ${renderCtaButton({ href: myEventsUrl, label: copy.cta })}
+      ${renderFallbackLink(myEventsUrl, locale)}
+    `,
+  });
+  const text = [
+    copy.heading,
+    copy.intro,
+    `${copy.eventName}: ${input.eventName}`,
+    `${copy.viewerLink}: ${viewerUrl}`,
+    `${copy.nominatedEmail}: ${input.nominatedEmail}`,
+    copy.note,
+    `${copy.cta}: ${myEventsUrl}`,
+  ].join("\n\n");
+
+  return { html, subject: copy.subject, text };
+}
+
 async function sendTransactionalEmail({
   html,
   subject,
@@ -541,3 +620,17 @@ export async function sendPremiumEventConfirmedEmail(input: EventEmailInput) {
     console.error("Could not send Premium event confirmed email", error);
   }
 }
+
+export async function sendStreamerNominationEmail(
+  input: StreamerNominationEmailInput
+) {
+  try {
+    await sendTransactionalEmail({
+      ...renderStreamerNominationEmail(input),
+      to: input.nominatedEmail,
+    });
+  } catch (error) {
+    console.error("Could not send streamer nomination email", error);
+  }
+}
+

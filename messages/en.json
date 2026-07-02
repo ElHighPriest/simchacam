@@ -304,7 +304,14 @@
       "scheduled": "Scheduled",
       "recordingReady": "Recording ready",
       "recordingProcessing": "Recording processing",
-      "passwordProtected": "Password protected"
+      "passwordProtected": "Password protected",
+      "nominatedStreamer": "Nominated streamer"
+    },
+    "nominationDialog": {
+      "title": "Nominate a streamer",
+      "description": "Invite someone you trust to go live for this Premium event. They must sign up or log in with the same email address.",
+      "emailLabel": "Streamer email address",
+      "send": "Send invitation"
     },
     "actions": {
       "copyLink": "Copy Link",
@@ -317,7 +324,11 @@
       "viewRecordingStatus": "View Recording Status",
       "viewEvent": "View Event",
       "premiumEnabled": "Premium enabled",
-      "creatingCheckout": "Creating checkout..."
+      "creatingCheckout": "Creating checkout...",
+      "nominateStreamer": "Nominate streamer",
+      "sendingNomination": "Sending nomination...",
+      "revokeNomination": "Revoke",
+      "revokingNomination": "Revoking..."
     },
     "messages": {
       "endedFree": "This free livestream has ended. No recording is available.",
@@ -326,7 +337,16 @@
       "checkoutFailed": "Could not start Premium checkout",
       "goLiveLogin": "Please log in before starting a livestream",
       "goLiveFailed": "Could not start livestream",
-      "shareText": "Please join the livestream for {eventName}"
+      "shareText": "Please join the livestream for {eventName}",
+      "nominatedStreamerInfo": "You have been nominated to stream this event. You can go live and share the viewer link, but only the event owner can edit settings.",
+      "activeNominations": "Nominated streamers:",
+      "nominationPrompt": "Enter the streamer's email address. They must sign up or log in with this same email.",
+      "nominationEmailRequired": "Please enter the streamer's email address.",
+      "nominationLogin": "Please log in before nominating a streamer.",
+      "nominationSent": "Streamer nomination sent.",
+      "nominationFailed": "Could not nominate streamer.",
+      "nominationRevokeConfirm": "Revoke the streamer nomination for {email}?",
+      "nominationRevokeFailed": "Could not revoke streamer nomination."
     }
   },
   "viewer": {
