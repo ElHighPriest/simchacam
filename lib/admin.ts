@@ -44,6 +44,7 @@ type StreamSessionRow = {
 };
 
 type RecordingRow = {
+  duration_ms?: number | null;
   ended_at: string | null;
   error_message: string | null;
   event_id: string;
@@ -51,12 +52,14 @@ type RecordingRow = {
   livekit_egress_id: string | null;
   object_key: string | null;
   ready_at: string | null;
+  size_bytes?: number | null;
   started_at: string | null;
   status: string | null;
   updated_at: string | null;
 };
 
 type RecordingSegmentRow = {
+  duration_ms?: number | null;
   ended_at: string | null;
   error_message: string | null;
   event_id: string;
@@ -64,6 +67,7 @@ type RecordingSegmentRow = {
   object_key: string | null;
   ready_at: string | null;
   segment_index: number | null;
+  size_bytes?: number | null;
   started_at: string | null;
   status: string | null;
   updated_at: string | null;
@@ -72,7 +76,9 @@ type RecordingSegmentRow = {
 export type AdminHealth = "healthy" | "warning" | "critical";
 
 export type AdminLiveEvent = {
+  averageWatchTimeMs: number | null;
   currentViewers: number | null;
+  endedAt: string | null;
   event: EventRow;
   hardEndsAt: string | null;
   health: AdminHealth;
@@ -84,11 +90,17 @@ export type AdminLiveEvent = {
   recordingStatus: string | null;
   session: StreamSessionRow | null;
   startedAt: string | null;
+  streamDurationMs: number | null;
+  totalWatchTimeMs: number | null;
+  uniqueViewers: number | null;
 };
 
 export type AdminEventDetail = AdminLiveEvent & {
   recording: RecordingRow | null;
   recordingSegments: RecordingSegmentRow[];
+  recordingSegmentCount: number;
+  recordingTotalDurationMs: number | null;
+  recordingTotalSizeBytes: number | null;
   sessions: StreamSessionRow[];
   timeline: {
     at: string | null;
@@ -106,6 +118,28 @@ export type AdminLiveEventsResponse = {
     warning: number;
   };
 };
+
+export type AdminEventStatusFilter = "live" | "ended" | "all";
+export type AdminEventDateFilter = "7d" | "30d" | "all";
+
+export type AdminEventsResponse = {
+  events: AdminLiveEvent[];
+  filters: {
+    date: AdminEventDateFilter;
+    status: AdminEventStatusFilter;
+  };
+  summary: {
+    critical: number;
+    events: number;
+    healthy: number;
+    totalCurrentViewers: number | null;
+    warning: number;
+  };
+};
+
+function upgradeToWarning(health: AdminHealth): AdminHealth {
+  return health === "critical" ? health : "warning";
+}
 
 function parseAdminEmails() {
   return new Set(
@@ -185,77 +219,89 @@ function deriveHealth({
   currentViewers,
   event,
   recording,
-  session,
+  activeSession,
+  primarySession,
 }: {
   currentViewers: number | null;
   event: EventRow;
   recording: RecordingRow | null;
-  session: StreamSessionRow | null;
+  activeSession: StreamSessionRow | null;
+  primarySession: StreamSessionRow | null;
 }) {
   const now = new Date();
   const reasons: string[] = [];
   let health: AdminHealth = "healthy";
-  const hardEndsAt = dateFrom(session?.hard_ends_at);
-  const updatedAt = dateFrom(session?.updated_at);
-  const disconnectedAt = dateFrom(session?.host_last_disconnected_at);
-  const connectedAt = dateFrom(session?.host_last_connected_at);
+  const hardEndsAt = dateFrom(activeSession?.hard_ends_at);
+  const updatedAt = dateFrom(activeSession?.updated_at);
+  const disconnectedAt = dateFrom(activeSession?.host_last_disconnected_at);
+  const connectedAt = dateFrom(activeSession?.host_last_connected_at);
 
-  if (event.status !== "live") {
-    health = "critical";
-    reasons.push("Event is not marked live");
-  }
-
-  if (!session) {
-    health = "critical";
-    reasons.push("No active stream session found");
-  } else {
-    if (hardEndsAt && hardEndsAt <= now) {
+  if (event.status === "live") {
+    if (!activeSession) {
       health = "critical";
-      reasons.push("Session is past hard end time");
-    } else if (
-      hardEndsAt &&
-      hardEndsAt.getTime() - now.getTime() <= 10 * 60 * 1000
-    ) {
-      health = health === "critical" ? health : "warning";
-      reasons.push("Close to hard end time");
-    }
-
-    if (disconnectedAt && (!connectedAt || disconnectedAt > connectedAt)) {
-      const disconnectedForMs = now.getTime() - disconnectedAt.getTime();
-
-      if (disconnectedForMs >= 10 * 60 * 1000) {
+      reasons.push("No active stream session found");
+    } else {
+      if (hardEndsAt && hardEndsAt <= now) {
         health = "critical";
-        reasons.push("Host has been disconnected for over 10 minutes");
-      } else {
-        health = health === "critical" ? health : "warning";
-        reasons.push("Host is inside reconnect grace period");
+        reasons.push("Session is past hard end time");
+      } else if (
+        hardEndsAt &&
+        hardEndsAt.getTime() - now.getTime() <= 10 * 60 * 1000
+      ) {
+        health = upgradeToWarning(health);
+        reasons.push("Close to hard end time");
+      }
+
+      if (disconnectedAt && (!connectedAt || disconnectedAt > connectedAt)) {
+        const disconnectedForMs = now.getTime() - disconnectedAt.getTime();
+
+        if (disconnectedForMs >= 10 * 60 * 1000) {
+          health = "critical";
+          reasons.push("Host has been disconnected for over 10 minutes");
+        } else {
+          health = upgradeToWarning(health);
+          reasons.push("Host is inside reconnect grace period");
+        }
+      }
+
+      if (updatedAt && now.getTime() - updatedAt.getTime() > 15 * 60 * 1000) {
+        health = upgradeToWarning(health);
+        reasons.push("Session update is older than 15 minutes");
       }
     }
-
-    if (updatedAt && now.getTime() - updatedAt.getTime() > 15 * 60 * 1000) {
-      health = health === "critical" ? health : "warning";
-      reasons.push("Session update is older than 15 minutes");
+  } else if (event.status === "ended") {
+    if (activeSession) {
+      health = "critical";
+      reasons.push("Event is ended but still has an active session");
+    } else if (!primarySession) {
+      health = "warning";
+      reasons.push("No stream session found");
+    } else {
+      reasons.push("Event is ended");
     }
+  } else {
+    health = "warning";
+    reasons.push(`Event status is ${event.status ?? "unknown"}`);
   }
 
-  if (session?.plan === "premium" && !recording) {
-    health = health === "critical" ? health : "warning";
+  if (primarySession?.plan === "premium" && !recording) {
+    health = upgradeToWarning(health);
     reasons.push("Premium recording status is unknown");
   }
 
   if (recording?.status === "failed") {
-    health = health === "critical" ? health : "warning";
+    health = upgradeToWarning(health);
     reasons.push("Recording is marked failed");
   }
 
-  if (currentViewers === null) {
-    health = health === "critical" ? health : "warning";
+  if (event.status === "live" && currentViewers === null) {
+    health = upgradeToWarning(health);
     reasons.push("Current viewer count unavailable");
   }
 
   return {
     health,
-    healthReasons: reasons.length > 0 ? reasons : ["Live session appears active"],
+    healthReasons: reasons.length > 0 ? reasons : ["No obvious issues found"],
   };
 }
 
@@ -296,15 +342,53 @@ async function getViewerCount(roomName: string | null) {
   }
 }
 
+function isActiveSession(session: StreamSessionRow | null | undefined) {
+  return ["starting", "live"].includes(session?.status ?? "");
+}
+
+function getPrimarySession(sessions: StreamSessionRow[]) {
+  return (
+    sessions.find((session) => isActiveSession(session)) ??
+    sessions.find((session) => session.started_at || session.ended_at) ??
+    sessions[0] ??
+    null
+  );
+}
+
+function getStreamDurationMs(
+  startedAt: string | null | undefined,
+  endedAt: string | null | undefined,
+  isLive: boolean
+) {
+  const start = dateFrom(startedAt);
+
+  if (!start) {
+    return null;
+  }
+
+  const end = dateFrom(endedAt) ?? (isLive ? new Date() : null);
+
+  if (!end) {
+    return null;
+  }
+
+  return Math.max(0, end.getTime() - start.getTime());
+}
+
 async function buildAdminEventRows(
   supabase: SupabaseClient,
   events: EventRow[],
-  activeSessions: StreamSessionRow[],
+  sessions: StreamSessionRow[],
   recordings: RecordingRow[]
 ) {
-  const sessionByEventId = new Map(
-    activeSessions.map((session) => [session.event_id, session])
-  );
+  const sessionsByEventId = new Map<string, StreamSessionRow[]>();
+
+  sessions.forEach((session) => {
+    const rows = sessionsByEventId.get(session.event_id) ?? [];
+    rows.push(session);
+    sessionsByEventId.set(session.event_id, rows);
+  });
+
   const recordingByEventId = new Map(
     recordings.map((recording) => [recording.event_id, recording])
   );
@@ -315,31 +399,49 @@ async function buildAdminEventRows(
 
   return Promise.all(
     events.map(async (event) => {
-      const session = sessionByEventId.get(event.id) ?? null;
+      const eventSessions = sessionsByEventId.get(event.id) ?? [];
+      const primarySession = getPrimarySession(eventSessions);
+      const activeSession =
+        eventSessions.find((session) => isActiveSession(session)) ?? null;
       const recording = recordingByEventId.get(event.id) ?? null;
-      const currentViewers = await getViewerCount(session?.room_name ?? event.slug);
+      const shouldLoadCurrentViewers = event.status === "live" && activeSession;
+      const currentViewers = shouldLoadCurrentViewers
+        ? await getViewerCount(activeSession.room_name ?? event.slug)
+        : null;
       const health = deriveHealth({
+        activeSession,
         currentViewers,
         event,
+        primarySession,
         recording,
-        session,
       });
 
+      // TODO: add an event_viewer_sessions table in a future phase for true
+      // unique viewers, peak viewers, and watch-time analytics.
       return {
+        averageWatchTimeMs: null,
         currentViewers,
+        endedAt: primarySession?.ended_at ?? null,
         event,
-        hardEndsAt: session?.hard_ends_at ?? null,
+        hardEndsAt: primarySession?.hard_ends_at ?? null,
         ...health,
         hostEmail: event.user_id ? hostEmails.get(event.user_id) ?? null : null,
-        lastUpdatedAt: session?.updated_at ?? null,
+        lastUpdatedAt: primarySession?.updated_at ?? null,
         peakViewers: null,
         plan:
-          session?.plan === "free" || session?.plan === "premium"
-            ? session.plan
+          primarySession?.plan === "free" || primarySession?.plan === "premium"
+            ? primarySession.plan
             : "unknown",
         recordingStatus: recording?.status ?? null,
-        session,
-        startedAt: session?.started_at ?? null,
+        session: primarySession,
+        startedAt: primarySession?.started_at ?? null,
+        streamDurationMs: getStreamDurationMs(
+          primarySession?.started_at,
+          primarySession?.ended_at,
+          event.status === "live"
+        ),
+        totalWatchTimeMs: null,
+        uniqueViewers: null,
       } satisfies AdminLiveEvent;
     })
   );
@@ -386,7 +488,7 @@ export async function loadAdminLiveEvents(
       supabase
         .from("event_recordings")
         .select(
-          "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, error_message, updated_at"
+          "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, duration_ms, size_bytes, error_message, updated_at"
         )
         .in("event_id", eventIds),
     ]);
@@ -416,6 +518,132 @@ export async function loadAdminLiveEvents(
       totalCurrentViewers: viewerCounts.every((count) => count !== null)
         ? (viewerCounts as number[]).reduce((sum, count) => sum + count, 0)
         : null,
+      warning: rows.filter((row) => row.health === "warning").length,
+    },
+  };
+}
+
+function normalizeStatusFilter(value: string | null): AdminEventStatusFilter {
+  return value === "live" || value === "ended" || value === "all"
+    ? value
+    : "ended";
+}
+
+function normalizeDateFilter(value: string | null): AdminEventDateFilter {
+  return value === "7d" || value === "30d" || value === "all"
+    ? value
+    : "30d";
+}
+
+function getDateFilterCutoff(filter: AdminEventDateFilter) {
+  const now = Date.now();
+
+  if (filter === "7d") {
+    return new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  if (filter === "30d") {
+    return new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  return null;
+}
+
+export async function loadAdminEvents(
+  supabase: SupabaseClient,
+  options: {
+    date?: string | null;
+    status?: string | null;
+  }
+): Promise<AdminEventsResponse> {
+  const status = normalizeStatusFilter(options.status ?? null);
+  const date = normalizeDateFilter(options.date ?? null);
+  const cutoff = getDateFilterCutoff(date);
+  let eventsQuery = supabase
+    .from("events")
+    .select("id, name, slug, status, user_id, event_at, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (status !== "all") {
+    eventsQuery = eventsQuery.eq("status", status);
+  }
+
+  if (cutoff) {
+    eventsQuery = eventsQuery.gte("created_at", cutoff);
+  }
+
+  const { data: events, error: eventsError } = await eventsQuery;
+
+  if (eventsError) {
+    throw eventsError;
+  }
+
+  const adminEvents = (events ?? []) as EventRow[];
+  const eventIds = adminEvents.map((event) => event.id);
+
+  if (eventIds.length === 0) {
+    return {
+      events: [],
+      filters: { date, status },
+      summary: {
+        critical: 0,
+        events: 0,
+        healthy: 0,
+        totalCurrentViewers: 0,
+        warning: 0,
+      },
+    };
+  }
+
+  const [{ data: sessions, error: sessionsError }, { data: recordings, error: recordingsError }] =
+    await Promise.all([
+      supabase
+        .from("event_stream_sessions")
+        .select(
+          "id, event_id, room_name, status, plan, stream_limit_seconds, viewer_limit, started_at, hard_ends_at, ended_at, ended_reason, host_last_connected_at, host_last_disconnected_at, updated_at"
+        )
+        .in("event_id", eventIds)
+        .order("started_at", { ascending: false }),
+      supabase
+        .from("event_recordings")
+        .select(
+          "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, duration_ms, size_bytes, error_message, updated_at"
+        )
+        .in("event_id", eventIds),
+    ]);
+
+  if (sessionsError) {
+    throw sessionsError;
+  }
+
+  if (recordingsError) {
+    throw recordingsError;
+  }
+
+  const rows = await buildAdminEventRows(
+    supabase,
+    adminEvents,
+    (sessions ?? []) as StreamSessionRow[],
+    (recordings ?? []) as RecordingRow[]
+  );
+  const viewerCounts = rows
+    .filter((row) => row.event.status === "live")
+    .map((row) => row.currentViewers);
+
+  return {
+    events: rows,
+    filters: { date, status },
+    summary: {
+      critical: rows.filter((row) => row.health === "critical").length,
+      events: rows.length,
+      healthy: rows.filter((row) => row.health === "healthy").length,
+      totalCurrentViewers:
+        viewerCounts.length > 0 && viewerCounts.every((count) => count !== null)
+          ? (viewerCounts as number[]).reduce((sum, count) => sum + count, 0)
+          : viewerCounts.length === 0
+            ? 0
+            : null,
       warning: rows.filter((row) => row.health === "warning").length,
     },
   };
@@ -454,14 +682,14 @@ export async function loadAdminEventDetail(
     supabase
       .from("event_recordings")
       .select(
-        "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, error_message, updated_at"
+        "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, duration_ms, size_bytes, error_message, updated_at"
       )
       .eq("event_id", eventId)
       .maybeSingle(),
     supabase
       .from("event_recording_segments")
       .select(
-        "event_id, segment_index, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, error_message, updated_at"
+        "event_id, segment_index, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, duration_ms, size_bytes, error_message, updated_at"
       )
       .eq("event_id", eventId)
       .order("segment_index", { ascending: true }),
@@ -480,17 +708,22 @@ export async function loadAdminEventDetail(
   }
 
   const streamSessions = (sessions ?? []) as StreamSessionRow[];
-  const activeSession =
-    streamSessions.find((session) =>
-      ["starting", "live"].includes(session.status ?? "")
-    ) ?? null;
   const [row] = await buildAdminEventRows(
     supabase,
     [event as EventRow],
-    activeSession ? [activeSession] : [],
+    streamSessions,
     recording ? [recording as RecordingRow] : []
   );
   const segments = (recordingSegments ?? []) as RecordingSegmentRow[];
+  const readySegments = segments.filter((segment) => segment.status === "ready");
+  const segmentDurationMs = readySegments.reduce(
+    (total, segment) => total + (segment.duration_ms ?? 0),
+    0
+  );
+  const segmentSizeBytes = readySegments.reduce(
+    (total, segment) => total + (segment.size_bytes ?? 0),
+    0
+  );
   const timeline = [
     { at: event.created_at, label: "Event created" },
     ...streamSessions.flatMap((session) => [
@@ -540,6 +773,15 @@ export async function loadAdminEventDetail(
     ...row,
     recording: recording ? (recording as RecordingRow) : null,
     recordingSegments: segments,
+    recordingSegmentCount: segments.length,
+    recordingTotalDurationMs:
+      segmentDurationMs > 0
+        ? segmentDurationMs
+        : ((recording as RecordingRow | null)?.duration_ms ?? null),
+    recordingTotalSizeBytes:
+      segmentSizeBytes > 0
+        ? segmentSizeBytes
+        : ((recording as RecordingRow | null)?.size_bytes ?? null),
     sessions: streamSessions,
     timeline,
   };

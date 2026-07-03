@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { AdminLiveEvent, AdminLiveEventsResponse } from "@/lib/admin";
+import type {
+  AdminEventDateFilter,
+  AdminEventsResponse,
+  AdminEventStatusFilter,
+  AdminLiveEvent,
+} from "@/lib/admin";
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -20,17 +25,14 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function formatDuration(startedAt: string | null) {
-  if (!startedAt) {
+function formatDurationMs(value: number | null) {
+  if (value === null) {
     return "Unknown";
   }
 
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000)
-  );
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
+  const minutesTotal = Math.max(0, Math.round(value / 60000));
+  const hours = Math.floor(minutesTotal / 60);
+  const minutes = minutesTotal % 60;
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
@@ -55,13 +57,16 @@ function HealthBadge({ health }: { health: AdminLiveEvent["health"] }) {
   );
 }
 
-export default function AdminDashboard() {
+export default function AdminEventsPage() {
   const router = useRouter();
-  const [data, setData] = useState<AdminLiveEventsResponse | null>(null);
+  const [data, setData] = useState<AdminEventsResponse | null>(null);
+  const [dateFilter, setDateFilter] = useState<AdminEventDateFilter>("30d");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] =
+    useState<AdminEventStatusFilter>("ended");
 
-  const loadDashboard = useCallback(async () => {
+  const loadEvents = useCallback(async () => {
     setError("");
 
     const {
@@ -73,7 +78,11 @@ export default function AdminDashboard() {
       return;
     }
 
-    const response = await fetch("/api/admin/live-events", {
+    const params = new URLSearchParams({
+      date: dateFilter,
+      status: statusFilter,
+    });
+    const response = await fetch(`/api/admin/events?${params.toString()}`, {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -92,28 +101,22 @@ export default function AdminDashboard() {
     }
 
     if (!response.ok) {
-      setError(body?.error || "Could not load admin dashboard");
+      setError(body?.error || "Could not load events");
       setLoading(false);
       return;
     }
 
-    setData(body as AdminLiveEventsResponse);
+    setData(body as AdminEventsResponse);
     setLoading(false);
-  }, [router]);
+  }, [dateFilter, router, statusFilter]);
 
   useEffect(() => {
-    const initialLoad = window.setTimeout(() => {
-      void loadDashboard();
+    const timeout = window.setTimeout(() => {
+      void loadEvents();
     }, 0);
-    const interval = window.setInterval(() => {
-      void loadDashboard();
-    }, 15000);
 
-    return () => {
-      window.clearTimeout(initialLoad);
-      window.clearInterval(interval);
-    };
-  }, [loadDashboard]);
+    return () => window.clearTimeout(timeout);
+  }, [loadEvents]);
 
   const totalCurrentViewers = useMemo(() => {
     if (data?.summary.totalCurrentViewers === null) {
@@ -129,7 +132,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-gold/35 border-t-gold" />
           <p className="text-sm font-medium text-muted-navy">
-            Loading admin dashboard...
+            Loading event analytics...
           </p>
         </div>
       </main>
@@ -159,37 +162,35 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
+            <Link
+              href="/admin"
+              className="text-sm font-semibold text-muted-navy transition hover:text-navy"
+            >
+              Back to live operations
+            </Link>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.24em] text-gold">
               SimchaCam Admin
             </p>
             <h1 className="mt-3 font-display text-4xl font-semibold sm:text-5xl">
-              Live operations
+              Event analytics
             </h1>
             <p className="mt-3 max-w-2xl text-muted-navy">
-              Monitor currently live events, stream sessions, recording state
-              and basic health without opening the livestream.
+              Review live and completed events using the stream, recording and
+              session data already stored by SimchaCam.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/admin/events"
-              className="inline-flex min-h-11 items-center rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-warm-white transition hover:bg-navy/90"
-            >
-              Event analytics
-            </Link>
-            <button
-              type="button"
-              onClick={loadDashboard}
-              className="min-h-11 rounded-xl border border-navy/10 bg-white px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-pale-gold/45"
-            >
-              Refresh
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={loadEvents}
+            className="min-h-11 rounded-xl border border-navy/10 bg-white px-4 py-2.5 text-sm font-semibold text-navy transition hover:bg-pale-gold/45"
+          >
+            Refresh
+          </button>
         </div>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {[
-            ["Live events now", data?.summary.liveEvents ?? 0],
+            ["Events", data?.summary.events ?? 0],
             ["Current viewers", totalCurrentViewers],
             ["Healthy", data?.summary.healthy ?? 0],
             ["Warning", data?.summary.warning ?? 0],
@@ -205,31 +206,63 @@ export default function AdminDashboard() {
           ))}
         </section>
 
+        <section className="mt-6 flex flex-col gap-3 rounded-[1.25rem] border border-gold/25 bg-white/80 p-4 shadow-[0_14px_40px_rgba(11,31,58,0.06)] sm:flex-row sm:items-center">
+          <label className="text-sm font-semibold text-navy">
+            Status
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as AdminEventStatusFilter)
+              }
+              className="mt-1 block min-h-11 rounded-xl border border-navy/10 bg-white px-3 py-2 text-sm font-medium"
+            >
+              <option value="live">Live</option>
+              <option value="ended">Ended</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold text-navy">
+            Date
+            <select
+              value={dateFilter}
+              onChange={(event) =>
+                setDateFilter(event.target.value as AdminEventDateFilter)
+              }
+              className="mt-1 block min-h-11 rounded-xl border border-navy/10 bg-white px-3 py-2 text-sm font-medium"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="all">All time</option>
+            </select>
+          </label>
+        </section>
+
         <section className="mt-8 overflow-hidden rounded-[1.5rem] border border-gold/25 bg-white/80 shadow-[0_18px_50px_rgba(11,31,58,0.08)]">
           <div className="overflow-x-auto">
-            <table className="min-w-[1180px] divide-y divide-navy/10 text-left text-sm">
+            <table className="min-w-[1420px] divide-y divide-navy/10 text-left text-sm">
               <thead className="bg-pale-gold/40 text-xs uppercase tracking-[0.14em] text-navy/60">
                 <tr>
                   <th className="px-4 py-4">Event</th>
                   <th className="px-4 py-4">Slug</th>
                   <th className="px-4 py-4">Host email</th>
                   <th className="px-4 py-4">Plan</th>
+                  <th className="px-4 py-4">Status</th>
                   <th className="px-4 py-4">Started</th>
+                  <th className="px-4 py-4">Ended</th>
                   <th className="px-4 py-4">Duration</th>
-                  <th className="px-4 py-4">Viewers</th>
-                  <th className="px-4 py-4">Peak</th>
                   <th className="px-4 py-4">Recording</th>
-                  <th className="px-4 py-4">Session</th>
-                  <th className="px-4 py-4">Hard ends</th>
-                  <th className="px-4 py-4">Updated</th>
-                  <th className="px-4 py-4">Health</th>
+                  <th className="px-4 py-4">Current</th>
+                  <th className="px-4 py-4">Peak</th>
+                  <th className="px-4 py-4">Unique</th>
+                  <th className="px-4 py-4">Watch time</th>
+                  <th className="px-4 py-4">Outcome</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy/8">
                 {data?.events.length === 0 && (
                   <tr>
-                    <td className="px-4 py-8 text-muted-navy" colSpan={13}>
-                      No events are currently live.
+                    <td className="px-4 py-8 text-muted-navy" colSpan={14}>
+                      No events match these filters.
                     </td>
                   </tr>
                 )}
@@ -250,9 +283,16 @@ export default function AdminDashboard() {
                       {event.hostEmail || "Unknown"}
                     </td>
                     <td className="px-4 py-4 capitalize">{event.plan}</td>
+                    <td className="px-4 py-4 capitalize">
+                      {event.event.status || "Unknown"}
+                    </td>
                     <td className="px-4 py-4">{formatDate(event.startedAt)}</td>
+                    <td className="px-4 py-4">{formatDate(event.endedAt)}</td>
                     <td className="px-4 py-4">
-                      {formatDuration(event.startedAt)}
+                      {formatDurationMs(event.streamDurationMs)}
+                    </td>
+                    <td className="px-4 py-4">
+                      {event.recordingStatus ?? "Unknown"}
                     </td>
                     <td className="px-4 py-4">
                       {event.currentViewers ?? "Unknown"}
@@ -261,18 +301,14 @@ export default function AdminDashboard() {
                       {event.peakViewers ?? "Unknown"}
                     </td>
                     <td className="px-4 py-4">
-                      {event.recordingStatus ?? "Unknown"}
+                      {event.uniqueViewers ?? "Unknown"}
                     </td>
                     <td className="px-4 py-4">
-                      {event.session?.status ?? "Unknown"}
-                    </td>
-                    <td className="px-4 py-4">{formatDate(event.hardEndsAt)}</td>
-                    <td className="px-4 py-4">
-                      {formatDate(event.lastUpdatedAt)}
+                      {formatDurationMs(event.totalWatchTimeMs)}
                     </td>
                     <td className="px-4 py-4">
                       <HealthBadge health={event.health} />
-                      <p className="mt-2 max-w-44 text-xs leading-5 text-muted-navy">
+                      <p className="mt-2 max-w-48 text-xs leading-5 text-muted-navy">
                         {event.healthReasons.join("; ")}
                       </p>
                     </td>

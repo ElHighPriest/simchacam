@@ -21,6 +21,54 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatDurationMs(value: number | null) {
+  if (value === null) {
+    return "Unknown";
+  }
+
+  const minutesTotal = Math.max(0, Math.round(value / 60000));
+  const hours = Math.floor(minutesTotal / 60);
+  const minutes = minutesTotal % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
+function formatBytes(value: number | null) {
+  if (value === null) {
+    return "Unknown";
+  }
+
+  if (value >= 1024 * 1024 * 1024) {
+    return `${(value / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+
+  if (value >= 1024 * 1024) {
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${Math.round(value / 1024)} KB`;
+}
+
+function HealthBadge({ health }: { health: AdminEventDetailData["health"] }) {
+  const classes = {
+    critical: "bg-red-50 text-recording-red ring-recording-red/20",
+    healthy: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
+    warning: "bg-amber-50 text-amber-700 ring-amber-600/15",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ${classes[health]}`}
+    >
+      {health}
+    </span>
+  );
+}
+
 function Field({
   label,
   value,
@@ -126,10 +174,10 @@ export default function AdminEventDetail({ id }: { id: string }) {
     <main className="min-h-screen bg-warm-white px-5 py-8 text-navy sm:px-8">
       <div className="mx-auto max-w-6xl">
         <Link
-          href="/admin"
+          href="/admin/events"
           className="text-sm font-semibold text-muted-navy transition hover:text-navy"
         >
-          Back to live operations
+          Back to event analytics
         </Link>
 
         <div className="mt-6 rounded-[1.5rem] border border-gold/25 bg-white/80 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)] sm:p-8">
@@ -143,24 +191,55 @@ export default function AdminEventDetail({ id }: { id: string }) {
             {event.event.slug || "Unknown slug"}
           </p>
 
-          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Status" value={event.event.status || "Unknown"} />
+            <Field label="Plan" value={event.plan} />
+            <Field
+              label="Duration"
+              value={formatDurationMs(event.streamDurationMs)}
+            />
+            <Field
+              label="Recording"
+              value={event.recording?.status ?? event.recordingStatus ?? "Unknown"}
+            />
+            <Field label="Peak viewers" value={event.peakViewers ?? "Unknown"} />
+            <Field
+              label="Unique viewers"
+              value={event.uniqueViewers ?? "Unknown"}
+            />
+            <Field
+              label="Total watch time"
+              value={formatDurationMs(event.totalWatchTimeMs)}
+            />
+            <Field
+              label="Average watch time"
+              value={formatDurationMs(event.averageWatchTimeMs)}
+            />
+          </section>
+
+          <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Host email" value={event.hostEmail || "Unknown"} />
-            <Field label="Event status" value={event.event.status || "Unknown"} />
-            <Field label="Plan / tier" value={event.plan} />
             <Field label="Started at" value={formatDate(event.startedAt)} />
+            <Field label="Ended at" value={formatDate(event.endedAt)} />
             <Field label="Hard ends at" value={formatDate(event.hardEndsAt)} />
             <Field
               label="Current viewers"
               value={event.currentViewers ?? "Unknown"}
             />
-            <Field label="Peak viewers" value={event.peakViewers ?? "Unknown"} />
-            <Field
-              label="Recording status"
-              value={event.recording?.status ?? event.recordingStatus ?? "Unknown"}
-            />
             <Field
               label="Session status"
               value={event.session?.status ?? "Unknown"}
+            />
+            <Field
+              label="Health / outcome"
+              value={
+                <div>
+                  <HealthBadge health={event.health} />
+                  <p className="mt-2 text-xs font-medium leading-5 text-muted-navy">
+                    {event.healthReasons.join("; ")}
+                  </p>
+                </div>
+              }
             />
           </section>
         </div>
@@ -196,6 +275,10 @@ export default function AdminEventDetail({ id }: { id: string }) {
                       Host disconnected:{" "}
                       {formatDate(session.host_last_disconnected_at)}
                     </div>
+                    <div>Ended: {formatDate(session.ended_at ?? null)}</div>
+                    <div>
+                      End reason: {session.ended_reason ?? "Unknown"}
+                    </div>
                   </dl>
                 </div>
               ))}
@@ -203,9 +286,26 @@ export default function AdminEventDetail({ id }: { id: string }) {
           </div>
 
           <div className="rounded-[1.5rem] border border-gold/25 bg-white/80 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)]">
-            <h2 className="font-display text-3xl font-semibold">
+            <h2 className="font-display text-3xl font-semibold">Recording</h2>
+            <dl className="mt-5 grid gap-3 text-sm text-muted-navy sm:grid-cols-2">
+              <div>Status: {event.recording?.status ?? "Unknown"}</div>
+              <div>Segments: {event.recordingSegmentCount}</div>
+              <div>
+                Duration: {formatDurationMs(event.recordingTotalDurationMs)}
+              </div>
+              <div>File size: {formatBytes(event.recordingTotalSizeBytes)}</div>
+              <div>Ready: {formatDate(event.recording?.ready_at ?? null)}</div>
+              <div>Expires: {formatDate(event.recording?.expires_at ?? null)}</div>
+            </dl>
+            {event.recording?.error_message && (
+              <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-recording-red">
+                {event.recording.error_message}
+              </p>
+            )}
+
+            <h3 className="mt-7 text-sm font-semibold uppercase tracking-[0.14em] text-navy/45">
               Recording segments
-            </h2>
+            </h3>
             <div className="mt-5 space-y-3">
               {event.recordingSegments.length === 0 && (
                 <p className="text-sm text-muted-navy">
@@ -236,6 +336,10 @@ export default function AdminEventDetail({ id }: { id: string }) {
                         {segment.object_key || "Unknown"}
                       </span>
                     </div>
+                    <div>
+                      Duration: {formatDurationMs(segment.duration_ms ?? null)}
+                    </div>
+                    <div>Size: {formatBytes(segment.size_bytes ?? null)}</div>
                   </dl>
                   {segment.error_message && (
                     <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-recording-red">
@@ -244,6 +348,55 @@ export default function AdminEventDetail({ id }: { id: string }) {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[1.5rem] border border-gold/25 bg-white/80 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)]">
+            <h2 className="font-display text-3xl font-semibold">
+              Viewer analytics
+            </h2>
+            <dl className="mt-5 grid gap-3 text-sm text-muted-navy sm:grid-cols-2">
+              <div>Current viewers: {event.currentViewers ?? "Unknown"}</div>
+              <div>Peak viewers: {event.peakViewers ?? "Unknown"}</div>
+              <div>Unique viewers: {event.uniqueViewers ?? "Unknown"}</div>
+              <div>
+                Total watch time: {formatDurationMs(event.totalWatchTimeMs)}
+              </div>
+              <div>
+                Average watch time: {formatDurationMs(event.averageWatchTimeMs)}
+              </div>
+            </dl>
+            <p className="mt-4 rounded-xl bg-pale-gold/40 px-4 py-3 text-sm text-muted-navy">
+              Viewer history is not stored yet, so unique viewers, peak viewers
+              and watch time show as Unknown until a future viewer-session table
+              is added.
+            </p>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-gold/25 bg-white/80 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)]">
+            <h2 className="font-display text-3xl font-semibold">
+              Technical health
+            </h2>
+            <dl className="mt-5 grid gap-3 text-sm text-muted-navy sm:grid-cols-2">
+              <div>Session status: {event.session?.status ?? "Unknown"}</div>
+              <div>Hard end: {formatDate(event.hardEndsAt)}</div>
+              <div>
+                End reason: {event.session?.ended_reason ?? "Unknown"}
+              </div>
+              <div>
+                Recording failures:{" "}
+                {event.recordingSegments.some(
+                  (segment) => segment.status === "failed"
+                ) || event.recording?.status === "failed"
+                  ? "Yes"
+                  : "No"}
+              </div>
+            </dl>
+            <div className="mt-4 rounded-xl bg-white/70 px-4 py-3 text-sm text-muted-navy">
+              <HealthBadge health={event.health} />
+              <p className="mt-3 leading-6">{event.healthReasons.join("; ")}</p>
             </div>
           </div>
         </section>
