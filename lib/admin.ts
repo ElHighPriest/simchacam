@@ -73,6 +73,21 @@ type RecordingSegmentRow = {
   updated_at: string | null;
 };
 
+type ViewerSessionRow = {
+  browser: string | null;
+  country: string | null;
+  device_type: string | null;
+  event_id: string;
+  id: string;
+  joined_at: string;
+  last_seen_at: string;
+  left_at: string | null;
+  user_agent: string | null;
+  viewer_label: string | null;
+  viewer_session_id: string;
+  watch_seconds: number | null;
+};
+
 export type AdminHealth = "healthy" | "warning" | "critical";
 
 export type AdminLiveEvent = {
@@ -85,6 +100,7 @@ export type AdminLiveEvent = {
   healthReasons: string[];
   hostEmail: string | null;
   lastUpdatedAt: string | null;
+  lastViewerActivityAt: string | null;
   peakViewers: number | null;
   plan: "free" | "premium" | "unknown";
   recordingStatus: string | null;
@@ -93,6 +109,7 @@ export type AdminLiveEvent = {
   streamDurationMs: number | null;
   totalWatchTimeMs: number | null;
   uniqueViewers: number | null;
+  viewerSessionCount: number;
 };
 
 export type AdminEventDetail = AdminLiveEvent & {
@@ -101,6 +118,7 @@ export type AdminEventDetail = AdminLiveEvent & {
   recordingSegmentCount: number;
   recordingTotalDurationMs: number | null;
   recordingTotalSizeBytes: number | null;
+  viewerSessions: ViewerSessionRow[];
   sessions: StreamSessionRow[];
   timeline: {
     at: string | null;
@@ -375,11 +393,109 @@ function getStreamDurationMs(
   return Math.max(0, end.getTime() - start.getTime());
 }
 
+function getViewerWatchSeconds(session: ViewerSessionRow, now = new Date()) {
+  if (typeof session.watch_seconds === "number") {
+    return session.watch_seconds;
+  }
+
+  const joinedAt = dateFrom(session.joined_at);
+  const lastSeenAt = dateFrom(session.left_at ?? session.last_seen_at) ?? now;
+
+  if (!joinedAt) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    Math.floor((lastSeenAt.getTime() - joinedAt.getTime()) / 1000)
+  );
+}
+
+function calculatePeakViewers(sessions: ViewerSessionRow[]) {
+  const timeline: { at: number; delta: number }[] = [];
+
+  sessions.forEach((session) => {
+    const joinedAt = dateFrom(session.joined_at);
+    const leftAt = dateFrom(session.left_at);
+    const lastSeenAt = dateFrom(session.last_seen_at);
+    const endedAt =
+      leftAt ??
+      (lastSeenAt
+        ? new Date(lastSeenAt.getTime() + 60 * 1000)
+        : null);
+
+    if (!joinedAt || !endedAt || endedAt <= joinedAt) {
+      return;
+    }
+
+    timeline.push({ at: joinedAt.getTime(), delta: 1 });
+    timeline.push({ at: endedAt.getTime(), delta: -1 });
+  });
+
+  let active = 0;
+  let peak = 0;
+
+  timeline
+    .sort((left, right) => left.at - right.at || right.delta - left.delta)
+    .forEach((item) => {
+      active += item.delta;
+      peak = Math.max(peak, active);
+    });
+
+  return sessions.length > 0 ? peak : null;
+}
+
+function getActiveViewerSessionCount(sessions: ViewerSessionRow[]) {
+  const cutoff = Date.now() - 60 * 1000;
+
+  return sessions.filter((session) => {
+    const lastSeenAt = dateFrom(session.last_seen_at);
+
+    return !session.left_at && lastSeenAt && lastSeenAt.getTime() >= cutoff;
+  }).length;
+}
+
+function getViewerAnalytics(sessions: ViewerSessionRow[]) {
+  const uniqueViewers = new Set(
+    sessions.map((session) => session.viewer_session_id)
+  ).size;
+  const totalWatchSeconds = sessions.reduce(
+    (total, session) => total + getViewerWatchSeconds(session),
+    0
+  );
+  const lastViewerActivityAt = sessions.reduce<string | null>(
+    (latest, session) => {
+      if (!latest) {
+        return session.last_seen_at;
+      }
+
+      return new Date(session.last_seen_at) > new Date(latest)
+        ? session.last_seen_at
+        : latest;
+    },
+    null
+  );
+
+  return {
+    activeViewerSessions: getActiveViewerSessionCount(sessions),
+    averageWatchTimeMs:
+      sessions.length > 0
+        ? Math.round((totalWatchSeconds * 1000) / sessions.length)
+        : null,
+    lastViewerActivityAt,
+    peakViewers: calculatePeakViewers(sessions),
+    totalWatchTimeMs: totalWatchSeconds > 0 ? totalWatchSeconds * 1000 : null,
+    uniqueViewers: sessions.length > 0 ? uniqueViewers : null,
+    viewerSessionCount: sessions.length,
+  };
+}
+
 async function buildAdminEventRows(
   supabase: SupabaseClient,
   events: EventRow[],
   sessions: StreamSessionRow[],
-  recordings: RecordingRow[]
+  recordings: RecordingRow[],
+  viewerSessions: ViewerSessionRow[] = []
 ) {
   const sessionsByEventId = new Map<string, StreamSessionRow[]>();
 
@@ -392,6 +508,14 @@ async function buildAdminEventRows(
   const recordingByEventId = new Map(
     recordings.map((recording) => [recording.event_id, recording])
   );
+  const viewerSessionsByEventId = new Map<string, ViewerSessionRow[]>();
+
+  viewerSessions.forEach((session) => {
+    const rows = viewerSessionsByEventId.get(session.event_id) ?? [];
+    rows.push(session);
+    viewerSessionsByEventId.set(session.event_id, rows);
+  });
+
   const hostEmails = await getHostEmails(
     supabase,
     events.map((event) => event.user_id)
@@ -404,10 +528,14 @@ async function buildAdminEventRows(
       const activeSession =
         eventSessions.find((session) => isActiveSession(session)) ?? null;
       const recording = recordingByEventId.get(event.id) ?? null;
+      const eventViewerSessions = viewerSessionsByEventId.get(event.id) ?? [];
+      const viewerAnalytics = getViewerAnalytics(eventViewerSessions);
       const shouldLoadCurrentViewers = event.status === "live" && activeSession;
-      const currentViewers = shouldLoadCurrentViewers
+      const liveKitCurrentViewers = shouldLoadCurrentViewers
         ? await getViewerCount(activeSession.room_name ?? event.slug)
         : null;
+      const currentViewers =
+        liveKitCurrentViewers ?? viewerAnalytics.activeViewerSessions;
       const health = deriveHealth({
         activeSession,
         currentViewers,
@@ -416,10 +544,8 @@ async function buildAdminEventRows(
         recording,
       });
 
-      // TODO: add an event_viewer_sessions table in a future phase for true
-      // unique viewers, peak viewers, and watch-time analytics.
       return {
-        averageWatchTimeMs: null,
+        averageWatchTimeMs: viewerAnalytics.averageWatchTimeMs,
         currentViewers,
         endedAt: primarySession?.ended_at ?? null,
         event,
@@ -427,7 +553,8 @@ async function buildAdminEventRows(
         ...health,
         hostEmail: event.user_id ? hostEmails.get(event.user_id) ?? null : null,
         lastUpdatedAt: primarySession?.updated_at ?? null,
-        peakViewers: null,
+        lastViewerActivityAt: viewerAnalytics.lastViewerActivityAt,
+        peakViewers: viewerAnalytics.peakViewers,
         plan:
           primarySession?.plan === "free" || primarySession?.plan === "premium"
             ? primarySession.plan
@@ -440,8 +567,9 @@ async function buildAdminEventRows(
           primarySession?.ended_at,
           event.status === "live"
         ),
-        totalWatchTimeMs: null,
-        uniqueViewers: null,
+        totalWatchTimeMs: viewerAnalytics.totalWatchTimeMs,
+        uniqueViewers: viewerAnalytics.uniqueViewers,
+        viewerSessionCount: viewerAnalytics.viewerSessionCount,
       } satisfies AdminLiveEvent;
     })
   );
@@ -476,7 +604,11 @@ export async function loadAdminLiveEvents(
     };
   }
 
-  const [{ data: sessions, error: sessionsError }, { data: recordings, error: recordingsError }] =
+  const [
+    { data: sessions, error: sessionsError },
+    { data: recordings, error: recordingsError },
+    { data: viewerSessions, error: viewerSessionsError },
+  ] =
     await Promise.all([
       supabase
         .from("event_stream_sessions")
@@ -491,6 +623,12 @@ export async function loadAdminLiveEvents(
           "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, duration_ms, size_bytes, error_message, updated_at"
         )
         .in("event_id", eventIds),
+      supabase
+        .from("event_viewer_sessions")
+        .select(
+          "id, event_id, viewer_session_id, viewer_label, joined_at, last_seen_at, left_at, watch_seconds, user_agent, country, device_type, browser"
+        )
+        .in("event_id", eventIds),
     ]);
 
   if (sessionsError) {
@@ -501,11 +639,16 @@ export async function loadAdminLiveEvents(
     throw recordingsError;
   }
 
+  if (viewerSessionsError) {
+    throw viewerSessionsError;
+  }
+
   const rows = await buildAdminEventRows(
     supabase,
     liveEvents,
     (sessions ?? []) as StreamSessionRow[],
-    (recordings ?? []) as RecordingRow[]
+    (recordings ?? []) as RecordingRow[],
+    (viewerSessions ?? []) as ViewerSessionRow[]
   );
   const viewerCounts = rows.map((row) => row.currentViewers);
 
@@ -596,7 +739,11 @@ export async function loadAdminEvents(
     };
   }
 
-  const [{ data: sessions, error: sessionsError }, { data: recordings, error: recordingsError }] =
+  const [
+    { data: sessions, error: sessionsError },
+    { data: recordings, error: recordingsError },
+    { data: viewerSessions, error: viewerSessionsError },
+  ] =
     await Promise.all([
       supabase
         .from("event_stream_sessions")
@@ -611,6 +758,12 @@ export async function loadAdminEvents(
           "event_id, status, livekit_egress_id, object_key, started_at, ended_at, ready_at, expires_at, duration_ms, size_bytes, error_message, updated_at"
         )
         .in("event_id", eventIds),
+      supabase
+        .from("event_viewer_sessions")
+        .select(
+          "id, event_id, viewer_session_id, viewer_label, joined_at, last_seen_at, left_at, watch_seconds, user_agent, country, device_type, browser"
+        )
+        .in("event_id", eventIds),
     ]);
 
   if (sessionsError) {
@@ -621,11 +774,16 @@ export async function loadAdminEvents(
     throw recordingsError;
   }
 
+  if (viewerSessionsError) {
+    throw viewerSessionsError;
+  }
+
   const rows = await buildAdminEventRows(
     supabase,
     adminEvents,
     (sessions ?? []) as StreamSessionRow[],
-    (recordings ?? []) as RecordingRow[]
+    (recordings ?? []) as RecordingRow[],
+    (viewerSessions ?? []) as ViewerSessionRow[]
   );
   const viewerCounts = rows
     .filter((row) => row.event.status === "live")
@@ -671,6 +829,7 @@ export async function loadAdminEventDetail(
     { data: sessions, error: sessionsError },
     { data: recording, error: recordingError },
     { data: recordingSegments, error: segmentsError },
+    { data: viewerSessions, error: viewerSessionsError },
   ] = await Promise.all([
     supabase
       .from("event_stream_sessions")
@@ -693,6 +852,14 @@ export async function loadAdminEventDetail(
       )
       .eq("event_id", eventId)
       .order("segment_index", { ascending: true }),
+    supabase
+      .from("event_viewer_sessions")
+      .select(
+        "id, event_id, viewer_session_id, viewer_label, joined_at, last_seen_at, left_at, watch_seconds, user_agent, country, device_type, browser"
+      )
+      .eq("event_id", eventId)
+      .order("joined_at", { ascending: false })
+      .limit(50),
   ]);
 
   if (sessionsError) {
@@ -707,12 +874,18 @@ export async function loadAdminEventDetail(
     throw segmentsError;
   }
 
+  if (viewerSessionsError) {
+    throw viewerSessionsError;
+  }
+
   const streamSessions = (sessions ?? []) as StreamSessionRow[];
+  const eventViewerSessions = (viewerSessions ?? []) as ViewerSessionRow[];
   const [row] = await buildAdminEventRows(
     supabase,
     [event as EventRow],
     streamSessions,
-    recording ? [recording as RecordingRow] : []
+    recording ? [recording as RecordingRow] : [],
+    eventViewerSessions
   );
   const segments = (recordingSegments ?? []) as RecordingSegmentRow[];
   const readySegments = segments.filter((segment) => segment.status === "ready");
@@ -782,6 +955,7 @@ export async function loadAdminEventDetail(
       segmentSizeBytes > 0
         ? segmentSizeBytes
         : ((recording as RecordingRow | null)?.size_bytes ?? null),
+    viewerSessions: eventViewerSessions,
     sessions: streamSessions,
     timeline,
   };

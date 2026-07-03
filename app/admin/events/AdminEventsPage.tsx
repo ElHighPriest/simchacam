@@ -254,14 +254,16 @@ export default function AdminEventsPage() {
                   <th className="px-4 py-4">Current</th>
                   <th className="px-4 py-4">Peak</th>
                   <th className="px-4 py-4">Unique</th>
+                  <th className="px-4 py-4">Sessions</th>
                   <th className="px-4 py-4">Watch time</th>
+                  <th className="px-4 py-4">Last activity</th>
                   <th className="px-4 py-4">Outcome</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy/8">
                 {data?.events.length === 0 && (
                   <tr>
-                    <td className="px-4 py-8 text-muted-navy" colSpan={14}>
+                    <td className="px-4 py-8 text-muted-navy" colSpan={16}>
                       No events match these filters.
                     </td>
                   </tr>
@@ -303,8 +305,12 @@ export default function AdminEventsPage() {
                     <td className="px-4 py-4">
                       {event.uniqueViewers ?? "Unknown"}
                     </td>
+                    <td className="px-4 py-4">{event.viewerSessionCount}</td>
                     <td className="px-4 py-4">
                       {formatDurationMs(event.totalWatchTimeMs)}
+                    </td>
+                    <td className="px-4 py-4">
+                      {formatDate(event.lastViewerActivityAt)}
                     </td>
                     <td className="px-4 py-4">
                       <HealthBadge health={event.health} />

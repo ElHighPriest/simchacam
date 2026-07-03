@@ -53,6 +53,14 @@ function formatBytes(value: number | null) {
   return `${Math.round(value / 1024)} KB`;
 }
 
+function maskViewerSessionId(value: string) {
+  if (value.length <= 10) {
+    return value;
+  }
+
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
 function HealthBadge({ health }: { health: AdminEventDetailData["health"] }) {
   const classes = {
     critical: "bg-red-50 text-recording-red ring-recording-red/20",
@@ -361,6 +369,10 @@ export default function AdminEventDetail({ id }: { id: string }) {
               <div>Current viewers: {event.currentViewers ?? "Unknown"}</div>
               <div>Peak viewers: {event.peakViewers ?? "Unknown"}</div>
               <div>Unique viewers: {event.uniqueViewers ?? "Unknown"}</div>
+              <div>Viewer sessions: {event.viewerSessionCount}</div>
+              <div>
+                Last activity: {formatDate(event.lastViewerActivityAt)}
+              </div>
               <div>
                 Total watch time: {formatDurationMs(event.totalWatchTimeMs)}
               </div>
@@ -369,10 +381,57 @@ export default function AdminEventDetail({ id }: { id: string }) {
               </div>
             </dl>
             <p className="mt-4 rounded-xl bg-pale-gold/40 px-4 py-3 text-sm text-muted-navy">
-              Viewer history is not stored yet, so unique viewers, peak viewers
-              and watch time show as Unknown until a future viewer-session table
-              is added.
+              Viewer analytics are anonymous. Missed unload events are handled
+              by treating viewers as stale after recent heartbeat activity.
             </p>
+            {event.viewerSessions.length > 0 && (
+              <div className="mt-5 overflow-x-auto rounded-xl border border-navy/10 bg-white/70">
+                <table className="min-w-[760px] divide-y divide-navy/10 text-left text-xs">
+                  <thead className="bg-pale-gold/35 uppercase tracking-[0.12em] text-navy/55">
+                    <tr>
+                      <th className="px-3 py-3">Viewer</th>
+                      <th className="px-3 py-3">Joined</th>
+                      <th className="px-3 py-3">Last seen</th>
+                      <th className="px-3 py-3">Left</th>
+                      <th className="px-3 py-3">Watch</th>
+                      <th className="px-3 py-3">Device</th>
+                      <th className="px-3 py-3">Browser</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-navy/8">
+                    {event.viewerSessions.map((session) => (
+                      <tr key={session.id}>
+                        <td className="px-3 py-3 font-mono">
+                          {maskViewerSessionId(session.viewer_session_id)}
+                        </td>
+                        <td className="px-3 py-3">
+                          {formatDate(session.joined_at)}
+                        </td>
+                        <td className="px-3 py-3">
+                          {formatDate(session.last_seen_at)}
+                        </td>
+                        <td className="px-3 py-3">
+                          {formatDate(session.left_at)}
+                        </td>
+                        <td className="px-3 py-3">
+                          {formatDurationMs(
+                            session.watch_seconds === null
+                              ? null
+                              : session.watch_seconds * 1000
+                          )}
+                        </td>
+                        <td className="px-3 py-3">
+                          {session.device_type ?? "Unknown"}
+                        </td>
+                        <td className="px-3 py-3">
+                          {session.browser ?? "Unknown"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="rounded-[1.5rem] border border-gold/25 bg-white/80 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)]">

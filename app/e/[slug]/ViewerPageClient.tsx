@@ -87,6 +87,111 @@ function ViewerHeader() {
   );
 }
 
+function getOrCreateViewerSessionId() {
+  const storageKey = "simchacam.viewerSessionId";
+
+  try {
+    const existing = window.localStorage.getItem(storageKey);
+
+    if (existing) {
+      return existing;
+    }
+
+    const generated =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `viewer-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    window.localStorage.setItem(storageKey, generated);
+
+    return generated;
+  } catch {
+    return `viewer-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+function sendViewerSessionEvent(
+  slug: string,
+  action: "start" | "heartbeat" | "end",
+  viewerSessionId: string,
+  useBeacon = false
+) {
+  const url = `/api/events/${encodeURIComponent(slug)}/viewer-session/${action}`;
+  const body = JSON.stringify({ viewerSessionId });
+
+  if (useBeacon && "sendBeacon" in navigator) {
+    const blob = new Blob([body], { type: "application/json" });
+    navigator.sendBeacon(url, blob);
+    return;
+  }
+
+  fetch(url, {
+    body,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    keepalive: action === "end",
+    method: "POST",
+  }).catch((error) => {
+    console.error("Viewer analytics request failed", error);
+  });
+}
+
+function useViewerSessionTracking({
+  enabled,
+  slug,
+}: {
+  enabled: boolean;
+  slug: string;
+}) {
+  const viewerSessionIdRef = useRef<string | null>(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    const viewerSessionId =
+      viewerSessionIdRef.current ?? getOrCreateViewerSessionId();
+    viewerSessionIdRef.current = viewerSessionId;
+
+    if (!startedRef.current) {
+      startedRef.current = true;
+      sendViewerSessionEvent(slug, "start", viewerSessionId);
+    }
+
+    const heartbeat = window.setInterval(() => {
+      sendViewerSessionEvent(slug, "heartbeat", viewerSessionId);
+    }, 25000);
+
+    function endSession() {
+      if (!startedRef.current) {
+        return;
+      }
+
+      startedRef.current = false;
+      sendViewerSessionEvent(slug, "end", viewerSessionId, true);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        endSession();
+      }
+    }
+
+    window.addEventListener("pagehide", endSession);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(heartbeat);
+      window.removeEventListener("pagehide", endSession);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      endSession();
+    };
+  }, [enabled, slug]);
+}
+
 export default function ViewerPageClient({
   locale: localeProp,
   slug,
@@ -172,6 +277,16 @@ export default function ViewerPageClient({
   }
 
   const eventHasPassword = Boolean(event?.hasPassword);
+  const viewerTrackingEnabled = Boolean(
+    event &&
+      (!eventHasPassword || passwordPassed) &&
+      (event.status === "live" || event.recording?.status === "ready")
+  );
+
+  useViewerSessionTracking({
+    enabled: viewerTrackingEnabled,
+    slug,
+  });
 
   useEffect(() => {
     return () => {
