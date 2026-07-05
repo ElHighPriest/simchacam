@@ -430,6 +430,9 @@
     "setupLabel": "Setup",
     "title": "Ready to go live?",
     "description": "Turn your phone sideways, frame your shot, then start.",
+    "rotateTitle": "Turn your phone sideways",
+    "rotateDescription": "Landscape gives your viewers the best view.",
+    "rotateToContinue": "Rotate to continue",
     "guidance": [
       "Check lighting and sound.",
       "Keep the phone plugged in if possible.",
