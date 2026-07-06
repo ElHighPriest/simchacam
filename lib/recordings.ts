@@ -343,7 +343,7 @@ function getRecordingEncodingOptions(
 
   return new EncodingOptions({
     audioBitrate: 128,
-    audioCodec: AudioCodec.OPUS,
+    audioCodec: AudioCodec.AAC,
     audioFrequency: 44100,
     depth: 24,
     framerate: 30,
