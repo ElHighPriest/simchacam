@@ -67,6 +67,7 @@ export default function MyEventsPage() {
   const [copiedSlug, setCopiedSlug] = useState("");
   const [copyFailedSlug, setCopyFailedSlug] = useState("");
   const [upgradingEventId, setUpgradingEventId] = useState("");
+  const [recordingAccessAction, setRecordingAccessAction] = useState("");
   const [nominatingEventId, setNominatingEventId] = useState("");
   const [nominationDialogEventId, setNominationDialogEventId] = useState("");
   const [nominationEmail, setNominationEmail] = useState("");
@@ -248,6 +249,20 @@ export default function MyEventsPage() {
     }).format(new Date(eventAt));
   }
 
+  function formatRecordingDate(expiresAt: string | null) {
+    if (!expiresAt) {
+      return "";
+    }
+
+    return new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(expiresAt));
+  }
+
   async function copyLink(slug: string) {
     const link = `https://simcha.cam${getLocalizedPath(locale, `/e/${slug}`)}`;
 
@@ -289,6 +304,53 @@ export default function MyEventsPage() {
     }
 
     await copyLink(event.slug);
+  }
+
+  async function openRecordingFromMyEvents(
+    event: Event,
+    action: "watch" | "download"
+  ) {
+    const actionKey = `${action}:${event.id}`;
+    setRecordingAccessAction(actionKey);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        router.push(getLocalizedPath(locale, "/auth"));
+        return;
+      }
+
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(event.id)}/recording/access`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action }),
+        }
+      );
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+        url?: string;
+      } | null;
+
+      if (!response.ok || !body?.url) {
+        alert(body?.error || messages.myEvents.messages.recordingAccessFailed);
+        return;
+      }
+
+      window.location.assign(body.url);
+    } catch (error) {
+      console.error(error);
+      alert(messages.myEvents.messages.recordingAccessFailed);
+    } finally {
+      setRecordingAccessAction("");
+    }
   }
 
   async function deleteEvent(id: string, name: string) {
@@ -749,6 +811,8 @@ export default function MyEventsPage() {
                         event.recording?.status === "ready";
                       const recordingProcessing =
                         event.recording?.status === "processing";
+                      const isEndedWithReadyRecording =
+                        isEnded && recordingReady;
                       const isEndedFreeWithoutRecording =
                         isEnded && event.plan !== "premium" && !event.recording;
                       const isEndedPremium = isEnded && event.plan === "premium";
@@ -760,7 +824,9 @@ export default function MyEventsPage() {
                         event.plan === "free" &&
                         event.status !== "ended";
                       const canNominateStreamer =
-                        canManageEvent && event.plan === "premium";
+                        canManageEvent && event.plan === "premium" && !isEnded;
+                      const canShowDelete =
+                        canManageEvent && !isEndedWithReadyRecording;
                       const isUpgrading = upgradingEventId === event.id;
                       const isNominating = nominatingEventId === event.id;
                       const showEventDate =
@@ -771,6 +837,13 @@ export default function MyEventsPage() {
                           : copyFailedSlug === event.slug
                             ? messages.common.copyFailed
                             : messages.myEvents.actions.copyLink;
+                      const recordingExpiryText =
+                        isEndedWithReadyRecording && event.recording?.expiresAt
+                          ? messages.myEvents.messages.availableUntil.replace(
+                              "{date}",
+                              formatRecordingDate(event.recording.expiresAt)
+                            )
+                          : "";
 
                       return (
                         <article
@@ -854,6 +927,11 @@ export default function MyEventsPage() {
                                     {messages.myEvents.messages.nominatedStreamerInfo}
                                   </p>
                                 )}
+                                {recordingExpiryText && (
+                                  <p className="mt-3 max-w-xl rounded-xl border border-gold/25 bg-pale-gold/50 px-4 py-3 text-sm font-semibold leading-6 text-navy/80">
+                                    {recordingExpiryText}
+                                  </p>
+                                )}
                                 {canNominateStreamer &&
                                   (event.nominations?.length ?? 0) > 0 && (
                                     <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-navy">
@@ -896,13 +974,42 @@ export default function MyEventsPage() {
                                   <div className="max-w-xs rounded-xl border border-navy/10 bg-navy/[0.025] px-4 py-3 text-sm leading-6 text-muted-navy">
                                     {messages.myEvents.messages.endedFree}
                                   </div>
-                                ) : isEnded && recordingReady ? (
-                                  <Link
-                                    href={getLocalizedPath(locale, `/e/${event.slug}`)}
-                                    className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] sm:w-auto"
-                                  >
-                                    {messages.myEvents.actions.watchRecording}
-                                  </Link>
+                                ) : isEndedWithReadyRecording ? (
+                                  <div className="grid w-full gap-3 sm:w-auto sm:min-w-48">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openRecordingFromMyEvents(event, "watch")
+                                      }
+                                      disabled={
+                                        recordingAccessAction !== ""
+                                      }
+                                      className="flex min-h-12 w-full items-center justify-center rounded-xl bg-navy px-6 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"
+                                    >
+                                      {recordingAccessAction ===
+                                      `watch:${event.id}`
+                                        ? messages.myEvents.actions.openingRecording
+                                        : messages.myEvents.actions.watchRecording}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openRecordingFromMyEvents(
+                                          event,
+                                          "download"
+                                        )
+                                      }
+                                      disabled={
+                                        recordingAccessAction !== ""
+                                      }
+                                      className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/50 bg-pale-gold/45 px-6 py-3 font-semibold text-navy transition hover:bg-pale-gold disabled:cursor-wait disabled:text-navy/40"
+                                    >
+                                      {recordingAccessAction ===
+                                      `download:${event.id}`
+                                        ? messages.myEvents.actions.preparingDownload
+                                        : messages.myEvents.actions.downloadRecording}
+                                    </button>
+                                  </div>
                                 ) : isEnded ? (
                                   <Link
                                     href={getLocalizedPath(locale, `/e/${event.slug}`)}
@@ -941,12 +1048,6 @@ export default function MyEventsPage() {
                                   </button>
                                 )}
 
-                                {canManageEvent && event.plan === "premium" && (
-                                  <div className="flex min-h-12 w-full items-center justify-center rounded-xl border border-gold/35 bg-pale-gold/60 px-6 py-3 text-sm font-semibold text-[#80652f] sm:w-auto">
-                                    {messages.myEvents.actions.premiumEnabled}
-                                  </div>
-                                )}
-
                                 {canNominateStreamer && (
                                   <button
                                     type="button"
@@ -965,7 +1066,7 @@ export default function MyEventsPage() {
 
                           {isEndedFreeWithoutRecording ? (
                             <div className="flex justify-end border-t border-navy/8 bg-navy/[0.015] px-4 py-3 sm:px-6">
-                              {canManageEvent && (
+                              {canShowDelete && (
                                 <button
                                   onClick={() =>
                                     deleteEvent(event.id, event.name)
@@ -1017,7 +1118,7 @@ export default function MyEventsPage() {
                                   </Link>
                                 </>
                               )}
-                              {canManageEvent && (
+                              {canShowDelete && (
                                 <button
                                   onClick={() =>
                                     deleteEvent(event.id, event.name)
