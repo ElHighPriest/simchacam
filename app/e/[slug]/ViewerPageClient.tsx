@@ -214,6 +214,10 @@ export default function ViewerPageClient({
   const [streamError, setStreamError] = useState("");
   const [recordingAction, setRecordingAction] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState("");
+  const [recordingPlayback, setRecordingPlayback] = useState<{
+    title: string;
+    url: string;
+  } | null>(null);
   const [viewerRoom, setViewerRoom] = useState<Room | null>(null);
   const viewerRoomRef = useRef<Room | null>(null);
   const hasLoadedEvent = useRef(false);
@@ -381,7 +385,8 @@ export default function ViewerPageClient({
 
   async function openRecording(
     action: "watch" | "download",
-    segmentId?: string | null
+    segmentId?: string | null,
+    segmentIndex?: number
   ) {
     const actionKey = segmentId ? `${action}:${segmentId}` : action;
     setRecordingAction(actionKey);
@@ -416,6 +421,17 @@ export default function ViewerPageClient({
         }
 
         throw new Error(data.error);
+      }
+
+      if (action === "watch") {
+        setRecordingPlayback({
+          title: segmentIndex
+            ? t.part.replace("{number}", String(segmentIndex))
+            : t.eventRecording,
+          url: data.url,
+        });
+        setRecordingAction(null);
+        return;
       }
 
       window.location.assign(data.url);
@@ -476,6 +492,49 @@ export default function ViewerPageClient({
   const readyRecordingSegments =
     event.recording?.status === "ready" ? event.recording.segments ?? [] : [];
   const hasMultipleRecordingSegments = readyRecordingSegments.length > 1;
+
+  if (recordingPlayback) {
+    return (
+      <main
+        lang={locale}
+        dir={getLocaleDirection(locale)}
+        className="flex h-[100dvh] w-full max-w-full flex-col overflow-hidden bg-black text-white"
+      >
+        <div className="flex shrink-0 items-center justify-between gap-4 px-4 py-3 [padding-top:max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+          <div className="min-w-0 text-start">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
+              {t.eventRecording}
+            </p>
+            <h1 className="wrap-anywhere mt-1 line-clamp-1 text-base font-semibold text-white sm:text-lg">
+              {event.name}
+            </h1>
+          </div>
+          <button
+            onClick={() => setRecordingPlayback(null)}
+            className="shrink-0 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+          >
+            {t.backToRecordingOptions}
+          </button>
+        </div>
+
+        <section className="flex min-h-0 flex-1 flex-col px-2 pb-3 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+          <p className="shrink-0 px-2 pb-2 text-start text-sm font-medium text-white/70">
+            {recordingPlayback.title}
+          </p>
+          <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+            <video
+              key={recordingPlayback.url}
+              src={recordingPlayback.url}
+              className="h-full w-full bg-black object-contain"
+              controls
+              playsInline
+              preload="metadata"
+            />
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (eventHasPassword && !passwordPassed) {
     return (
@@ -645,7 +704,11 @@ export default function ViewerPageClient({
                             <div className="mt-3 grid gap-2 sm:grid-cols-2">
                               <button
                                 onClick={() =>
-                                  openRecording("watch", segment.id)
+                                  openRecording(
+                                    "watch",
+                                    segment.id,
+                                    segment.segmentIndex
+                                  )
                                 }
                                 disabled={recordingAction !== null}
                                 className="min-h-12 rounded-xl bg-navy px-4 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f] disabled:cursor-wait disabled:bg-navy/45"

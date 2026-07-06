@@ -1,13 +1,19 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
+  AudioCodec,
   EgressClient,
   EgressStatus,
   EncodedFileOutput,
   EncodedFileType,
-  EncodingOptionsPreset,
+  EncodingOptions,
   type EgressInfo,
+  RoomServiceClient,
   S3Upload,
+  type TrackInfo,
+  TrackSource,
+  TrackType,
+  VideoCodec,
 } from "livekit-server-sdk";
 import { getStreamEventContext } from "@/lib/event-permissions";
 import { getR2Config } from "@/lib/r2";
@@ -145,6 +151,21 @@ function getEgressClient() {
   }
 
   return new EgressClient(getLiveKitApiUrl(), apiKey, apiSecret);
+}
+
+function getRoomServiceClient() {
+  const apiKey = process.env.LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_API_SECRET;
+
+  if (!apiKey || !apiSecret) {
+    throw new Error("Missing LiveKit API credentials");
+  }
+
+  return new RoomServiceClient(getLiveKitApiUrl(), apiKey, apiSecret);
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function getFileResult(egress: EgressInfo) {
@@ -302,6 +323,96 @@ export async function recomputeParentRecordingSummary(
   }
 }
 
+function normalizeEvenDimension(value: number, fallback: number) {
+  const dimension = Number.isFinite(value) && value > 0 ? value : fallback;
+
+  return Math.max(2, dimension - (dimension % 2));
+}
+
+function getFallbackRecordingSize(orientation: "portrait" | "landscape") {
+  return orientation === "portrait"
+    ? { width: 720, height: 1280 }
+    : { width: 1280, height: 720 };
+}
+
+function getRecordingEncodingOptions(
+  videoTrack: TrackInfo,
+  orientation: "portrait" | "landscape"
+) {
+  const fallback = getFallbackRecordingSize(orientation);
+
+  return new EncodingOptions({
+    audioBitrate: 128,
+    audioCodec: AudioCodec.OPUS,
+    audioFrequency: 44100,
+    depth: 24,
+    framerate: 30,
+    height: normalizeEvenDimension(videoTrack.height, fallback.height),
+    keyFrameInterval: 4,
+    videoBitrate: 3000,
+    videoCodec: VideoCodec.H264_MAIN,
+    width: normalizeEvenDimension(videoTrack.width, fallback.width),
+  });
+}
+
+async function getStreamerTracks(roomName: string) {
+  const roomServiceClient = getRoomServiceClient();
+  const participant = await roomServiceClient.getParticipant(
+    roomName,
+    "streamer"
+  );
+
+  const videoTrack =
+    participant.tracks.find(
+      (track) =>
+        track.type === TrackType.VIDEO && track.source === TrackSource.CAMERA
+    ) ??
+    participant.tracks.find(
+      (track) =>
+        track.type === TrackType.VIDEO &&
+        track.source !== TrackSource.SCREEN_SHARE
+    ) ??
+    participant.tracks.find((track) => track.type === TrackType.VIDEO);
+
+  const audioTrack =
+    participant.tracks.find(
+      (track) =>
+        track.type === TrackType.AUDIO &&
+        track.source === TrackSource.MICROPHONE
+    ) ?? participant.tracks.find((track) => track.type === TrackType.AUDIO);
+
+  return {
+    audioTrack,
+    videoTrack,
+  };
+}
+
+async function waitForStreamerTracks(
+  roomName: string
+): Promise<{ audioTrack?: TrackInfo; videoTrack: TrackInfo }> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      const tracks = await getStreamerTracks(roomName);
+
+      if (tracks.videoTrack) {
+        return {
+          audioTrack: tracks.audioTrack,
+          videoTrack: tracks.videoTrack,
+        };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+
+    await sleep(500);
+  }
+
+  console.error("Could not find streamer video track for recording", lastError);
+  throw new Error("Streamer video track is not available for recording");
+}
+
 export async function startParticipantRecording(
   eventId: string,
   roomName: string,
@@ -325,15 +436,16 @@ export async function startParticipantRecording(
       }),
     },
   });
-  const egress = await getEgressClient().startParticipantEgress(
+
+  const { audioTrack, videoTrack } = await waitForStreamerTracks(roomName);
+
+  const egress = await getEgressClient().startTrackCompositeEgress(
     roomName,
-    "streamer",
     { file: output },
     {
-      encodingOptions:
-        orientation === "portrait"
-          ? EncodingOptionsPreset.PORTRAIT_H264_720P_30
-          : EncodingOptionsPreset.H264_720P_30,
+      audioTrackId: audioTrack?.sid,
+      encodingOptions: getRecordingEncodingOptions(videoTrack, orientation),
+      videoTrackId: videoTrack.sid,
     }
   );
 
