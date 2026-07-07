@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Room } from "livekit-client";
@@ -9,6 +10,7 @@ import ViewerRoom from "@/app/components/ViewerRoom";
 import {
   getLocaleDirection,
   getLocaleFromPathname,
+  getLocalizedPath,
   getMessages,
   type Locale,
 } from "@/lib/i18n";
@@ -68,11 +70,15 @@ function formatRecordingDate(eventAt: string | null, locale: Locale) {
   }).format(new Date(eventAt));
 }
 
-function ViewerHeader() {
+function ViewerHeader({ locale }: { locale: Locale }) {
   return (
     <header className="absolute inset-x-0 top-0 z-10">
       <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5">
-        <div className="relative h-10 w-36 overflow-hidden sm:h-12 sm:w-44">
+        <Link
+          href={getLocalizedPath(locale)}
+          aria-label="SimchaCam"
+          className="relative h-10 w-36 overflow-hidden sm:h-12 sm:w-44"
+        >
           <Image
             src="/simchacam-logo.svg"
             alt="SimchaCam"
@@ -80,10 +86,38 @@ function ViewerHeader() {
             sizes="(max-width: 640px) 144px, 176px"
             className="object-cover object-center mix-blend-multiply"
           />
-        </div>
+        </Link>
         <LanguageSwitcher />
       </div>
     </header>
+  );
+}
+
+function PoweredBySimchaCam({
+  locale,
+  t,
+}: {
+  locale: Locale;
+  t: ReturnType<typeof getMessages>["viewer"];
+}) {
+  return (
+    <section className="mt-5 rounded-[1.25rem] border border-gold/20 bg-white/55 px-5 py-5 text-center shadow-[0_12px_34px_rgba(11,31,58,0.04)] backdrop-blur">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        {t.poweredByTitle}
+      </p>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-navy">
+        {t.poweredByDescription}
+      </p>
+      <p className="mt-3 text-xs font-semibold tracking-[0.12em] text-navy/65">
+        {t.poweredByTrust}
+      </p>
+      <Link
+        href={getLocalizedPath(locale)}
+        className="mt-4 inline-flex items-center rounded-full border border-gold/35 bg-pale-gold/55 px-4 py-2 text-sm font-semibold text-navy transition hover:bg-pale-gold"
+      >
+        {t.poweredByLearnMore}
+      </Link>
+    </section>
   );
 }
 
@@ -466,7 +500,7 @@ export default function ViewerPageClient({
         dir={getLocaleDirection(locale)}
         className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-6 text-center text-navy"
       >
-        <ViewerHeader />
+        <ViewerHeader locale={locale} />
         <div className="w-full min-w-0 max-w-md rounded-[1.5rem] border border-gold/30 bg-white/75 px-6 py-10 shadow-[0_18px_50px_rgba(11,31,58,0.07)]">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold">
             {t.eventUnavailable}
@@ -543,7 +577,7 @@ export default function ViewerPageClient({
         dir={getLocaleDirection(locale)}
         className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy"
       >
-        <ViewerHeader />
+        <ViewerHeader locale={locale} />
         <div className="w-full min-w-0 max-w-md">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             {t.privateEvent}
@@ -597,6 +631,7 @@ export default function ViewerPageClient({
               {t.enterEvent}
             </button>
           </section>
+          <PoweredBySimchaCam locale={locale} t={t} />
         </div>
       </main>
     );
@@ -623,7 +658,7 @@ export default function ViewerPageClient({
         dir={getLocaleDirection(locale)}
         className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy"
       >
-        <ViewerHeader />
+        <ViewerHeader locale={locale} />
         <div className="w-full min-w-0 max-w-xl">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             {t.eventRecording}
@@ -791,7 +826,7 @@ export default function ViewerPageClient({
         dir={getLocaleDirection(locale)}
         className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy"
       >
-        <ViewerHeader />
+        <ViewerHeader locale={locale} />
         <div className="w-full min-w-0 max-w-lg">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-gold">
             {t.invited}
@@ -812,6 +847,7 @@ export default function ViewerPageClient({
               {t.waitingDescription}
             </p>
           </section>
+          <PoweredBySimchaCam locale={locale} t={t} />
         </div>
       </main>
     );
@@ -823,7 +859,7 @@ export default function ViewerPageClient({
       dir={getLocaleDirection(locale)}
       className="relative flex min-h-screen w-full max-w-full items-center justify-center overflow-x-hidden bg-warm-white px-5 py-28 text-center text-navy"
     >
-      <ViewerHeader />
+      <ViewerHeader locale={locale} />
       <div className="w-full min-w-0 max-w-lg">
         <div className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-recording-red">
           <span className="h-2 w-2 rounded-full bg-recording-red shadow-[0_0_0_4px_rgba(229,57,53,0.12)]" />
@@ -855,6 +891,7 @@ export default function ViewerPageClient({
         >
           {streamLoading ? t.connecting : t.joinLivestream}
         </button>
+        <PoweredBySimchaCam locale={locale} t={t} />
       </div>
     </main>
   );
