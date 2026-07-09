@@ -768,7 +768,12 @@ export default function StreamerRoom({
           frameRate: 30,
         },
       }}
-      audio={true}
+      audio={{
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      }}
       options={{
         adaptiveStream: true,
         dynacast: true,

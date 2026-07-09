@@ -54,7 +54,12 @@ export default function PreLiveSetup({
           height: { ideal: 720 },
           frameRate: { ideal: 30 },
         },
-        audio: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
       });
 
       streamRef.current = stream;
