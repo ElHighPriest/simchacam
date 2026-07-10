@@ -32,6 +32,22 @@ type StreamerRoomProps = {
   recordingEnabled?: boolean;
 };
 
+const TEMP_RECORDING_DEBUG = true;
+
+function logRecordingDebug(
+  stage: string,
+  details: Record<string, unknown> = {}
+) {
+  if (!TEMP_RECORDING_DEBUG) {
+    return;
+  }
+
+  console.info("[TEMP RECORDING DEBUG] StreamerRoom", {
+    stage,
+    ...details,
+  });
+}
+
 function StreamerContent({
   eventId,
   hardEndsAt,
@@ -112,6 +128,21 @@ function StreamerContent({
         ? "portrait"
         : "landscape";
 
+    logRecordingDebug("recording-start-effect-triggered", {
+      eventId,
+      sessionId,
+      recordingEnabled,
+      localParticipantIdentity: localParticipant.identity,
+      localVideoTrackSid: localVideoTrack.sid,
+      captureSettings: {
+        width: captureSettings.width,
+        height: captureSettings.height,
+        frameRate: captureSettings.frameRate,
+        deviceId: captureSettings.deviceId ? "present" : "missing",
+      },
+      orientation,
+    });
+
     async function startRecording() {
       setRecordingNotice("");
       setRecordingWarning("");
@@ -120,11 +151,20 @@ function StreamerContent({
       } = await supabase.auth.getSession();
 
       if (!session) {
+        logRecordingDebug("recording-start-no-session", {
+          eventId,
+          sessionId,
+        });
         setRecordingWarning(t.recordingSignInWarning);
         return;
       }
 
       try {
+        logRecordingDebug("recording-start-request", {
+          eventId,
+          sessionId,
+          orientation,
+        });
         const response = await fetch(
           `/api/events/id/${encodeURIComponent(eventId!)}/recording/start`,
           {
@@ -138,17 +178,45 @@ function StreamerContent({
         );
         const data = await response.json().catch(() => null);
 
+        logRecordingDebug("recording-start-response", {
+          eventId,
+          sessionId,
+          ok: response.ok,
+          status: response.status,
+          data,
+        });
+
         if (!response.ok) {
           console.error("Could not initialize recording", data);
+          logRecordingDebug("recording-start-warning-set", {
+            eventId,
+            sessionId,
+            warning: "recordingResumeWarning",
+            responseStatus: response.status,
+            data,
+          });
           setRecordingWarning(t.recordingResumeWarning);
           return;
         }
 
         if (data?.recovered) {
+          logRecordingDebug("recording-start-recovered-notice-set", {
+            eventId,
+            sessionId,
+          });
           setRecordingNotice(t.recordingResumed);
         }
       } catch (error) {
         console.error("Could not initialize recording", error);
+        logRecordingDebug("recording-start-fetch-error-warning-set", {
+          eventId,
+          sessionId,
+          warning: "recordingConnectionWarning",
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message }
+              : String(error),
+        });
         setRecordingWarning(t.recordingConnectionWarning);
       }
     }
@@ -157,8 +225,10 @@ function StreamerContent({
   }, [
     eventId,
     localCameraTrack,
+    localParticipant.identity,
     localVideoTrack,
     recordingEnabled,
+    sessionId,
     t.recordingConnectionWarning,
     t.recordingResumeWarning,
     t.recordingResumed,

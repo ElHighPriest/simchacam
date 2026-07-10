@@ -40,6 +40,60 @@ type RecordingSegment = {
   segment_index: number;
 };
 
+const TEMP_RECORDING_DEBUG = true;
+
+function logRecordingDebug(
+  stage: string,
+  details: Record<string, unknown> = {}
+) {
+  if (!TEMP_RECORDING_DEBUG) {
+    return;
+  }
+
+  console.info("[TEMP RECORDING DEBUG] recordings", {
+    stage,
+    ...details,
+  });
+}
+
+function serializeRecordingError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return String(error);
+}
+
+function describeEgressStatus(status: EgressStatus | undefined) {
+  if (status === undefined) {
+    return null;
+  }
+
+  return {
+    code: status,
+    name: EgressStatus[status] ?? String(status),
+  };
+}
+
+function describeTrack(track: TrackInfo | undefined) {
+  if (!track) {
+    return null;
+  }
+
+  return {
+    sid: track.sid,
+    name: track.name,
+    type: track.type,
+    source: track.source,
+    width: track.width,
+    height: track.height,
+    muted: track.muted,
+  };
+}
+
 function getSupabaseConfig() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -220,9 +274,20 @@ export function getCompletedEgressSegmentUpdates(egress: EgressInfo) {
 }
 
 export async function getEgressInfo(egressId: string) {
+  logRecordingDebug("egress-info-request", {
+    egressId,
+  });
   const egresses = await getEgressClient().listEgress({ egressId });
+  const egress = egresses[0] ?? null;
 
-  return egresses[0] ?? null;
+  logRecordingDebug("egress-info-response", {
+    egressId,
+    found: Boolean(egress),
+    count: egresses.length,
+    status: describeEgressStatus(egress?.status),
+  });
+
+  return egress;
 }
 
 export async function recomputeParentRecordingSummary(
@@ -362,6 +427,13 @@ async function getStreamerTracks(roomName: string) {
     "streamer"
   );
 
+  logRecordingDebug("streamer-participant-loaded", {
+    roomName,
+    participantIdentity: participant.identity,
+    trackCount: participant.tracks.length,
+    tracks: participant.tracks.map(describeTrack),
+  });
+
   const videoTrack =
     participant.tracks.find(
       (track) =>
@@ -394,22 +466,48 @@ async function waitForStreamerTracks(
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
     try {
+      logRecordingDebug("streamer-track-wait-attempt", {
+        roomName,
+        attempt: attempt + 1,
+      });
       const tracks = await getStreamerTracks(roomName);
 
       if (tracks.videoTrack) {
+        logRecordingDebug("streamer-track-found", {
+          roomName,
+          attempt: attempt + 1,
+          videoTrack: describeTrack(tracks.videoTrack),
+          audioTrack: describeTrack(tracks.audioTrack),
+        });
         return {
           audioTrack: tracks.audioTrack,
           videoTrack: tracks.videoTrack,
         };
       }
+
+      logRecordingDebug("streamer-track-missing-video", {
+        roomName,
+        attempt: attempt + 1,
+        audioTrack: describeTrack(tracks.audioTrack),
+      });
     } catch (error) {
       lastError = error;
+      logRecordingDebug("streamer-track-wait-error", {
+        roomName,
+        attempt: attempt + 1,
+        error: serializeRecordingError(error),
+      });
     }
 
     await sleep(500);
   }
 
   console.error("Could not find streamer video track for recording", lastError);
+  logRecordingDebug("streamer-track-timeout", {
+    roomName,
+    attempts: 8,
+    lastError: serializeRecordingError(lastError),
+  });
   throw new Error("Streamer video track is not available for recording");
 }
 
@@ -438,16 +536,66 @@ export async function startParticipantRecording(
   });
 
   const { audioTrack, videoTrack } = await waitForStreamerTracks(roomName);
+  const encodingOptions = getRecordingEncodingOptions(videoTrack, orientation);
 
-  const egress = await getEgressClient().startTrackCompositeEgress(
+  logRecordingDebug("track-composite-egress-start-request", {
+    eventId,
     roomName,
-    { file: output },
-    {
-      audioTrackId: audioTrack?.sid,
-      encodingOptions: getRecordingEncodingOptions(videoTrack, orientation),
-      videoTrackId: videoTrack.sid,
-    }
-  );
+    orientation,
+    objectKey,
+    videoTrack: describeTrack(videoTrack),
+    audioTrack: describeTrack(audioTrack),
+    encoding: {
+      audioBitrate: 128,
+      audioCodec: "AAC",
+      audioFrequency: 44100,
+      framerate: 30,
+      height: normalizeEvenDimension(
+        videoTrack.height,
+        getFallbackRecordingSize(orientation).height
+      ),
+      keyFrameInterval: 4,
+      videoBitrate: 3000,
+      videoCodec: "H264_MAIN",
+      width: normalizeEvenDimension(
+        videoTrack.width,
+        getFallbackRecordingSize(orientation).width
+      ),
+    },
+  });
+
+  let egress: Awaited<
+    ReturnType<ReturnType<typeof getEgressClient>["startTrackCompositeEgress"]>
+  >;
+
+  try {
+    egress = await getEgressClient().startTrackCompositeEgress(
+      roomName,
+      { file: output },
+      {
+        audioTrackId: audioTrack?.sid,
+        encodingOptions,
+        videoTrackId: videoTrack.sid,
+      }
+    );
+  } catch (error) {
+    logRecordingDebug("track-composite-egress-start-error", {
+      eventId,
+      roomName,
+      orientation,
+      videoTrack: describeTrack(videoTrack),
+      audioTrack: describeTrack(audioTrack),
+      error: serializeRecordingError(error),
+    });
+    throw error;
+  }
+
+  logRecordingDebug("track-composite-egress-start-response", {
+    eventId,
+    roomName,
+    egressId: egress.egressId,
+    status: describeEgressStatus(egress.status),
+  });
 
   return {
     egressId: egress.egressId,
@@ -456,5 +604,22 @@ export async function startParticipantRecording(
 }
 
 export async function stopParticipantRecording(egressId: string) {
-  return getEgressClient().stopEgress(egressId);
+  logRecordingDebug("stop-egress-request", {
+    egressId,
+  });
+
+  try {
+    const response = await getEgressClient().stopEgress(egressId);
+    logRecordingDebug("stop-egress-response", {
+      egressId,
+      status: describeEgressStatus(response.status),
+    });
+    return response;
+  } catch (error) {
+    logRecordingDebug("stop-egress-error", {
+      egressId,
+      error: serializeRecordingError(error),
+    });
+    throw error;
+  }
 }

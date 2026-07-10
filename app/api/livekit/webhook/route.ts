@@ -10,6 +10,43 @@ import {
 export const runtime = "nodejs";
 
 const STREAMER_IDENTITY = "streamer";
+const TEMP_RECORDING_DEBUG = true;
+
+function logRecordingWebhookDebug(
+  stage: string,
+  details: Record<string, unknown> = {}
+) {
+  if (!TEMP_RECORDING_DEBUG) {
+    return;
+  }
+
+  console.info("[TEMP RECORDING DEBUG] livekit/webhook", {
+    stage,
+    ...details,
+  });
+}
+
+function describeEgressStatus(status: EgressStatus | undefined) {
+  if (status === undefined) {
+    return null;
+  }
+
+  return {
+    code: status,
+    name: EgressStatus[status] ?? String(status),
+  };
+}
+
+function serializeWebhookError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return String(error);
+}
 
 function getServerConfig() {
   const apiKey = process.env.LIVEKIT_API_KEY;
@@ -74,6 +111,7 @@ export async function POST(request: NextRequest) {
 
   if (!config) {
     console.error("LiveKit webhook server configuration is missing");
+    logRecordingWebhookDebug("server-config-missing");
     return NextResponse.json(
       { error: "Webhook is not configured" },
       { status: 500 }
@@ -92,8 +130,19 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("LiveKit webhook signature verification failed", error);
+    logRecordingWebhookDebug("signature-verification-failed", {
+      error: serializeWebhookError(error),
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
+
+  logRecordingWebhookDebug("event-received", {
+    event: webhookEvent.event,
+    roomName: webhookEvent.room?.name,
+    participantIdentity: webhookEvent.participant?.identity,
+    egressId: webhookEvent.egressInfo?.egressId,
+    egressStatus: describeEgressStatus(webhookEvent.egressInfo?.status),
+  });
 
   const supabase = createServiceSupabase(config);
 
@@ -106,6 +155,11 @@ export async function POST(request: NextRequest) {
     const roomName = webhookEvent.room?.name;
 
     if (participantIdentity !== STREAMER_IDENTITY || !roomName) {
+      logRecordingWebhookDebug("presence-event-ignored", {
+        event: webhookEvent.event,
+        roomName,
+        participantIdentity,
+      });
       return NextResponse.json({ received: true });
     }
 
@@ -121,11 +175,20 @@ export async function POST(request: NextRequest) {
         event: webhookEvent.event,
         roomName,
       });
+      logRecordingWebhookDebug("streamer-presence-updated", {
+        event: webhookEvent.event,
+        roomName,
+      });
     } catch (error) {
       console.error("Could not update streamer presence", {
         event: webhookEvent.event,
         roomName,
         error,
+      });
+      logRecordingWebhookDebug("streamer-presence-update-error", {
+        event: webhookEvent.event,
+        roomName,
+        error: serializeWebhookError(error),
       });
     }
 
@@ -136,12 +199,18 @@ export async function POST(request: NextRequest) {
     webhookEvent.event !== "egress_updated" &&
     webhookEvent.event !== "egress_ended"
   ) {
+    logRecordingWebhookDebug("non-egress-event-ignored", {
+      event: webhookEvent.event,
+    });
     return NextResponse.json({ received: true });
   }
 
   const egress = webhookEvent.egressInfo;
 
   if (!egress?.egressId) {
+    logRecordingWebhookDebug("missing-egress-information", {
+      event: webhookEvent.event,
+    });
     return NextResponse.json(
       { error: "Missing Egress information" },
       { status: 400 }
@@ -159,6 +228,10 @@ export async function POST(request: NextRequest) {
       "Could not find recording segment for LiveKit webhook",
       segmentError
     );
+    logRecordingWebhookDebug("segment-lookup-error", {
+      egressId: egress.egressId,
+      error: segmentError,
+    });
     return NextResponse.json(
       { error: "Could not load recording segment" },
       { status: 500 }
@@ -178,6 +251,10 @@ export async function POST(request: NextRequest) {
       "Could not find legacy recording for LiveKit webhook",
       legacyRecordingError
     );
+    logRecordingWebhookDebug("legacy-recording-lookup-error", {
+      egressId: egress.egressId,
+      error: legacyRecordingError,
+    });
     return NextResponse.json(
       { error: "Could not load recording" },
       { status: 500 }
@@ -188,12 +265,21 @@ export async function POST(request: NextRequest) {
     console.warn("No recording matches LiveKit Egress", {
       egressId: egress.egressId,
     });
+    logRecordingWebhookDebug("egress-unmatched", {
+      egressId: egress.egressId,
+      status: describeEgressStatus(egress.status),
+    });
     return NextResponse.json({ received: true, matched: false });
   }
 
   const eventId = segment?.event_id ?? legacyRecording?.event_id;
 
   if (!eventId) {
+    logRecordingWebhookDebug("missing-event-id-for-egress", {
+      egressId: egress.egressId,
+      hasSegment: Boolean(segment),
+      hasLegacyRecording: Boolean(legacyRecording),
+    });
     return NextResponse.json(
       { error: "Missing recording event" },
       { status: 500 }
@@ -203,6 +289,12 @@ export async function POST(request: NextRequest) {
   if (egress.status === EgressStatus.EGRESS_COMPLETE) {
     const readyAt = new Date();
     const updates = getCompletedEgressSegmentUpdates(egress);
+    logRecordingWebhookDebug("egress-complete", {
+      eventId,
+      egressId: egress.egressId,
+      hasSegment: Boolean(segment),
+      updates,
+    });
 
     if (segment) {
       const { error } = await supabase
@@ -212,6 +304,12 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("Could not finalize recording segment", error);
+        logRecordingWebhookDebug("segment-finalize-error", {
+          eventId,
+          egressId: egress.egressId,
+          segmentId: segment.id,
+          error,
+        });
         return NextResponse.json(
           { error: "Could not finalize recording segment" },
           { status: 500 }
@@ -222,6 +320,11 @@ export async function POST(request: NextRequest) {
         await recomputeParentRecordingSummary(supabase, eventId);
       } catch (error) {
         console.error("Could not recompute recording summary", error);
+        logRecordingWebhookDebug("summary-recompute-error-after-complete", {
+          eventId,
+          egressId: egress.egressId,
+          error: serializeWebhookError(error),
+        });
         return NextResponse.json(
           { error: "Could not update recording summary" },
           { status: 500 }
@@ -240,6 +343,11 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("Could not finalize recording", error);
+        logRecordingWebhookDebug("legacy-recording-finalize-error", {
+          eventId,
+          egressId: egress.egressId,
+          error,
+        });
         return NextResponse.json(
           { error: "Could not finalize recording" },
           { status: 500 }
@@ -260,6 +368,13 @@ export async function POST(request: NextRequest) {
       error_message: getSafeEgressFailureMessage(egress.status),
       updated_at: new Date().toISOString(),
     };
+    logRecordingWebhookDebug("egress-failed", {
+      eventId,
+      egressId: egress.egressId,
+      egressStatus: describeEgressStatus(egress.status),
+      hasSegment: Boolean(segment),
+      updates: failedUpdates,
+    });
 
     if (segment) {
       const { error } = await supabase
@@ -269,6 +384,12 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("Could not mark recording segment as failed", error);
+        logRecordingWebhookDebug("segment-failed-update-error", {
+          eventId,
+          egressId: egress.egressId,
+          segmentId: segment.id,
+          error,
+        });
         return NextResponse.json(
           { error: "Could not update recording segment" },
           { status: 500 }
@@ -279,6 +400,11 @@ export async function POST(request: NextRequest) {
         await recomputeParentRecordingSummary(supabase, eventId);
       } catch (error) {
         console.error("Could not recompute recording summary", error);
+        logRecordingWebhookDebug("summary-recompute-error-after-failure", {
+          eventId,
+          egressId: egress.egressId,
+          error: serializeWebhookError(error),
+        });
         return NextResponse.json(
           { error: "Could not update recording summary" },
           { status: 500 }
@@ -295,6 +421,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Could not mark recording as failed", error);
+      logRecordingWebhookDebug("legacy-recording-failed-update-error", {
+        eventId,
+        egressId: egress.egressId,
+        error,
+      });
       return NextResponse.json(
         { error: "Could not update recording" },
         { status: 500 }
@@ -303,6 +434,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true, status: "failed" });
   }
+
+  logRecordingWebhookDebug("egress-status-unchanged", {
+    eventId,
+    egressId: egress.egressId,
+    egressStatus: describeEgressStatus(egress.status),
+  });
 
   return NextResponse.json({ received: true, status: "unchanged" });
 }

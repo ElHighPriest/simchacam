@@ -13,6 +13,44 @@ import {
 
 export const runtime = "nodejs";
 
+const TEMP_RECORDING_DEBUG = true;
+
+function logRecordingStartDebug(
+  stage: string,
+  details: Record<string, unknown> = {}
+) {
+  if (!TEMP_RECORDING_DEBUG) {
+    return;
+  }
+
+  console.info("[TEMP RECORDING DEBUG] recording/start", {
+    stage,
+    ...details,
+  });
+}
+
+function serializeRecordingError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  return String(error);
+}
+
+function describeEgressStatus(status: EgressStatus | undefined) {
+  if (status === undefined) {
+    return null;
+  }
+
+  return {
+    code: status,
+    name: EgressStatus[status] ?? String(status),
+  };
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,6 +60,7 @@ export async function POST(
     ?.replace(/^Bearer\s+/i, "");
 
   if (!accessToken) {
+    logRecordingStartDebug("unauthorized-missing-token");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,9 +70,19 @@ export async function POST(
   } | null;
   const orientation =
     body?.orientation === "portrait" ? "portrait" : "landscape";
+
+  logRecordingStartDebug("request-received", {
+    eventId: id,
+    orientation,
+    bodyOrientation: body?.orientation,
+  });
+
   const ownedEvent = await getOwnedRecordingEvent(accessToken, id);
 
   if (!ownedEvent) {
+    logRecordingStartDebug("recording-permission-denied-or-config-missing", {
+      eventId: id,
+    });
     return NextResponse.json(
       { error: "Unauthorized or recording server credentials are missing" },
       { status: 401 }
@@ -44,6 +93,11 @@ export async function POST(
     ownedEvent.entitlement?.status !== "active" ||
     !ownedEvent.entitlement.recording_enabled
   ) {
+    logRecordingStartDebug("recording-entitlement-disabled", {
+      eventId: id,
+      entitlementStatus: ownedEvent.entitlement?.status,
+      recordingEnabled: ownedEvent.entitlement?.recording_enabled,
+    });
     return NextResponse.json(
       { error: "Recording is not enabled for this event" },
       { status: 403 }
@@ -58,6 +112,10 @@ export async function POST(
 
   if (existingRecordingError) {
     console.error(existingRecordingError);
+    logRecordingStartDebug("existing-recording-load-error", {
+      eventId: id,
+      error: existingRecordingError,
+    });
     return NextResponse.json(
       { error: "Could not load recording" },
       { status: 500 }
@@ -76,6 +134,10 @@ export async function POST(
 
   if (activeSegmentError) {
     console.error(activeSegmentError);
+    logRecordingStartDebug("active-segment-load-error", {
+      eventId: id,
+      error: activeSegmentError,
+    });
     return NextResponse.json(
       { error: "Could not load recording segment" },
       { status: 500 }
@@ -85,8 +147,20 @@ export async function POST(
   let recovered = false;
 
   if (activeSegment) {
+    logRecordingStartDebug("active-segment-found", {
+      eventId: id,
+      segmentId: activeSegment.id,
+      segmentIndex: activeSegment.segment_index,
+      segmentStatus: activeSegment.status,
+      hasEgressId: Boolean(activeSegment.livekit_egress_id),
+    });
+
     if (!activeSegment.livekit_egress_id) {
       recovered = true;
+      logRecordingStartDebug("active-segment-missing-egress-id", {
+        eventId: id,
+        segmentId: activeSegment.id,
+      });
       await ownedEvent.serviceSupabase
         .from("event_recording_segments")
         .update({
@@ -97,9 +171,35 @@ export async function POST(
         .eq("id", activeSegment.id);
       await recomputeParentRecordingSummary(ownedEvent.serviceSupabase, id);
     } else {
-      const egress = await getEgressInfo(activeSegment.livekit_egress_id);
+      let egress;
+
+      try {
+        egress = await getEgressInfo(activeSegment.livekit_egress_id);
+      } catch (error) {
+        logRecordingStartDebug("active-segment-egress-lookup-error", {
+          eventId: id,
+          segmentId: activeSegment.id,
+          egressId: activeSegment.livekit_egress_id,
+          error: serializeRecordingError(error),
+        });
+        throw error;
+      }
+
+      logRecordingStartDebug("active-segment-egress-lookup-result", {
+        eventId: id,
+        segmentId: activeSegment.id,
+        egressId: activeSegment.livekit_egress_id,
+        found: Boolean(egress),
+        egressStatus: describeEgressStatus(egress?.status),
+      });
 
       if (egress && isLiveKitEgressActive(egress.status)) {
+        logRecordingStartDebug("active-egress-reused", {
+          eventId: id,
+          segmentId: activeSegment.id,
+          egressId: activeSegment.livekit_egress_id,
+          egressStatus: describeEgressStatus(egress.status),
+        });
         return NextResponse.json({
           status: "recording",
           egressStarted: true,
@@ -146,11 +246,23 @@ export async function POST(
 
       if (staleSegmentError) {
         console.error(staleSegmentError);
+        logRecordingStartDebug("stale-segment-update-error", {
+          eventId: id,
+          segmentId: activeSegment.id,
+          updates: segmentUpdates,
+          error: staleSegmentError,
+        });
         return NextResponse.json(
           { error: "Could not update stale recording segment" },
           { status: 500 }
         );
       }
+
+      logRecordingStartDebug("stale-segment-updated", {
+        eventId: id,
+        segmentId: activeSegment.id,
+        updates: segmentUpdates,
+      });
 
       await recomputeParentRecordingSummary(ownedEvent.serviceSupabase, id);
     }
@@ -175,6 +287,10 @@ export async function POST(
 
   if (pendingError) {
     console.error(pendingError);
+    logRecordingStartDebug("parent-recording-upsert-error", {
+      eventId: id,
+      error: pendingError,
+    });
     return NextResponse.json(
       { error: "Could not initialize recording" },
       { status: 500 }
@@ -192,6 +308,10 @@ export async function POST(
 
   if (startingError) {
     console.error(startingError);
+    logRecordingStartDebug("parent-recording-starting-update-error", {
+      eventId: id,
+      error: startingError,
+    });
     return NextResponse.json(
       { error: "Could not start recording" },
       { status: 500 }
@@ -209,6 +329,10 @@ export async function POST(
 
   if (latestSegmentError) {
     console.error(latestSegmentError);
+    logRecordingStartDebug("latest-segment-load-error", {
+      eventId: id,
+      error: latestSegmentError,
+    });
     return NextResponse.json(
       { error: "Could not load recording segments" },
       { status: 500 }
@@ -216,6 +340,12 @@ export async function POST(
   }
 
   const segmentIndex = (latestSegment?.segment_index ?? 0) + 1;
+  logRecordingStartDebug("creating-recording-segment", {
+    eventId: id,
+    segmentIndex,
+    recovered,
+  });
+
   const { data: newSegment, error: segmentStartingError } =
     await ownedEvent.serviceSupabase
       .from("event_recording_segments")
@@ -231,6 +361,11 @@ export async function POST(
 
   if (segmentStartingError) {
     console.error(segmentStartingError);
+    logRecordingStartDebug("recording-segment-create-error", {
+      eventId: id,
+      segmentIndex,
+      error: segmentStartingError,
+    });
     return NextResponse.json(
       { error: "Could not initialize recording segment" },
       { status: 500 }
@@ -238,6 +373,10 @@ export async function POST(
   }
 
   if (!newSegment) {
+    logRecordingStartDebug("recording-segment-create-empty-result", {
+      eventId: id,
+      segmentIndex,
+    });
     return NextResponse.json(
       { error: "Could not create recording segment" },
       { status: 500 }
@@ -245,6 +384,10 @@ export async function POST(
   }
 
   if (!isEgressConfigured()) {
+    logRecordingStartDebug("egress-not-configured", {
+      eventId: id,
+      segmentId: newSegment.id,
+    });
     const failedAt = new Date().toISOString();
     await ownedEvent.serviceSupabase
       .from("event_recordings")
@@ -275,11 +418,24 @@ export async function POST(
   }
 
   try {
+    logRecordingStartDebug("starting-livekit-egress", {
+      eventId: id,
+      segmentId: newSegment.id,
+      segmentIndex,
+      roomName: ownedEvent.event.slug,
+      orientation,
+    });
     const { egressId, objectKey } = await startParticipantRecording(
       id,
       ownedEvent.event.slug,
       orientation
     );
+    logRecordingStartDebug("livekit-egress-started", {
+      eventId: id,
+      segmentId: newSegment.id,
+      egressId,
+      objectKey,
+    });
     const startedAt = new Date().toISOString();
     const { error: segmentRecordingError } = await ownedEvent.serviceSupabase
       .from("event_recording_segments")
@@ -299,6 +455,12 @@ export async function POST(
 
     if (segmentRecordingError) {
       console.error(segmentRecordingError);
+      logRecordingStartDebug("segment-recording-update-error-after-egress", {
+        eventId: id,
+        segmentId: newSegment.id,
+        egressId,
+        error: segmentRecordingError,
+      });
       return NextResponse.json(
         { error: "Egress started but recording segment could not be saved" },
         { status: 500 }
@@ -320,11 +482,24 @@ export async function POST(
 
     if (recordingError) {
       console.error(recordingError);
+      logRecordingStartDebug("parent-recording-update-error-after-egress", {
+        eventId: id,
+        segmentId: newSegment.id,
+        egressId,
+        error: recordingError,
+      });
       return NextResponse.json(
         { error: "Egress started but recording status could not be saved" },
         { status: 500 }
       );
     }
+
+    logRecordingStartDebug("recording-start-success", {
+      eventId: id,
+      segmentId: newSegment.id,
+      egressId,
+      recovered,
+    });
 
     return NextResponse.json({
       status: "recording",
@@ -333,6 +508,11 @@ export async function POST(
     });
   } catch (error) {
     console.error(error);
+    logRecordingStartDebug("recording-start-egress-error", {
+      eventId: id,
+      segmentId: newSegment.id,
+      error: serializeRecordingError(error),
+    });
 
     const failedAt = new Date().toISOString();
     const errorMessage =
