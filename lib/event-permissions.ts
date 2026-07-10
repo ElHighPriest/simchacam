@@ -8,7 +8,8 @@ export type EventAccessRole = "owner" | "nominated_streamer";
 export class EventPermissionError extends Error {
   constructor(
     message: string,
-    readonly status: number
+    readonly status: number,
+    readonly code?: string
   ) {
     super(message);
     this.name = "EventPermissionError";
@@ -30,6 +31,10 @@ type EventEntitlement = {
   stream_limit_seconds: number;
   viewer_limit: number;
 };
+
+export const NOMINATED_STREAMER_ACTIVE_CODE = "NOMINATED_STREAMER_ACTIVE";
+export const NOMINATED_STREAMER_ACTIVE_MESSAGE =
+  "Revoke the nominated streamer to go live yourself.";
 
 export type StreamEventContext = {
   entitlement: EventEntitlement;
@@ -191,6 +196,48 @@ async function acceptMatchingNomination({
   }
 
   return true;
+}
+
+export async function getActiveStreamerNomination(
+  serviceSupabase: SupabaseClient,
+  eventId: string
+) {
+  const { data, error } = await serviceSupabase
+    .from("event_streamer_nominations")
+    .select("id, nominated_email, accepted_at, created_at")
+    .eq("event_id", eventId)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Could not load active streamer nomination", error);
+    throw new EventPermissionError("Could not load streamer nomination", 500);
+  }
+
+  return data;
+}
+
+export async function assertCanPublishStream(
+  context: Pick<StreamEventContext, "event" | "role" | "serviceSupabase">
+) {
+  if (context.role !== "owner") {
+    return;
+  }
+
+  const activeNomination = await getActiveStreamerNomination(
+    context.serviceSupabase,
+    context.event.id
+  );
+
+  if (activeNomination) {
+    throw new EventPermissionError(
+      NOMINATED_STREAMER_ACTIVE_MESSAGE,
+      403,
+      NOMINATED_STREAMER_ACTIVE_CODE
+    );
+  }
 }
 
 export async function getStreamEventContext(

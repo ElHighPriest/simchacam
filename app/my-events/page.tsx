@@ -374,6 +374,13 @@ export default function MyEventsPage() {
   }
 
   function openNominationDialog(eventId: string) {
+    const event = events.find((currentEvent) => currentEvent.id === eventId);
+
+    if ((event?.nominations?.length ?? 0) > 0) {
+      alert(messages.myEvents.messages.nominationAlreadyActive);
+      return;
+    }
+
     setNominationDialogEventId(eventId);
     setNominationEmail("");
     setNominationError("");
@@ -390,6 +397,11 @@ export default function MyEventsPage() {
   }
 
   async function nominateStreamer(event: Event) {
+    if ((event.nominations?.length ?? 0) > 0) {
+      setNominationError(messages.myEvents.messages.nominationAlreadyActive);
+      return;
+    }
+
     const email = nominationEmail.trim();
 
     if (!email) {
@@ -423,13 +435,16 @@ export default function MyEventsPage() {
         }
       );
       const body = (await response.json().catch(() => null)) as {
+        code?: string;
         error?: string;
         nomination?: StreamerNomination;
       } | null;
 
       if (!response.ok || !body?.nomination) {
         setNominationError(
-          body?.error || messages.myEvents.messages.nominationFailed
+          body?.code === "NOMINATED_STREAMER_ACTIVE"
+            ? messages.myEvents.messages.nominationAlreadyActive
+            : body?.error || messages.myEvents.messages.nominationFailed
         );
         return;
       }
@@ -601,7 +616,11 @@ export default function MyEventsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || messages.myEvents.messages.goLiveFailed);
+        alert(
+          data.code === "NOMINATED_STREAMER_ACTIVE"
+            ? messages.myEvents.messages.ownerBlockedByNomination
+            : data.error || messages.myEvents.messages.goLiveFailed
+        );
         return false;
       }
 
@@ -819,12 +838,18 @@ export default function MyEventsPage() {
                       const isNominatedStreamer =
                         event.role === "nominated_streamer";
                       const canManageEvent = event.role === "owner";
+                      const activeNomination = event.nominations?.[0] ?? null;
+                      const ownerBlockedByNomination =
+                        canManageEvent && Boolean(activeNomination);
                       const canUpgrade =
                         canManageEvent &&
                         event.plan === "free" &&
                         event.status !== "ended";
                       const canNominateStreamer =
-                        canManageEvent && event.plan === "premium" && !isEnded;
+                        canManageEvent &&
+                        event.plan === "premium" &&
+                        !isEnded &&
+                        !activeNomination;
                       const canShowDelete =
                         canManageEvent && !isEndedWithReadyRecording;
                       const isUpgrading = upgradingEventId === event.id;
@@ -932,41 +957,43 @@ export default function MyEventsPage() {
                                     {recordingExpiryText}
                                   </p>
                                 )}
-                                {canNominateStreamer &&
-                                  (event.nominations?.length ?? 0) > 0 && (
+                                {canManageEvent && activeNomination && (
                                     <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-navy">
                                       <span className="font-semibold text-navy/70">
                                         {messages.myEvents.messages.activeNominations}
                                       </span>
-                                      {event.nominations?.map((nomination) => (
                                         <span
-                                          key={nomination.id}
+                                          key={activeNomination.id}
                                           className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-pale-gold/60 px-3 py-1 text-xs font-semibold text-navy/75"
                                         >
-                                          <span dir="ltr">{nomination.email}</span>
+                                          <span dir="ltr">{activeNomination.email}</span>
                                           <button
                                             type="button"
                                             onClick={() =>
                                               revokeStreamerNomination(
                                                 event,
-                                                nomination
+                                                activeNomination
                                               )
                                             }
                                             disabled={
                                               revokingNominationId ===
-                                              nomination.id
+                                              activeNomination.id
                                             }
                                             className="text-navy/45 transition hover:text-recording-red disabled:cursor-wait"
                                           >
                                             {revokingNominationId ===
-                                            nomination.id
+                                            activeNomination.id
                                               ? messages.myEvents.actions.revokingNomination
                                               : messages.myEvents.actions.revokeNomination}
                                           </button>
                                         </span>
-                                      ))}
                                     </div>
                                   )}
+                                {ownerBlockedByNomination && !isEnded && (
+                                  <p className="mt-3 max-w-xl rounded-xl border border-gold/25 bg-pale-gold/35 px-4 py-3 text-sm font-semibold leading-6 text-navy/75">
+                                    {messages.myEvents.messages.ownerBlockedByNomination}
+                                  </p>
+                                )}
                               </div>
 
                               <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto">
@@ -1019,6 +1046,14 @@ export default function MyEventsPage() {
                                       ? messages.myEvents.actions.viewRecordingStatus
                                       : messages.myEvents.actions.viewEvent}
                                   </Link>
+                                ) : ownerBlockedByNomination ? (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="flex min-h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-navy/30 px-6 py-3 font-semibold text-white shadow-[0_10px_24px_rgba(11,31,58,0.1)] sm:w-auto"
+                                  >
+                                    {messages.myEvents.actions.streamerNominated}
+                                  </button>
                                 ) : (
                                   <button
                                     onClick={() =>

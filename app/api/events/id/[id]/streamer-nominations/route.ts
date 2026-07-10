@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   EventPermissionError,
+  getActiveStreamerNomination,
   getOwnerEventContext,
   isValidEmail,
   normalizeNominationEmail,
+  NOMINATED_STREAMER_ACTIVE_CODE,
 } from "@/lib/event-permissions";
 import { sendStreamerNominationEmail } from "@/lib/transactional-email";
 
@@ -110,6 +112,22 @@ export async function POST(
       );
     }
 
+    const activeNomination = await getActiveStreamerNomination(
+      context.serviceSupabase,
+      context.event.id
+    );
+
+    if (activeNomination) {
+      return NextResponse.json(
+        {
+          error:
+            "This event already has a nominated streamer. Revoke them before nominating someone else.",
+          code: NOMINATED_STREAMER_ACTIVE_CODE,
+        },
+        { status: 409 }
+      );
+    }
+
     const now = new Date().toISOString();
     const { data, error } = await context.serviceSupabase
       .from("event_streamer_nominations")
@@ -125,7 +143,11 @@ export async function POST(
 
     if (error?.code === "23505") {
       return NextResponse.json(
-        { error: "Nomination already exists" },
+        {
+          error:
+            "This event already has a nominated streamer. Revoke them before nominating someone else.",
+          code: NOMINATED_STREAMER_ACTIVE_CODE,
+        },
         { status: 409 }
       );
     }

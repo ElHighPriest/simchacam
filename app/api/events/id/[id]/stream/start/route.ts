@@ -11,6 +11,10 @@ import {
   markStreamLive,
   StreamLifecycleError,
 } from "@/lib/stream-sessions";
+import {
+  assertCanPublishStream,
+  EventPermissionError,
+} from "@/lib/event-permissions";
 
 export const runtime = "nodejs";
 
@@ -38,6 +42,8 @@ export async function POST(
     if (context.event.status === "ended") {
       throw new StreamLifecycleError("Event has ended", 409);
     }
+
+    await assertCanPublishStream(context);
 
     createdSession = await createOrReuseStreamSession(context);
     await createLimitedStreamRoom(
@@ -72,7 +78,14 @@ export async function POST(
 
     if (error instanceof StreamLifecycleError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
+
+    if (error instanceof EventPermissionError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
         { status: error.status }
       );
     }

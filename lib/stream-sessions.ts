@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  type EventAccessRole,
   EventPermissionError,
   getStreamEventContext,
 } from "@/lib/event-permissions";
@@ -22,6 +23,7 @@ type OwnedStreamContext = {
     status: string | null;
     user_id: string;
   };
+  role: EventAccessRole;
   serviceSupabase: SupabaseClient;
 };
 
@@ -40,7 +42,8 @@ export type StreamSession = {
 export class StreamLifecycleError extends Error {
   constructor(
     message: string,
-    readonly status: number
+    readonly status: number,
+    readonly code?: string
   ) {
     super(message);
     this.name = "StreamLifecycleError";
@@ -62,11 +65,12 @@ export async function getOwnedStreamContext(
         viewer_limit: context.entitlement.viewer_limit,
       },
       event: context.event,
+      role: context.role,
       serviceSupabase: context.serviceSupabase,
     };
   } catch (error) {
     if (error instanceof EventPermissionError) {
-      throw new StreamLifecycleError(error.message, error.status);
+      throw new StreamLifecycleError(error.message, error.status, error.code);
     }
 
     throw error;

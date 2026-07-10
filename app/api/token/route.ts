@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { verifyPassword } from "@/lib/password";
 import {
+  assertCanPublishStream,
   EventPermissionError,
   getStreamEventContextBySlug,
 } from "@/lib/event-permissions";
@@ -71,11 +72,12 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        await getStreamEventContextBySlug(accessToken, roomName);
+        const context = await getStreamEventContextBySlug(accessToken, roomName);
+        await assertCanPublishStream(context);
       } catch (error) {
         if (error instanceof EventPermissionError) {
           return NextResponse.json(
-            { error: error.message },
+            { error: error.message, code: error.code },
             { status: error.status }
           );
         }
