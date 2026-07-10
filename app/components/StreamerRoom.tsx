@@ -32,6 +32,57 @@ type StreamerRoomProps = {
   recordingEnabled?: boolean;
 };
 
+const TEMP_HOST_CODEC_DIAGNOSTICS = true;
+const HOST_CODEC_DIAGNOSTICS_INTERVAL_MS = 10_000;
+
+type OutboundVideoStats = RTCStats & {
+  bytesSent?: number;
+  codecId?: string;
+  frameHeight?: number;
+  frameWidth?: number;
+  framesEncoded?: number;
+  framesPerSecond?: number;
+  keyFramesEncoded?: number;
+  kind?: string;
+  mediaType?: string;
+  packetsSent?: number;
+  qualityLimitationDurations?: Record<string, number>;
+  qualityLimitationReason?: string;
+  retransmittedPacketsSent?: number;
+  totalEncodeTime?: number;
+};
+
+type CodecStats = RTCStats & {
+  mimeType?: string;
+  payloadType?: number;
+};
+
+function isOutboundVideoStats(stat: RTCStats): stat is OutboundVideoStats {
+  const candidate = stat as OutboundVideoStats;
+
+  return (
+    candidate.type === "outbound-rtp" &&
+    (candidate.kind === "video" || candidate.mediaType === "video")
+  );
+}
+
+function getCodecStats(
+  report: RTCStatsReport,
+  codecId: string | undefined
+): CodecStats | null {
+  if (!codecId) {
+    return null;
+  }
+
+  const codec = report.get(codecId);
+
+  if (!codec || codec.type !== "codec") {
+    return null;
+  }
+
+  return codec as CodecStats;
+}
+
 function StreamerContent({
   eventId,
   hardEndsAt,
@@ -91,6 +142,9 @@ function StreamerContent({
 
   const localCameraTrack = tracks.find(
     (trackRef) => trackRef.participant.identity === localParticipant.identity
+  );
+  const previousOutboundStats = useRef(
+    new Map<string, { bytesSent: number; timestamp: number }>()
   );
 
   useEffect(() => {
@@ -164,6 +218,99 @@ function StreamerContent({
     t.recordingResumed,
     t.recordingSignInWarning,
   ]);
+
+  useEffect(() => {
+    if (!TEMP_HOST_CODEC_DIAGNOSTICS || !localVideoTrack) {
+      return;
+    }
+
+    const previousById = previousOutboundStats.current;
+    let stopped = false;
+
+    async function logPublishedCameraStats() {
+      const sender = localVideoTrack?.sender;
+
+      if (
+        stopped ||
+        !sender ||
+        !sender.track ||
+        sender.track.id !== localVideoTrack.mediaStreamTrack.id
+      ) {
+        return;
+      }
+
+      try {
+        const report = await sender.getStats();
+        const outboundVideoStats = Array.from(report.values()).filter(
+          isOutboundVideoStats
+        );
+        const streams = outboundVideoStats.map((outbound) => {
+          const codec = getCodecStats(report, outbound.codecId);
+          const previous = previousById.get(outbound.id);
+          const bitrate =
+            previous && outbound.bytesSent !== undefined
+              ? Math.round(
+                  ((outbound.bytesSent - previous.bytesSent) * 8 * 1000) /
+                    Math.max(outbound.timestamp - previous.timestamp, 1)
+                )
+              : null;
+
+          if (outbound.bytesSent !== undefined) {
+            previousById.set(outbound.id, {
+              bytesSent: outbound.bytesSent,
+              timestamp: outbound.timestamp,
+            });
+          }
+
+          return {
+            outboundId: outbound.id,
+            negotiatedCodec: codec?.mimeType?.split("/")[1] ?? "unknown",
+            mimeType: codec?.mimeType ?? "unknown",
+            payloadType: codec?.payloadType ?? "unknown",
+            outboundBitrateBps: bitrate,
+            outboundBitrateKbps:
+              bitrate === null ? null : Math.round(bitrate / 1000),
+            framesPerSecond: outbound.framesPerSecond ?? null,
+            frameWidth: outbound.frameWidth ?? null,
+            frameHeight: outbound.frameHeight ?? null,
+            framesEncoded: outbound.framesEncoded ?? null,
+            keyFramesEncoded: outbound.keyFramesEncoded ?? null,
+            totalEncodeTime: outbound.totalEncodeTime ?? null,
+            qualityLimitationReason:
+              outbound.qualityLimitationReason ?? "unknown",
+            qualityLimitationDurations:
+              outbound.qualityLimitationDurations ?? null,
+            packetsSent: outbound.packetsSent ?? null,
+            retransmittedPacketsSent:
+              outbound.retransmittedPacketsSent ?? null,
+          };
+        });
+
+        console.info("[TEMP HOST CODEC DIAGNOSTICS] Camera sender stats", {
+          cameraTrackId: localVideoTrack.mediaStreamTrack.id,
+          senderTrackId: sender.track.id,
+          streams,
+        });
+      } catch (error) {
+        console.warn(
+          "[TEMP HOST CODEC DIAGNOSTICS] Could not read camera sender stats",
+          error
+        );
+      }
+    }
+
+    void logPublishedCameraStats();
+    const interval = window.setInterval(
+      () => void logPublishedCameraStats(),
+      HOST_CODEC_DIAGNOSTICS_INTERVAL_MS
+    );
+
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+      previousById.clear();
+    };
+  }, [localVideoTrack]);
 
   useEffect(() => {
     if (!recordingEnabled || isEndingStream) {
@@ -779,7 +926,7 @@ export default function StreamerRoom({
         dynacast: true,
         publishDefaults: {
           simulcast: true,
-          videoCodec: "vp8",
+          videoCodec: "h264",
           videoEncoding: {
             maxBitrate: 3_000_000,
             maxFramerate: 30,
