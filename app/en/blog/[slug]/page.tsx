@@ -162,14 +162,14 @@ export default async function GuidePage({ params }: GuidePageProps) {
         </header>
 
         {guide.featuredImage && (
-          <div className="mt-10 overflow-hidden rounded-[1.5rem] bg-navy/5 shadow-[0_18px_50px_rgba(11,31,58,0.1)]">
+          <div className="relative left-1/2 mt-10 w-[min(100vw-2.5rem,56rem)] -translate-x-1/2 overflow-hidden rounded-[1.5rem] bg-navy/5 shadow-[0_18px_50px_rgba(11,31,58,0.1)]">
             <Image
               src={guide.featuredImage}
               alt={guide.featuredImageAlt ?? guide.title}
               width={guide.featuredImageWidth ?? 1200}
               height={guide.featuredImageHeight ?? 630}
               priority
-              sizes="(max-width: 768px) 100vw, 768px"
+              sizes="(max-width: 768px) 100vw, 896px"
               className="h-auto w-full"
             />
             {guide.featuredImageCaption && (
@@ -180,7 +180,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
           </div>
         )}
 
-        <div className="mt-10 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_h3]:mt-8 [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:leading-tight [&_h3]:text-navy [&_li]:pl-1 [&_p]:max-w-none [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
+        <div className="mt-12 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-16 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_h3]:mt-10 [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:leading-tight [&_h3]:text-navy [&_li]:pl-1 [&_p]:max-w-none [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
           {guide.content}
         </div>
 

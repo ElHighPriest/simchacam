@@ -16,7 +16,7 @@ export default function GuideFigure({
   width = 1536,
 }: GuideFigureProps) {
   return (
-    <figure className="my-10">
+    <figure className="my-12">
       <div className="overflow-hidden rounded-[1.5rem] border border-gold/25 bg-white shadow-[0_18px_50px_rgba(11,31,58,0.11)]">
         <Image
           src={src}
@@ -29,7 +29,7 @@ export default function GuideFigure({
       </div>
 
       {caption && (
-        <figcaption className="mt-3 text-center text-sm leading-6 text-muted-navy">
+        <figcaption className="mt-4 text-center text-sm leading-6 text-muted-navy">
           {caption}
         </figcaption>
       )}

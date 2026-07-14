@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Link from "next/link";
 import GuideFigure from "@/app/components/GuideFigure";
+import GuideLightboxFigure from "@/app/components/GuideLightboxFigure";
 import type { Guide } from "./types";
 
 const imagePath =
@@ -26,7 +27,6 @@ const guide: Guide = {
     ? featuredImage
     : undefined,
   featuredImageAlt: "A real wedding livestream using SimchaCam.",
-  featuredImageCaption: "A real SimchaCam livestream from a family wedding.",
   featuredImageWidth: 1536,
   featuredImageHeight: 1024,
   seoTitle:
@@ -130,26 +130,26 @@ const guide: Guide = {
       <h2>Quick comparison</h2>
 
       <div className="my-8 overflow-x-auto rounded-[1.25rem] border border-gold/25 bg-white shadow-[0_18px_50px_rgba(11,31,58,0.08)]">
-        <table className="min-w-[760px] border-collapse text-left text-sm leading-6">
+        <table className="min-w-[620px] border-collapse text-left text-xs leading-6 sm:text-sm">
           <caption className="sr-only">
             Comparison of popular platforms for livestreaming weddings and
             family events.
           </caption>
           <thead className="bg-navy text-warm-white">
             <tr>
-              <th scope="col" className="px-4 py-4 font-semibold">
+              <th scope="col" className="px-3 py-4 font-semibold sm:px-4">
                 Platform
               </th>
-              <th scope="col" className="px-4 py-4 font-semibold">
+              <th scope="col" className="px-3 py-4 font-semibold sm:px-4">
                 Private Viewing
               </th>
-              <th scope="col" className="px-4 py-4 font-semibold">
+              <th scope="col" className="px-3 py-4 font-semibold sm:px-4">
                 Guests Need an Account?
               </th>
-              <th scope="col" className="px-4 py-4 font-semibold">
+              <th scope="col" className="px-3 py-4 font-semibold sm:px-4">
                 Recording
               </th>
-              <th scope="col" className="px-4 py-4 font-semibold">
+              <th scope="col" className="px-3 py-4 font-semibold sm:px-4">
                 Best For
               </th>
             </tr>
@@ -207,27 +207,18 @@ const guide: Guide = {
               ],
             ].map(([platform, privateViewing, account, recording, bestFor]) => (
               <tr key={platform} className="align-top">
-                <th scope="row" className="px-4 py-4 font-semibold text-navy">
+                <th scope="row" className="px-3 py-4 font-semibold text-navy sm:px-4">
                   {platform}
                 </th>
-                <td className="px-4 py-4">{privateViewing}</td>
-                <td className="px-4 py-4">{account}</td>
-                <td className="px-4 py-4">{recording}</td>
-                <td className="px-4 py-4">{bestFor}</td>
+                <td className="px-3 py-4 sm:px-4">{privateViewing}</td>
+                <td className="px-3 py-4 sm:px-4">{account}</td>
+                <td className="px-3 py-4 sm:px-4">{recording}</td>
+                <td className="px-3 py-4 sm:px-4">{bestFor}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {existsSync(join(process.cwd(), "public", comparisonImage)) && (
-        <GuideFigure
-          src={comparisonImage}
-          alt="Comparison of popular livestream platforms for weddings and family events."
-          width={1536}
-          height={1024}
-        />
-      )}
 
       <h2>What makes a good wedding livestream?</h2>
 
@@ -326,7 +317,7 @@ const guide: Guide = {
         <GuideFigure
           src={viewerImage}
           alt="The SimchaCam viewer experience."
-          caption="Guests simply click a private link and watch—no downloads, no accounts and no meeting controls."
+          caption="A live SimchaCam stream during a family event. Simply place your phone on a tripod and let SimchaCam do the rest."
           width={1536}
           height={709}
         />
@@ -584,6 +575,15 @@ const guide: Guide = {
         day without meetings, downloads or social media.
       </p>
 
+      {existsSync(join(process.cwd(), "public", comparisonImage)) && (
+        <GuideLightboxFigure
+          src={comparisonImage}
+          alt="Comparison of popular livestream platforms for weddings and family events."
+          width={1536}
+          height={1024}
+        />
+      )}
+
       <h2>Frequently asked questions</h2>
 
       <h3>Is Zoom good for livestreaming weddings?</h3>
@@ -615,6 +615,25 @@ const guide: Guide = {
         Absolutely. Some guests may live in different time zones or be unable
         to watch live. A recording lets them enjoy the celebration afterwards.
       </p>
+
+      <aside className="my-14 rounded-[1.5rem] border border-gold/35 bg-pale-gold/70 p-6 shadow-[0_18px_50px_rgba(11,31,58,0.08)] sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#80652f]">
+          Try SimchaCam
+        </p>
+        <p className="mt-3 font-display text-3xl font-semibold leading-tight text-navy">
+          Create a private event link in minutes.
+        </p>
+        <p className="mt-3 leading-7 text-muted-navy">
+          Set up a free event, share the private link with someone you trust
+          and test your livestream before the big day.
+        </p>
+        <Link
+          href="/en/auth"
+          className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-navy px-5 py-3 font-semibold text-warm-white transition hover:bg-[#102b4f]"
+        >
+          Create your first event
+        </Link>
+      </aside>
 
       <h2>Final thoughts</h2>
 
