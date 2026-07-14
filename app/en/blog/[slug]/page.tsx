@@ -168,13 +168,19 @@ export default async function GuidePage({ params }: GuidePageProps) {
               alt={guide.featuredImageAlt ?? guide.title}
               width={guide.featuredImageWidth ?? 1200}
               height={guide.featuredImageHeight ?? 630}
+              priority
               sizes="(max-width: 768px) 100vw, 768px"
               className="h-auto w-full"
             />
+            {guide.featuredImageCaption && (
+              <p className="border-t border-gold/20 bg-white/75 px-5 py-3 text-center text-sm leading-6 text-muted-navy">
+                {guide.featuredImageCaption}
+              </p>
+            )}
           </div>
         )}
 
-        <div className="mt-10 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_li]:pl-1 [&_p]:max-w-none [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
+        <div className="mt-10 space-y-6 text-[1.0625rem] leading-8 text-muted-navy [&_h2]:mt-12 [&_h2]:font-display [&_h2]:text-4xl [&_h2]:font-semibold [&_h2]:leading-tight [&_h2]:text-navy [&_h3]:mt-8 [&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:leading-tight [&_h3]:text-navy [&_li]:pl-1 [&_p]:max-w-none [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">
           {guide.content}
         </div>
 

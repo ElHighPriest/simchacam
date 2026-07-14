@@ -1,8 +1,10 @@
 import howToLivestreamWedding from "./how-to-livestream-a-wedding-for-family-abroad";
+import simchaCamVsZoomYouTubeWhatsAppFacebookLive from "./simchacam-vs-zoom-youtube-whatsapp-facebook-live";
 import whyIStartedSimchaCam from "./why-i-started-simchacam";
 import type { Guide } from "./types";
 
 export const guides: Guide[] = [
+  simchaCamVsZoomYouTubeWhatsAppFacebookLive,
   howToLivestreamWedding,
   whyIStartedSimchaCam,
 ].sort(

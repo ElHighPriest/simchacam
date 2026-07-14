@@ -9,6 +9,7 @@ export type Guide = {
   readingTime: string;
   featuredImage?: string;
   featuredImageAlt?: string;
+  featuredImageCaption?: string;
   featuredImageWidth?: number;
   featuredImageHeight?: number;
   seoTitle: string;
