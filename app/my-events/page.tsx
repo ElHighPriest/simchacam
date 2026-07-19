@@ -38,6 +38,34 @@ type Event = {
   role: "owner" | "nominated_streamer";
 };
 
+type EventsApiEvent = {
+  createdAt: string;
+  entitlement: {
+    downloadEnabled: boolean;
+    plan: "free" | "premium";
+    recordingEnabled: boolean;
+    replayEnabled: boolean;
+    replayRetentionDays: number;
+    status: string;
+    streamDurationLimitSeconds: number;
+    viewerLimit: number;
+  } | null;
+  eventAt: string | null;
+  hasPassword: boolean;
+  id: string;
+  name: string;
+  nominatedStreamer: {
+    acceptedAt: string | null;
+    createdAt: string;
+    email: string;
+    id: string;
+    status: "accepted" | "pending";
+  } | null;
+  recording: Event["recording"];
+  slug: string;
+  status: string | null;
+};
+
 type StreamerNomination = {
   acceptedAt: string | null;
   createdAt: string | null;
@@ -97,137 +125,93 @@ export default function MyEventsPage() {
 
       setUser(userData.user);
 
-      const { data, error } = await supabase
-        .from("events")
-        .select("id,name,slug,status,event_at")
-        .eq("user_id", userData.user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
+      if (!session) {
+        router.push(getLocalizedPath(locale, "/auth"));
+        return;
       }
 
-      const ownedEvents = (data || []).map((event) => ({
-        ...event,
-        role: "owner" as const,
+      const eventsResponse = await fetch("/api/events", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const eventsBody = (await eventsResponse.json()) as {
+        error?: string;
+        events?: EventsApiEvent[];
+      };
+
+      if (!eventsResponse.ok) {
+        console.error(eventsBody.error ?? "Could not load events");
+        setLoading(false);
+        return;
+      }
+
+      const ownedEvents: Event[] = (eventsBody.events ?? []).map((event) => ({
+        id: event.id,
+        name: event.name,
+        slug: event.slug,
+        status: event.status,
+        event_at: event.eventAt,
+        hasPassword: event.hasPassword,
+        nominations: event.nominatedStreamer
+          ? [
+              {
+                acceptedAt: event.nominatedStreamer.acceptedAt,
+                createdAt: event.nominatedStreamer.createdAt,
+                email: event.nominatedStreamer.email,
+                id: event.nominatedStreamer.id,
+                revokedAt: null,
+              },
+            ]
+          : [],
+        plan: event.entitlement?.plan ?? null,
+        recording: event.recording,
+        role: "owner",
       }));
       let nominatedEvents: Event[] = [];
-      const eventIds = ownedEvents.map((event) => event.id);
-      const entitlementPlans = new Map<
-        string,
-        "free" | "premium"
-      >();
-      const nominationMap = new Map<string, StreamerNomination[]>();
 
-      if (eventIds.length > 0) {
-        const { data: entitlements, error: entitlementError } = await supabase
-          .from("event_entitlements")
-          .select("event_id,plan")
-          .in("event_id", eventIds);
+      try {
+        const response = await fetch("/api/events/nominated", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-        if (entitlementError) {
-          console.error(entitlementError);
-        } else {
-          for (const entitlement of entitlements || []) {
-            if (
-              entitlement.plan === "free" ||
-              entitlement.plan === "premium"
-            ) {
-              entitlementPlans.set(entitlement.event_id, entitlement.plan);
-            }
-          }
+        if (response.ok) {
+          const body = (await response.json()) as { events?: Event[] };
+          nominatedEvents = body.events ?? [];
         }
+      } catch (nominatedError) {
+        console.error(nominatedError);
       }
 
-      if (session) {
-        const premiumOwnerEventIds = ownedEvents
-          .filter((event) => entitlementPlans.get(event.id) === "premium")
-          .map((event) => event.id);
-
-        await Promise.all(
-          premiumOwnerEventIds.map(async (eventId) => {
-            try {
-              const response = await fetch(
-                `/api/events/id/${encodeURIComponent(
-                  eventId
-                )}/streamer-nominations`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                }
-              );
-
-              if (!response.ok) {
-                return;
-              }
-
-              const body = (await response.json()) as {
-                nominations?: StreamerNomination[];
-              };
-              nominationMap.set(
-                eventId,
-                (body.nominations ?? []).filter(
-                  (nomination) => !nomination.revokedAt
-                )
-              );
-            } catch (nominationError) {
-              console.error(nominationError);
-            }
-          })
-        );
-
-        try {
-          const response = await fetch("/api/events/nominated", {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
-
-          if (response.ok) {
-            const body = (await response.json()) as { events?: Event[] };
-            nominatedEvents = body.events ?? [];
-          }
-        } catch (nominatedError) {
-          console.error(nominatedError);
-        }
-      }
-
-      const eventsWithRecordings = await Promise.all(
-        [...ownedEvents, ...nominatedEvents].map(async (event) => {
-          const eventPlan = "plan" in event ? event.plan : null;
-          const eventWithPlan = {
-            ...event,
-            nominations: nominationMap.get(event.id) ?? [],
-            plan:
-              eventPlan ??
-              entitlementPlans.get(event.id) ??
-              (event.role === "nominated_streamer" ? "premium" : null),
-          };
-
+      const nominatedEventsWithRecordings = await Promise.all(
+        nominatedEvents.map(async (event) => {
           try {
             const response = await fetch(
               `/api/events/${encodeURIComponent(event.slug)}`
             );
 
             if (!response.ok) {
-              return { ...eventWithPlan, hasPassword: false, recording: null };
+              return { ...event, hasPassword: false, recording: null };
             }
 
             const metadata = await response.json();
             return {
-              ...eventWithPlan,
+              ...event,
+              nominations: [],
+              plan: event.plan ?? "premium",
               hasPassword: Boolean(metadata.hasPassword),
               recording: metadata.recording ?? null,
             };
           } catch (metadataError) {
             console.error(metadataError);
-            return { ...eventWithPlan, hasPassword: false, recording: null };
+            return { ...event, hasPassword: false, recording: null };
           }
         })
       );
 
-      setEvents(eventsWithRecordings);
+      setEvents([...ownedEvents, ...nominatedEventsWithRecordings]);
       setLoading(false);
     }
 
