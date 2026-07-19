@@ -52,7 +52,8 @@ export function createServiceRoleClient() {
 }
 
 export async function authenticateApiRequest(
-  request: NextRequest
+  request: NextRequest,
+  createSupabaseClient: typeof createClient = createClient
 ): Promise<AuthenticatedApiContext> {
   const { supabaseAnonKey, supabaseUrl } = getSupabaseConfig();
   const accessToken = request.headers
@@ -63,7 +64,7 @@ export async function authenticateApiRequest(
     throw new ApiAuthenticationError("Unauthorized", 401);
   }
 
-  const authSupabase = createClient(supabaseUrl, supabaseAnonKey);
+  const authSupabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
   const {
     data: { user },
     error,
@@ -75,7 +76,7 @@ export async function authenticateApiRequest(
 
   return {
     accessToken,
-    authenticatedSupabase: createClient(supabaseUrl, supabaseAnonKey, {
+    authenticatedSupabase: createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {
           Authorization: `Bearer ${accessToken}`,

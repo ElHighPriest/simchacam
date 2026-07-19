@@ -15,11 +15,16 @@ import {
 import { supabase } from "@/lib/supabase";
 
 type EventRecord = {
+  entitlement: {
+    plan: "free" | "premium";
+  } | null;
   eventAt: string | null;
   id: string;
   name: string;
-  hasRecording: boolean;
-  plan: "free" | "premium";
+  recording: {
+    expiresAt: string | null;
+    status: string;
+  } | null;
 };
 
 export default function EditEventPage() {
@@ -74,10 +79,10 @@ export default function EditEventPage() {
         return;
       }
 
-      const event = data as EventRecord;
+      const event = data.event as EventRecord;
       setName(event.name || "");
-      setHasRecording(Boolean(event.hasRecording));
-      setPlan(event.plan === "premium" ? "premium" : "free");
+      setHasRecording(Boolean(event.recording));
+      setPlan(event.entitlement?.plan === "premium" ? "premium" : "free");
 
       if (event.eventAt) {
         const eventDateValue = new Date(event.eventAt);

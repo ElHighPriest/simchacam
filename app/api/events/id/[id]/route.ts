@@ -1,117 +1,37 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  ApiAuthenticationError,
+  authenticateApiRequest,
+} from "@/lib/api-auth";
+import { createGetEventDetailsHandler } from "@/lib/event-details-handler";
 import { hashPassword } from "@/lib/password";
-import { isEmailVerified } from "@/lib/auth";
 
-async function getAuthenticatedClient(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const accessToken = request.headers
-    .get("authorization")
-    ?.replace(/^Bearer\s+/i, "");
+export const GET = createGetEventDetailsHandler();
 
-  if (!supabaseUrl || !supabaseAnonKey || !accessToken) {
-    return null;
+function patchAuthenticationErrorResponse(error: unknown) {
+  if (error instanceof ApiAuthenticationError) {
+    return NextResponse.json(
+      { error: error.status === 401 ? "Unauthorized" : error.message },
+      { status: error.status }
+    );
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser(accessToken);
-
-  if (!isEmailVerified(user)) {
-    return null;
-  }
-
-  return {
-    user,
-    supabase: createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    }),
-  };
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const authenticated = await getAuthenticatedClient(request);
-
-  if (!authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const { data: event, error } = await authenticated.supabase
-    .from("events")
-    .select("id, name, user_id, event_at")
-    .eq("id", id)
-    .single();
-
-  if (error || !event) {
-    return NextResponse.json({ error: "Event not found" }, { status: 404 });
-  }
-
-  if (event.user_id !== authenticated.user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const recordingSupabase = serviceRoleKey
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      })
-    : authenticated.supabase;
-
-  const { data: recording, error: recordingError } = await recordingSupabase
-    .from("event_recordings")
-    .select("event_id")
-    .eq("event_id", id)
-    .maybeSingle();
-
-  if (recordingError) {
-    console.error("Could not load recording status:", recordingError);
-  }
-
-  const hasRecording = recordingError ? false : Boolean(recording);
-
-  const { data: entitlement, error: entitlementError } =
-    await authenticated.supabase
-      .from("event_entitlements")
-      .select("plan")
-      .eq("event_id", id)
-      .maybeSingle();
-
-  if (entitlementError) {
-    console.error("Could not load event entitlement:", entitlementError);
-  }
-
-  return NextResponse.json({
-    id: event.id,
-    name: event.name,
-    eventAt: event.event_at,
-    hasRecording,
-    plan: entitlement?.plan === "premium" ? "premium" : "free",
-  });
+  throw error;
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authenticated = await getAuthenticatedClient(request);
+  let authenticated: Awaited<ReturnType<typeof authenticateApiRequest>>;
 
-  if (!authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    authenticated = await authenticateApiRequest(request);
+  } catch (error) {
+    return patchAuthenticationErrorResponse(error);
   }
 
+  const { authenticatedSupabase, user } = authenticated;
   const { id } = await params;
   const body = await request.json();
   const { name } = body;
@@ -132,7 +52,7 @@ export async function PATCH(
 
   if (Object.hasOwn(body, "eventAt")) {
     const { data: entitlement, error: entitlementError } =
-      await authenticated.supabase
+      await authenticatedSupabase
         .from("event_entitlements")
         .select("plan")
         .eq("event_id", id)
@@ -169,11 +89,11 @@ export async function PATCH(
     }
   }
 
-  const { data, error } = await authenticated.supabase
+  const { data, error } = await authenticatedSupabase
     .from("events")
     .update(updates)
     .eq("id", id)
-    .eq("user_id", authenticated.user.id)
+    .eq("user_id", user.id)
     .select("id")
     .single();
 
