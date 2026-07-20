@@ -4,9 +4,11 @@ import {
   authenticateApiRequest,
 } from "@/lib/api-auth";
 import { createGetEventDetailsHandler } from "@/lib/event-details-handler";
+import { createDeleteEventHandler } from "@/lib/event-delete-handler";
 import { hashPassword } from "@/lib/password";
 
 export const GET = createGetEventDetailsHandler();
+export const DELETE = createDeleteEventHandler();
 
 function patchAuthenticationErrorResponse(error: unknown) {
   if (error instanceof ApiAuthenticationError) {

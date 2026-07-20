@@ -344,10 +344,33 @@ export default function MyEventsPage() {
 
     if (!confirmed) return;
 
-    const { error } = await supabase.from("events").delete().eq("id", id);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error(error);
+    if (!session?.access_token) {
+      alert(messages.myEvents.messages.deleteFailed);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/events/id/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Could not delete event", await response.json());
+        alert(messages.myEvents.messages.deleteFailed);
+        return;
+      }
+    } catch (error) {
+      console.error("Could not delete event", error);
       alert(messages.myEvents.messages.deleteFailed);
       return;
     }
