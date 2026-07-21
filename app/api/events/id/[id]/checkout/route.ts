@@ -12,6 +12,7 @@ export const runtime = "nodejs";
 type CheckoutReturnUrls = {
   successUrl: string;
   cancelUrl: string;
+  originContext?: "mobile_app";
 };
 
 export function resolveCheckoutReturnUrls({
@@ -49,7 +50,11 @@ export function resolveCheckoutReturnUrls({
     const cancelUrl = new URL(cancelReturnUrl!);
     successUrl.searchParams.set("eventId", eventId!);
     cancelUrl.searchParams.set("eventId", eventId!);
-    return { successUrl: successUrl.toString(), cancelUrl: cancelUrl.toString() };
+    return {
+      successUrl: successUrl.toString(),
+      cancelUrl: cancelUrl.toString(),
+      originContext: "mobile_app",
+    };
   }
 
   const cancelPath = requestedCancelPath ?? myEventsPath;
@@ -285,6 +290,9 @@ export async function POST(
           },
           success_url: returnUrls.successUrl,
           cancel_url: returnUrls.cancelUrl,
+          ...(returnUrls.originContext
+            ? { origin_context: returnUrls.originContext }
+            : {}),
         },
         {
           idempotencyKey: `event-payment-${payment.id}`,

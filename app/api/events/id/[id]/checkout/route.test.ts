@@ -21,6 +21,7 @@ describe("checkout return URLs", () => {
     ).toEqual({
       successUrl: "https://simcha.cam/mobile/checkout/success?eventId=event-1",
       cancelUrl: "https://simcha.cam/mobile/checkout/cancel?eventId=event-1",
+      originContext: "mobile_app",
     });
   });
 
