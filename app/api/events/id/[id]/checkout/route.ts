@@ -9,6 +9,58 @@ import {
 
 export const runtime = "nodejs";
 
+type CheckoutReturnUrls = {
+  successUrl: string;
+  cancelUrl: string;
+};
+
+export function resolveCheckoutReturnUrls({
+  siteUrl,
+  locale,
+  requestedCancelPath,
+  successReturnUrl,
+  cancelReturnUrl,
+  eventId,
+}: {
+  siteUrl: string | URL;
+  locale: string;
+  requestedCancelPath?: string;
+  successReturnUrl?: string;
+  cancelReturnUrl?: string;
+  eventId?: string;
+}): CheckoutReturnUrls {
+  const myEventsPath = locale === "he" ? "/he/my-events" : "/en/my-events";
+  const mobileOrigin = new URL(siteUrl).origin;
+  if (successReturnUrl !== undefined || cancelReturnUrl !== undefined) {
+    const isAllowed = (value: string | undefined, path: string) => {
+      if (!value || !eventId) return false;
+      const url = new URL(value);
+      return (
+        url.origin === mobileOrigin &&
+        url.pathname === path &&
+        url.searchParams.size === 0 &&
+        url.hash === ""
+      );
+    };
+    if (!isAllowed(successReturnUrl, "/mobile/checkout/success") || !isAllowed(cancelReturnUrl, "/mobile/checkout/cancel")) {
+      throw new Error("Unsupported mobile return URL");
+    }
+    const successUrl = new URL(successReturnUrl!);
+    const cancelUrl = new URL(cancelReturnUrl!);
+    successUrl.searchParams.set("eventId", eventId!);
+    cancelUrl.searchParams.set("eventId", eventId!);
+    return { successUrl: successUrl.toString(), cancelUrl: cancelUrl.toString() };
+  }
+
+  const cancelPath = requestedCancelPath ?? myEventsPath;
+  return {
+    successUrl:
+      `${new URL(myEventsPath, siteUrl).toString()}` +
+      "?checkout=success&session_id={CHECKOUT_SESSION_ID}",
+    cancelUrl: `${new URL(cancelPath, siteUrl).toString()}?checkout=cancelled`,
+  };
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,16 +68,26 @@ export async function POST(
   let locale = "en";
   let requestedCancelPath: string | undefined;
   let currency: Currency | undefined;
+  let successReturnUrl: string | undefined;
+  let cancelReturnUrl: string | undefined;
 
   try {
     const body = (await request.json()) as {
       cancelPath?: unknown;
       currency?: unknown;
       locale?: unknown;
+      successReturnUrl?: unknown;
+      cancelReturnUrl?: unknown;
     };
     locale = body.locale === "he" ? "he" : "en";
     requestedCancelPath =
       typeof body.cancelPath === "string" ? body.cancelPath : undefined;
+    successReturnUrl =
+      typeof body.successReturnUrl === "string"
+        ? body.successReturnUrl
+        : undefined;
+    cancelReturnUrl =
+      typeof body.cancelReturnUrl === "string" ? body.cancelReturnUrl : undefined;
 
     if (body.currency !== undefined) {
       if (typeof body.currency !== "string" || !isCurrency(body.currency)) {
@@ -191,12 +253,22 @@ export async function POST(
         : `/en/edit-event/${event.id}`;
     const cancelPath =
       requestedCancelPath === editEventPath ? editEventPath : myEventsPath;
-    const successUrl =
-      `${new URL(myEventsPath, siteUrl).toString()}` +
-      "?checkout=success&session_id={CHECKOUT_SESSION_ID}";
-    const cancelUrl =
-      `${new URL(cancelPath, siteUrl).toString()}` +
-      "?checkout=cancelled";
+    let returnUrls: CheckoutReturnUrls;
+    try {
+      returnUrls = resolveCheckoutReturnUrls({
+        siteUrl,
+        locale,
+        requestedCancelPath: cancelPath,
+        successReturnUrl,
+        cancelReturnUrl,
+        eventId: event.id,
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "Unsupported mobile return URL" },
+        { status: 400 }
+      );
+    }
 
     try {
       const session = await client.checkout.sessions.create(
@@ -211,8 +283,8 @@ export async function POST(
           payment_intent_data: {
             metadata,
           },
-          success_url: successUrl,
-          cancel_url: cancelUrl,
+          success_url: returnUrls.successUrl,
+          cancel_url: returnUrls.cancelUrl,
         },
         {
           idempotencyKey: `event-payment-${payment.id}`,

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.simchacam.host",
+      "sha256_cert_fingerprints": [
+        3E:70:D2:C9:2A:25:6F:80:9B:08:05:F2:3F:F1:7B:27:DA:AB:7B:DF:96:1E:84:56:8C:60:85:F7:65:C4:53:5D
+      ]
+    }
+  }
+]
