@@ -2,15 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
-import {
-  getLocaleFromPathname,
-  getPremiumPriceDisplay,
-} from "@/lib/i18n";
+import { usePremiumPricing } from "@/app/components/usePremiumPricing";
+import { getLocaleFromPathname } from "@/lib/i18n";
 
 export default function PremiumPrice() {
   const locale = getLocaleFromPathname(usePathname());
   const { currency } = useCurrencyPreference(locale);
-  const price = getPremiumPriceDisplay(currency, locale);
+  const price = usePremiumPricing(currency, locale);
 
   return (
     <>

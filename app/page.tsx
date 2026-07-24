@@ -11,6 +11,7 @@ import ProfileMenu from "./components/ProfileMenu";
 import PublicFooter from "./components/PublicFooter";
 import StreamerRoom from "./components/StreamerRoom";
 import { useCurrencyPreference } from "./components/useCurrencyPreference";
+import { usePremiumPricing } from "./components/usePremiumPricing";
 import { supabase } from "@/lib/supabase";
 import { isEmailVerified } from "@/lib/auth";
 import {
@@ -18,7 +19,6 @@ import {
   getLocaleFromPathname,
   getLocalizedPath,
   getMessages,
-  getPremiumPriceDisplay,
 } from "@/lib/i18n";
 import type { User } from "@supabase/supabase-js";
 
@@ -39,7 +39,7 @@ export default function Home() {
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
   const { currency } = useCurrencyPreference(locale);
-  const premiumPrice = getPremiumPriceDisplay(currency, locale);
+  const premiumPrice = usePremiumPricing(currency, locale);
   const homePath = getLocalizedPath(locale);
   const direction = getLocaleDirection(locale);
   const [user, setUser] = useState<User | null>(null);

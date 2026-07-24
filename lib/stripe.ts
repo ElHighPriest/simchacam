@@ -46,7 +46,7 @@ function getStripeClientConfig() {
   }
 
   for (const [currency, priceId] of Object.entries(premiumPriceIds)) {
-    if (priceId && !priceId.startsWith("price_")) {
+    if (priceId && !/^price_[A-Za-z0-9]+$/.test(priceId)) {
       throw new Error(`Invalid Stripe ${currency.toUpperCase()} price ID`);
     }
   }
@@ -61,6 +61,10 @@ function getStripeClientConfig() {
     client: stripeClient,
     premiumPriceIds,
   };
+}
+
+export function getStripePricingConfig() {
+  return getStripeClientConfig();
 }
 
 export function getStripeConfig(

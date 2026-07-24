@@ -9,13 +9,13 @@ import PreLiveSetup from "@/app/components/PreLiveSetup";
 import ProfileMenu from "@/app/components/ProfileMenu";
 import StreamerRoom from "@/app/components/StreamerRoom";
 import { useCurrencyPreference } from "@/app/components/useCurrencyPreference";
+import { usePremiumPricing } from "@/app/components/usePremiumPricing";
 import { isEmailVerified } from "@/lib/auth";
 import {
   getLocaleDirection,
   getLocaleFromPathname,
   getLocalizedPath,
   getMessages,
-  getPremiumPriceDisplay,
 } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -86,7 +86,7 @@ export default function MyEventsPage() {
   const locale = getLocaleFromPathname(pathname);
   const messages = getMessages(locale);
   const { currency } = useCurrencyPreference(locale);
-  const premiumPrice = getPremiumPriceDisplay(currency, locale);
+  const premiumPrice = usePremiumPricing(currency, locale);
   const homePath = getLocalizedPath(locale);
   const createEventHref = `${homePath}#create-event`;
   const [user, setUser] = useState<User | null>(null);
