@@ -34,7 +34,7 @@ export async function GET(
   const { slug } = await params;
   const { data: event, error } = await supabase
     .from("events")
-    .select("id, name, slug, password, status, event_at")
+    .select("id, name, slug, password, status, event_at, stream_provider")
     .eq("slug", slug)
     .single();
 
@@ -133,6 +133,7 @@ export async function GET(
     name: event.name,
     slug: event.slug,
     status: event.status,
+    streamProvider: event.stream_provider ?? "livekit",
     eventAt: event.event_at,
     hasPassword: Boolean(event.password),
     recording,

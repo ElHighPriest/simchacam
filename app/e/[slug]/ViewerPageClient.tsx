@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Room } from "livekit-client";
 import LanguageSwitcher from "@/app/components/LanguageSwitcher";
+import MuxViewerRoom from "@/app/components/MuxViewerRoom";
 import ViewerRoom from "@/app/components/ViewerRoom";
 import {
   getLocaleDirection,
@@ -25,6 +26,7 @@ type EventRecord = {
   name: string | null;
   slug: string | null;
   status: string | null;
+  streamProvider: "livekit" | "mux";
   eventAt: string | null;
   hasPassword: boolean;
   recording: {
@@ -253,6 +255,7 @@ export default function ViewerPageClient({
     url: string;
   } | null>(null);
   const [viewerRoom, setViewerRoom] = useState<Room | null>(null);
+  const [muxPlaybackId, setMuxPlaybackId] = useState("");
   const viewerRoomRef = useRef<Room | null>(null);
   const hasLoadedEvent = useRef(false);
 
@@ -315,10 +318,64 @@ export default function ViewerPageClient({
   }
 
   const eventHasPassword = Boolean(event?.hasPassword);
+  const muxPasswordAccepted = !eventHasPassword || passwordPassed;
+
+  useEffect(() => {
+    if (
+      event?.streamProvider !== "mux" ||
+      !muxPasswordAccepted ||
+      event.status === "ended"
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function checkMuxPlayback() {
+      try {
+        const response = await fetch(
+          `/api/events/viewer/${encodeURIComponent(slug)}/mux-playback`,
+          {
+            body: JSON.stringify({ password: enteredPassword }),
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            method: "POST",
+          }
+        );
+        const data = await response.json();
+
+        if (!cancelled && response.ok && data.ready && data.playbackId) {
+          setMuxPlaybackId(data.playbackId);
+        }
+      } catch {
+        // Preserve the waiting page and retry while Mux prepares the stream.
+      }
+    }
+
+    const initialCheck = window.setTimeout(() => {
+      void checkMuxPlayback();
+    }, 0);
+    const interval = window.setInterval(checkMuxPlayback, 3000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(initialCheck);
+      window.clearInterval(interval);
+    };
+  }, [
+    enteredPassword,
+    event?.status,
+    event?.streamProvider,
+    muxPasswordAccepted,
+    slug,
+  ]);
+
   const viewerTrackingEnabled = Boolean(
     event &&
       (!eventHasPassword || passwordPassed) &&
-      (event.status === "live" || event.recording?.status === "ready")
+      (event.status === "live" ||
+        muxPlaybackId ||
+        event.recording?.status === "ready")
   );
 
   useViewerSessionTracking({
@@ -819,7 +876,18 @@ export default function ViewerPageClient({
     );
   }
 
-  if (event.status !== "live") {
+  if (event.streamProvider === "mux" && muxPlaybackId) {
+    return (
+      <MuxViewerRoom
+        eventName={event.name}
+        eventAt={event.eventAt}
+        locale={locale}
+        playbackId={muxPlaybackId}
+      />
+    );
+  }
+
+  if (event.streamProvider === "mux" || event.status !== "live") {
     return (
       <main
         lang={locale}

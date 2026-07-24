@@ -41,7 +41,7 @@ describe("POST /api/events/[eventId]/mux-host", () => {
 
   it("requires a bearer token", async () => {
     const response = await POST(request(false), {
-      params: Promise.resolve({ eventId: "event-id" }),
+      params: Promise.resolve({ slug: "event-id" }),
     });
 
     expect(response.status).toBe(401);
@@ -59,7 +59,7 @@ describe("POST /api/events/[eventId]/mux-host", () => {
     const infoLog = vi.spyOn(console, "info").mockImplementation(() => {});
 
     const response = await POST(request(), {
-      params: Promise.resolve({ eventId: "event-id" }),
+      params: Promise.resolve({ slug: "event-id" }),
     });
 
     expect(getStreamEventContext).toHaveBeenCalledWith(
@@ -83,7 +83,7 @@ describe("POST /api/events/[eventId]/mux-host", () => {
     );
 
     const response = await POST(request(), {
-      params: Promise.resolve({ eventId: "event-id" }),
+      params: Promise.resolve({ slug: "event-id" }),
     });
 
     expect(response.status).toBe(403);

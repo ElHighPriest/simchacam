@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ eventId: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const accessToken = request.headers
     .get("authorization")
@@ -33,7 +33,7 @@ export async function POST(
   }
 
   try {
-    const { eventId } = await params;
+    const { slug: eventId } = await params;
     const context = await getStreamEventContext(accessToken, eventId);
 
     await assertCanPublishStream(context);
