@@ -18,9 +18,12 @@ export class EventPermissionError extends Error {
 
 type EventRow = {
   id: string;
+  mux_playback_id: string | null;
+  mux_stream_id: string | null;
   name?: string | null;
   slug: string;
   status: string | null;
+  stream_provider: "livekit" | "mux" | null;
   user_id: string;
 };
 
@@ -220,7 +223,11 @@ export async function getActiveStreamerNomination(
 }
 
 export async function assertCanPublishStream(
-  context: Pick<StreamEventContext, "event" | "role" | "serviceSupabase">
+  context: {
+    event: { id: string };
+    role: EventAccessRole;
+    serviceSupabase: SupabaseClient;
+  }
 ) {
   if (context.role !== "owner") {
     return;
@@ -248,7 +255,9 @@ export async function getStreamEventContext(
   const serviceSupabase = createServiceClient(config);
   const { data: event, error: eventError } = await serviceSupabase
     .from("events")
-    .select("id, name, slug, status, user_id")
+    .select(
+      "id, name, slug, status, user_id, stream_provider, mux_stream_id, mux_playback_id"
+    )
     .eq("id", eventId)
     .maybeSingle();
 
@@ -300,7 +309,9 @@ export async function getStreamEventContextBySlug(
   const serviceSupabase = createServiceClient(config);
   const { data: event, error: eventError } = await serviceSupabase
     .from("events")
-    .select("id, name, slug, status, user_id")
+    .select(
+      "id, name, slug, status, user_id, stream_provider, mux_stream_id, mux_playback_id"
+    )
     .eq("slug", slug)
     .maybeSingle();
 
